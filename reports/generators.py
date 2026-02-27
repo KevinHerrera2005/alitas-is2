@@ -306,10 +306,15 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws = wb.active
     ws.title = "Reporte"
 
-    max_col = max(1, len(columns))
-    last_col = get_column_letter(max(8, max_col))
+    ws.row_dimensions[1].height = 32
+    ws.row_dimensions[2].height = 18
+    ws.row_dimensions[3].height = 18
+    ws.row_dimensions[4].height = 18
 
-    ws.merge_cells(f"A1:{last_col}1")
+    max_col = max(1, len(columns))
+    last_data_col = get_column_letter(max_col)
+
+    ws.merge_cells(f"A1:{last_data_col}1")
     ws["A1"] = report_title
     ws["A1"].font = Font(bold=True, name="Calibri", size=16)
     ws["A1"].alignment = Alignment(horizontal="left", vertical="center")
@@ -330,9 +335,15 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     if logo_path:
         try:
             img = XLImage(logo_path)
-            img.width = 170
-            img.height = 60
-            ws.add_image(img, f"{last_col}1")
+
+            max_w = 200
+            iw = float(img.width or 1)
+            ih = float(img.height or 1)
+            scale = max_w / iw
+            img.width = int(iw * scale)
+            img.height = int(ih * scale)
+
+            ws.add_image(img, "H1")
         except Exception:
             pass
 
