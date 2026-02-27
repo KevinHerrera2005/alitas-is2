@@ -110,7 +110,7 @@ def ejecutar_init_sql_si_aplica(odbc_conn_str, init_sql_path, db_name):
 
     print("[INIT] init.sql ejecutado.")
 
-
+## poner sus credenciales aqui su sa  con la contrasseña y su nombre del sql o sea DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-5FSTOOH\SQLEXPRESS")
 DB_DRIVER = os.getenv("ODBC_DRIVER", "ODBC Driver 17 for SQL Server")
 DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-5FSTOOH\SQLEXPRESS")
 DB_NAME = os.getenv("DB_NAME", "ALITAS EL COMELON SF")
