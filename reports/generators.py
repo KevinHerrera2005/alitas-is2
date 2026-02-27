@@ -18,6 +18,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table as XLTable
 from openpyxl.worksheet.table import TableStyleInfo
 
+
 Cell = Any
 ColumnSpec = Tuple[str, Callable[[Any], Any]]
 
@@ -249,8 +250,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     _auto_anchos(ws, columns, rows)
 
     try:
-        ref = f"A{start_row}:"
-        ref += f"{get_column_letter(max_col)}{max_row}"
+        ref = f"A{start_row}:{get_column_letter(max_col)}{max_row}"
         tab = XLTable(displayName="TablaReporte", ref=ref)
         style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
         tab.tableStyleInfo = style
@@ -271,11 +271,3 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     out = BytesIO()
     wb.save(out)
     return out.getvalue()
-
-
-def render_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    return generar_pdf(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
-
-
-def render_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    return generar_excel(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
