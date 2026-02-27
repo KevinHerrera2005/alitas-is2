@@ -311,13 +311,16 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     if logo_path:
         try:
             img = XLImage(logo_path)
-            img.width = 150
-            img.height = 80
+            size = 90
+            img.width = size
+            img.height = size
             ws.add_image(img, "A1")
+            ws.row_dimensions[1].height = size * 0.75
         except Exception:
-            pass
+            ws.row_dimensions[1].height = 65
+    else:
+        ws.row_dimensions[1].height = 65
 
-    ws.row_dimensions[1].height = 65
     ws.row_dimensions[2].height = 28
     ws.row_dimensions[3].height = 20
     ws.row_dimensions[4].height = 20
@@ -383,6 +386,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     out = BytesIO()
     wb.save(out)
     return out.getvalue()
+
 
 def render_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     return generar_pdf(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
