@@ -306,90 +306,106 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws = wb.active
     ws.title = "Reporte"
 
+    ws.sheet_view.showGridLines = False
+
+    fondo = PatternFill("solid", fgColor="FFFFFF")
+    for row in range(1, 200):
+        for col in range(1, 60):
+            ws.cell(row=row, column=col).fill = fondo
+
     max_col = max(1, len(columns))
-    last_col_letter = get_column_letter(max_col)
+    last_col = get_column_letter(max_col)
 
     logo_path = _ruta_logo()
     if logo_path:
         try:
             img = XLImage(logo_path)
-            img.width = 220
-            img.height = 160
-            ws.add_image(img, "A1")
+            img.width = 200
+            img.height = 140
+
+            center_col_index = max_col // 2
+            center_col = get_column_letter(max(center_col_index, 1))
+
+            ws.add_image(img, f"{center_col}1")
+
         except Exception:
             pass
 
-    ws.row_dimensions[1].height = 120
+    ws.row_dimensions[1].height = 110
     ws.row_dimensions[2].height = 35
     ws.row_dimensions[3].height = 22
     ws.row_dimensions[4].height = 22
     ws.row_dimensions[5].height = 22
 
-    ws.merge_cells(f"A2:{last_col_letter}2")
-    ws["A2"] = report_title
-    ws["A2"].font = Font(bold=True, size=16, name="Calibri")
-    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws.merge_cells(f"A2:{last_col}2")
+    titulo = ws["A2"]
+    titulo.value = report_title
+    titulo.font = Font(size=16, bold=True)
+    titulo.alignment = Alignment(horizontal="center")
 
-    ws["A3"] = "Empresa:"
-    ws["B3"] = _nombre_empresa()
+    ws.merge_cells(f"A3:{last_col}3")
+    ws["A3"] = f"Empresa: {_nombre_empresa()}"
+    ws["A3"].alignment = Alignment(horizontal="center")
 
-    ws["A4"] = "Impreso por:"
-    ws["B4"] = printed_by
+    ws.merge_cells(f"A4:{last_col}4")
+    ws["A4"] = f"Impreso por: {printed_by}"
+    ws["A4"].alignment = Alignment(horizontal="center")
 
-    ws["A5"] = "Fecha/Hora:"
-    ws["B5"] = _ahora_str()
-
-    for r in range(3, 6):
-        ws[f"A{r}"].font = Font(bold=True, size=11)
-        ws[f"A{r}"].alignment = Alignment(horizontal="left")
-        ws[f"B{r}"].alignment = Alignment(horizontal="left")
+    ws.merge_cells(f"A5:{last_col}5")
+    ws["A5"] = f"Fecha/Hora: {_ahora_str()}"
+    ws["A5"].alignment = Alignment(horizontal="center")
 
     start_row = 7
 
-    header_fill = PatternFill("solid", fgColor="111827")
-    header_font = Font(bold=True, color="FFFFFF", size=11)
-    body_font = Font(size=10)
+    header_fill = PatternFill("solid", fgColor="1F2937")
+    header_font = Font(bold=True, color="FFFFFF")
 
-    thin = Side(style="thin", color="D1D5DB")
+    thin = Side(style="thin", color="E5E7EB")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
     for col_index, col_name in enumerate(columns, 1):
         cell = ws.cell(row=start_row, column=col_index, value=col_name)
+
         cell.fill = header_fill
         cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.alignment = Alignment(horizontal="center")
         cell.border = border
 
     for row_index, row_data in enumerate(rows, start_row + 1):
         for col_index, value in enumerate(row_data, 1):
+
             cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
-            cell.font = body_font
-            cell.alignment = Alignment(horizontal="left", vertical="center")
+
             cell.border = border
+            cell.alignment = Alignment(horizontal="left")
 
     _auto_anchos(ws, columns, rows)
 
     max_row = start_row + len(rows)
 
     try:
-        ref = f"A{start_row}:{last_col_letter}{max_row}"
+        ref = f"A{start_row}:{last_col}{max_row}"
+
         tab = XLTable(displayName="TablaReporte", ref=ref)
+
         style = TableStyleInfo(
-            name="TableStyleMedium9",
+            name="TableStyleMedium2",
             showRowStripes=True,
             showColumnStripes=False
         )
+
         tab.tableStyleInfo = style
         ws.add_table(tab)
+
     except Exception:
         pass
 
-    ws.freeze_panes = ws[f"A{start_row+1}"]
+    ws.freeze_panes = ws["A8"]
 
-    out = BytesIO()
-    wb.save(out)
-    return out.getvalue()
+    output = BytesIO()
+    wb.save(output)
 
+    return output.getvalue()
 def render_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     return generar_pdf(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
 
