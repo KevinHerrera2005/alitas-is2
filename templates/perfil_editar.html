@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar perfil - Alitas El Comelón</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+    }
+
+    .page-wrapper {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .titulo-saludo {
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .nombre-usuario {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0 0 20px 0;
+      color: #111;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 25px;
+    }
+
+    .sidebar {
+      background-color: #ffffff;
+      border-radius: 14px;
+      padding: 18px 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .sidebar-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #555;
+    }
+
+    .menu-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .menu-item {
+      margin-bottom: 6px;
+    }
+
+    .menu-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      color: #444;
+      padding: 10px 12px;
+      border-radius: 10px;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .menu-link span.icon {
+      font-size: 1rem;
+    }
+
+    .menu-link.active {
+      background-color: #ffe0cf;
+      color: #b03c00;
+      font-weight: 600;
+    }
+
+    .menu-link:hover {
+      background-color: #f3f3f3;
+    }
+
+    .menu-link.logout {
+      color: #c62828;
+    }
+
+    .menu-link.logout:hover {
+      background-color: #ffe5e5;
+    }
+
+    .content {
+      background-color: #ffffff;
+      border-radius: 14px;
+      padding: 22px 24px 26px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .content-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px 24px;
+      margin-bottom: 22px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: #777;
+      margin-bottom: 4px;
+    }
+
+    .form-group input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 0.95rem;
+    }
+
+    .form-group input[readonly] {
+      background-color: #f5f5f5;
+      color: #666;
+    }
+
+    .acciones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: none;
+      background-color: #111;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary {
+      padding: 9px 18px;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      color: #555;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .msg {
+      font-size: 0.8rem;
+      margin-top: 3px;
+    }
+
+    .msg.error {
+      color: #c62828;
+    }
+
+    .msg.ok {
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <p class="titulo-saludo">Editar perfil</p>
+    <h1 class="nombre-usuario">{{ usuario.nombre }}</h1>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Mi cuenta</div>
+        <ul class="menu-list">
+          <li class="menu-item">
+            <a href="{{ url_for('usuario_cliente.perfil') }}" class="menu-link">
+              <span class="icon">👤</span>
+              <span>Información personal</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('tus_direcciones') }}" class="menu-link">
+              <span class="icon">📍</span>
+              <span>Direcciones de envío</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="#" class="menu-link">
+              <span class="icon">📦</span>
+              <span>Mis pedidos</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('tus_metodos_pago') }}" class="menu-link">
+              <span class="icon">💳</span>
+              <span>Métodos de pago</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('logout') }}" class="menu-link logout">
+              <span class="icon">⏻</span>
+              <span>Cerrar sesión</span>
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <main class="content">
+        <div class="content-title">Información personal</div>
+
+        <form method="POST" id="formEditar">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Usuario</label>
+              <input type="text" name="username" value="{{ usuario.Username }}" readonly>
+            </div>
+            <div class="form-group">
+              <label>Nombres</label>
+              <input type="text" name="nombre" value="{{ usuario.nombre }}" data-validacion="nombre">
+            </div>
+            <div class="form-group">
+              <label>Apellidos</label>
+              <input type="text" name="apellido" value="{{ usuario.apellido }}" data-validacion="apellido">
+            </div>
+            <div class="form-group">
+              <label>Teléfono</label>
+              <input type="text" name="telefono" value="{{ usuario.telefono }}" data-validacion="telefono">
+            </div>
+          </div>
+
+          <div class="acciones">
+            <button type="submit" class="btn-primary">Guardar cambios</button>
+            <a href="{{ url_for('usuario_cliente.perfil') }}" class="btn-secondary">Cancelar</a>
+          </div>
+        </form>
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+</body>
+</html>

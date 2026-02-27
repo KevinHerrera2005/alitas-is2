@@ -1,0 +1,35 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block brand %}
+  <a class="navbar-brand" href="{{ url_for('carrito_checkout') }}">
+    Volver a la Compra
+  </a>
+{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    .navbar-nav {
+      display: none !important;
+    }
+  </style>
+{% endblock %}
+
+{% block page_title %}
+  Ver mis direcciones
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      var campo = document.getElementById("direccion_textarea");
+      if (campo && typeof validarDescripcion === "function") {
+        campo.addEventListener("input", function () {
+          validarDescripcion(campo);
+        });
+      }
+    });
+  </script>
+{% endblock %}

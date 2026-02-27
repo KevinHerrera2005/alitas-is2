@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Receta | Alitas El Comelón</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 30px;
+            min-height: 100vh;
+        }
+        h1 { color: #b80000; }
+
+        /* --- FLASH MESSAGES --- */
+        .flash-container {
+            width: 380px;
+            margin-bottom: 10px;
+        }
+        .flash {
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .flash-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .flash-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .flash-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .flash-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        form {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            width: 380px;
+        }
+        label {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-top: 10px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-top: 5px;
+        }
+        .msg {
+            font-size: 0.85em;
+            text-align: left;
+            margin-top: 3px;
+            margin-bottom: 5px;
+        }
+        .ok { color: green; }
+        .error { color: red; }
+        .inline-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        button {
+            width: 100%;
+            background-color: #e60000;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #b80000; }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #listaInsumos {
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 6px;
+            background: #f9f9f9;
+            display: none;
+        }
+        a {
+            text-decoration: none;
+            color: #b80000;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Crear Nueva Receta</h1>
+
+{# ------ AQUÍ MOSTRAMOS LOS FLASH() DEL BACKEND ------ #}
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+</div>
+
+<form id="formReceta" action="{{ url_for('crear_receta') }}" method="POST">
+    <label>Nombre de la Receta:</label>
+    <input type="text"
+           id="nombre"
+           name="nombre"
+           required>
+    <div id="msgNombre" class="msg"></div>
+
+    <label>Pasos a seguir:</label>
+    <textarea id="descripcion"
+              name="descripcion"
+              rows="3"
+              required></textarea>
+    <div id="msgDescripcion" class="msg"></div>
+
+    <label>Descripción que verá el cliente:</label>
+    <textarea id="descripcion_cliente"
+              name="descripcion_cliente"
+              rows="3"
+              required></textarea>
+    <div id="msgDescripcionCliente" class="msg"></div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <label style="margin: 0;">Categoría de la Receta:</label>
+        <a href="/admin/categoria_recetas_admin/"
+           style="background-color: #28a745;
+                  color: white;
+                  padding: 5px 10px;
+                  border-radius: 5px;
+                  text-decoration: none;
+                  font-weight: bold;
+                  font-size: 0.85em;
+                  transition: 0.3s;">
+            ➕ Agregar
+        </a>
+    </div>
+
+    <select id="categoria_receta" name="categoria" required style="width: 100%; margin-top: 5px;">
+        <option value="">-- Selecciona una categoría --</option>
+        {% for id, nombre in categorias.items() %}
+        <option value="{{ id }}">{{ nombre }}</option>
+        {% endfor %}
+    </select>
+
+    <label style="margin-top: 0px;">Seleccionar Insumo:</label>
+    <a href="/admin/insumo/"
+       style="background-color: #28a745;
+              color: white;
+              padding: 5px 10px;
+              border-radius: 5px;
+              text-decoration: none;
+              font-weight: bold;
+              font-size: 0.85em;
+              transition: 0.3s;">
+        ➕ Agregar
+    </a>
+
+    <select id="insumo" name="id_insumo">
+        <option value="">-- Selecciona un insumo --</option>
+        {% for insumo in insumos %}
+        <option value="{{ insumo.ID_Insumo }}" data-tipo="{{ insumo.Tipo }}">
+            {{ insumo.Nombre_insumo }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <select id="unidad" name="id_unidad">
+        <option value="">-- Selecciona unidad --</option>
+        {% for unidad in unidades %}
+        <option value="{{ unidad.ID_Unidad }}" data-tipo="{{ unidad.Tipo }}">
+            {{ unidad.Nombre_Unidad }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <label style="margin-top: 15px;">Cantidad usada:</label>
+    <input type="number" id="cantidad" step="0.01" min="0.01">
+
+    <div class="inline-buttons" style="margin-top: 15px;">
+        <button type="button" onclick="agregarInsumo()">➕ Agregar insumo</button>
+        <button type="button" onclick="toggleLista()">👀 Ver insumos</button>
+    </div>
+
+    <div id="listaInsumos"></div>
+
+    <input type="hidden" name="insumos_json" id="insumos_json">
+
+    <button id="guardarBtn" type="submit" disabled>Guardar Receta</button>
+
+    <a href="{{ url_for('crud_recetas') }}">⬅ Volver al panel</a>
+</form>
+
+<!-- VALIDACIONES GENERALES -->
+<script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+
+<script>
+let insumosSeleccionados = [];
+
+function actualizarLista() {
+    const lista = document.getElementById('listaInsumos');
+    lista.innerHTML = "";
+    insumosSeleccionados.forEach((item, i) => {
+        lista.innerHTML += `<p>${i + 1}. ${item.nombre_insumo} - ${item.cantidad} ${item.nombre_unidad}</p>`;
+    });
+    document.getElementById('insumos_json').value = JSON.stringify(insumosSeleccionados);
+}
+
+function agregarInsumo() {
+    const insumo = document.getElementById('insumo');
+    const cantidad = document.getElementById('cantidad');
+    const unidad = document.getElementById('unidad');
+
+    if (!insumo.value || !cantidad.value || !unidad.value) {
+        alert('Por favor, completa todos los campos del insumo.');
+        return;
+    }
+
+    const tipoInsumo = insumo.options[insumo.selectedIndex]?.getAttribute('data-tipo');
+    const tipoUnidad = unidad.options[unidad.selectedIndex]?.getAttribute('data-tipo');
+
+    if (tipoInsumo && tipoUnidad && tipoInsumo !== tipoUnidad) {
+        alert('⚠ No puedes asignar medidas erróneas.\nEjemplo: no puedes usar litros para algo sólido.');
+        return;
+    }
+
+    const nuevoInsumo = {
+        id_insumo: insumo.value,
+        nombre_insumo: insumo.options[insumo.selectedIndex].text,
+        cantidad: parseFloat(cantidad.value),
+        id_unidad: unidad.value,
+        nombre_unidad: unidad.options[unidad.selectedIndex].text
+    };
+
+    insumosSeleccionados.push(nuevoInsumo);
+    actualizarLista();
+
+    insumo.value = "";
+    cantidad.value = "";
+    unidad.value = "";
+}
+
+function toggleLista() {
+    const lista = document.getElementById('listaInsumos');
+    lista.style.display = (lista.style.display === "none" || lista.style.display === "") ? "block" : "none";
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof configurarValidacionReceta === 'function') {
+        configurarValidacionReceta({
+            inputNombreId: 'nombre',
+            inputDescripcionId: 'descripcion',
+            msgNombreId: 'msgNombre',
+            msgDescripcionId: 'msgDescripcion',
+            botonGuardarId: 'guardarBtn'
+        });
+    }
+});
+</script>
+<script>
+(function () {
+  const insumoSel = document.getElementById("insumo");
+  const unidadSel = document.getElementById("unidad");
+  if (!insumoSel || !unidadSel) return;
+
+  const placeholder = unidadSel.querySelector('option[value=""]');
+  const opcionesOriginales = Array.from(unidadSel.querySelectorAll("option")).filter(o => o.value !== "");
+
+  function filtrarUnidades() {
+    const optInsumo = insumoSel.options[insumoSel.selectedIndex];
+    const tipoInsumo = optInsumo ? (optInsumo.getAttribute("data-tipo") || "") : "";
+
+    unidadSel.innerHTML = "";
+    if (placeholder) unidadSel.appendChild(placeholder.cloneNode(true));
+
+    if (!insumoSel.value || !tipoInsumo) {
+      for (const opt of opcionesOriginales) unidadSel.appendChild(opt.cloneNode(true));
+      return;
+    }
+
+    const compatibles = opcionesOriginales.filter(o => (o.getAttribute("data-tipo") || "") === tipoInsumo);
+
+    for (const opt of compatibles) unidadSel.appendChild(opt.cloneNode(true));
+
+    if (unidadSel.options.length <= 1) {
+      unidadSel.value = "";
+    }
+  }
+
+  insumoSel.addEventListener("change", filtrarUnidades);
+  filtrarUnidades();
+})();
+</script>
+<script>
+(function () {
+  const cat = document.getElementById("categoria_receta");
+  if (!cat) return;
+
+  cat.addEventListener("change", function (e) {
+    e.stopImmediatePropagation();
+  }, true);
+})();
+</script>
+
+</body>
+</html>

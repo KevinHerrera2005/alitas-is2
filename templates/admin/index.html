@@ -1,0 +1,16 @@
+{% extends 'admin/master.html' %}
+
+{% block head_css %}
+  {{ super() }}
+  {# ejemplo: tu CSS custom si quieres; opcional #}
+  <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/mi_admin.css') }}"> -->
+{% endblock %}
+
+{% block body %}
+  {{ super() }}
+  <div class="container" style="margin-top:20px;">
+    <div class="alert alert-info">
+      <strong>Panel personalizado:</strong> Bienvenido al admin — aquí puedes poner accesos rápidos, estadísticas, avisos, etc.
+    </div>
+  </div>
+{% endblock %}

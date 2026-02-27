@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de Receta | Alitas El Comelón</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #b80000;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .contenedor {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h2 { color: #b80000; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #e60000;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: #b80000;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            background-color: #8b0000;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🍗 Detalles de Receta</h1>
+</header>
+
+<div class="contenedor">
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% else %}
+        <h2>{{ receta.Nombre_receta }}</h2>
+        <p><strong>Descripción:</strong> {{ receta.descripcion or "Sin descripción" }}</p>
+        <p><strong>Insertada por:</strong> {{ receta.jefe }}</p>
+
+        <h3>Ingredientes</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre del Insumo</th>
+                    <th>Cantidad Usada</th>
+                    <th>Unidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ing in ingredientes %}
+                <tr>
+                    <td>{{ ing.Nombre_insumo }}</td>
+                    <td>{{ "%.2f"|format(ing.cantidad_usada) }}</td>
+                    <td>{{ ing.Nombre_Unidad }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <a href="{{ url_for('crud_recetas') }}">⬅ Volver al Panel</a>
+    {% endif %}
+</div>
+
+</body>
+</html>

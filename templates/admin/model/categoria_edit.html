@@ -1,0 +1,25 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block tail %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const inputNombre = document.getElementById('categoria_nombre');
+      const inputDesc   = document.getElementById('categoria_descripcion');
+
+      if (typeof validarNombre === 'function' && inputNombre) {
+        inputNombre.addEventListener('input', function () {
+          validarNombre(inputNombre);
+        });
+      }
+
+      if (typeof validarDescripcion === 'function' && inputDesc) {
+        inputDesc.addEventListener('input', function () {
+          validarDescripcion(inputDesc);
+        });
+      }
+    });
+  </script>
+{% endblock %}

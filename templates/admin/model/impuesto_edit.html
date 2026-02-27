@@ -1,0 +1,168 @@
+{% extends 'admin/model/edit.html' %}
+{% block tail %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const hiddenSelect = document.querySelector("select[name='categorias_ids']");
+      if (!hiddenSelect) return;
+
+      hiddenSelect.multiple = true;
+
+      const group  = hiddenSelect.closest(".form-group");
+      const parent = group ? group.parentNode : hiddenSelect.parentNode;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.marginTop = "15px";
+
+      const label1 = document.createElement("label");
+      label1.textContent = "Este impuesto aplica a:";
+      wrapper.appendChild(label1);
+
+      const inputSearch = document.createElement("input");
+      inputSearch.type = "text";
+      inputSearch.placeholder = "Buscar categoría por nombre...";
+      inputSearch.className = "form-control";
+      inputSearch.style.margin = "6px 0 8px 0";
+      wrapper.appendChild(inputSearch);
+
+      const selectDisponibles = document.createElement("select");
+      selectDisponibles.id = "cats_disponibles";
+      selectDisponibles.size = 6;
+      selectDisponibles.className = "form-control";
+      wrapper.appendChild(selectDisponibles);
+
+      const acciones = document.createElement("div");
+      acciones.style.display = "flex";
+      acciones.style.justifyContent = "flex-end";
+      acciones.style.alignItems = "center";
+      acciones.style.marginTop = "6px";
+
+      const btnAgregar = document.createElement("button");
+      btnAgregar.type = "button";
+      btnAgregar.textContent = "Agregar categoría";
+      btnAgregar.className = "btn btn-sm btn-primary";
+      acciones.appendChild(btnAgregar);
+
+      wrapper.appendChild(acciones);
+
+      const label2 = document.createElement("label");
+      label2.textContent = "Categorías a las que aplica este impuesto:";
+      label2.style.marginTop = "12px";
+      wrapper.appendChild(label2);
+
+      const selectImpuesto = document.createElement("select");
+      selectImpuesto.id = "cats_impuesto";
+      selectImpuesto.size = 6;
+      selectImpuesto.className = "form-control";
+      wrapper.appendChild(selectImpuesto);
+
+      const btnEliminar = document.createElement("button");
+      btnEliminar.type = "button";
+      btnEliminar.textContent = "Eliminar categoría del impuesto";
+      btnEliminar.className = "btn btn-sm btn-danger";
+      btnEliminar.style.marginTop = "8px";
+      wrapper.appendChild(btnEliminar);
+
+      if (group) {
+        group.style.display = "none";
+        parent.insertBefore(wrapper, group.nextSibling);
+      } else {
+        hiddenSelect.style.display = "none";
+        parent.insertBefore(wrapper, hiddenSelect.nextSibling);
+      }
+
+      const allOptions = Array.from(hiddenSelect.options).map(function (o) {
+        return {
+          value: o.value,
+          text:  o.text,
+          selected: o.selected
+        };
+      });
+
+      allOptions.forEach(function (o) {
+        if (!o.selected) return;
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.text;
+        selectImpuesto.appendChild(opt);
+      });
+
+      function renderDisponibles(filtro) {
+        const term = (filtro || "").trim().toLowerCase();
+        const valoresImpuesto = new Set(
+          Array.from(selectImpuesto.options).map(function (o) {
+            return o.value;
+          })
+        );
+
+        selectDisponibles.innerHTML = "";
+        allOptions.forEach(function (o) {
+          if (valoresImpuesto.has(o.value)) return;
+          if (term && !o.text.toLowerCase().includes(term)) return;
+          const opt = document.createElement("option");
+          opt.value = o.value;
+          opt.textContent = o.text;
+          selectDisponibles.appendChild(opt);
+        });
+      }
+
+      function syncHidden() {
+        const valoresImpuesto = new Set(
+          Array.from(selectImpuesto.options).map(function (o) {
+            return o.value;
+          })
+        );
+        Array.from(hiddenSelect.options).forEach(function (o) {
+          o.selected = valoresImpuesto.has(o.value);
+        });
+      }
+
+      btnAgregar.addEventListener("click", function () {
+        const opt = selectDisponibles.options[selectDisponibles.selectedIndex];
+        if (!opt) {
+          alert("Selecciona una categoría para agregar.");
+          return;
+        }
+        const nuevo = document.createElement("option");
+        nuevo.value = opt.value;
+        nuevo.textContent = opt.textContent;
+        selectImpuesto.appendChild(nuevo);
+        renderDisponibles(inputSearch.value);
+        syncHidden();
+      });
+
+      btnEliminar.addEventListener("click", function () {
+        const opt = selectImpuesto.options[selectImpuesto.selectedIndex];
+        if (!opt) {
+          alert("Selecciona una categoría para eliminar.");
+          return;
+        }
+        selectImpuesto.remove(opt.index);
+        renderDisponibles(inputSearch.value);
+        syncHidden();
+      });
+
+      inputSearch.addEventListener("input", function () {
+        renderDisponibles(inputSearch.value);
+      });
+
+      const form = hiddenSelect.closest("form");
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          if (!selectImpuesto.options.length) {
+            alert("Debes seleccionar al menos una categoría para este impuesto.");
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          syncHidden();
+        });
+      }
+
+      renderDisponibles("");
+      syncHidden();
+    });
+  </script>
+{% endblock %}

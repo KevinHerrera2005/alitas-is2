@@ -1,0 +1,14 @@
+msgid "List"
+msgstr "Lista"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Search"
+msgstr "Buscar"
+
+msgid "With selected"
+msgstr "Con seleccionado"
+
+msgid "Delete"
+msgstr "Eliminar"

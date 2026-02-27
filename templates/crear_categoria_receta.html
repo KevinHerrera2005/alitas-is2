@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Categoría de Receta | Alitas El Comelón</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 40px;
+            min-height: 100vh;
+        }
+
+        h1 { color: #b80000; }
+
+        form {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            width: 380px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            margin-top: 5px;
+        }
+
+        button {
+            width: 100%;
+            background-color: #e60000;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover { background-color: #b80000; }
+        .msg { font-size: 0.9em; margin-top: 3px; }
+        .error { color: red; }
+        .ok { color: green; }
+        a { text-decoration: none; color: #b80000; font-weight: bold; display: block; text-align: center; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<h1>Agregar Nueva Categoría</h1>
+
+<form id="formCategoria" action="{{ url_for('crear_categoria_receta') }}" method="POST">
+    <label>Nombre de la Categoría:</label>
+    <input type="text" id="nombre" name="nombre" required>
+    <div id="msgNombre" class="msg"></div>
+
+    <label>Descripción:</label>
+    <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
+    <div id="msgDescripcion" class="msg"></div>
+
+    <button id="guardarBtn" type="submit" disabled>Guardar Categoría</button>
+    <a href="{{ url_for('crear_receta') }}">⬅ Volver a Recetas</a>
+</form>
+
+<script>
+const nombre = document.getElementById("nombre");
+const descripcion = document.getElementById("descripcion");
+const msgNombre = document.getElementById("msgNombre");
+const msgDescripcion = document.getElementById("msgDescripcion");
+const guardarBtn = document.getElementById("guardarBtn");
+
+function tieneTresIguales(valor) {
+    return /([a-záéíóúñ])\1\1/i.test(valor);
+}
+
+
+function validarNombre() {
+    const valor = nombre.value.trim();
+    const lower = valor.toLowerCase();
+    const sinEspacios = valor.replace(/\s+/g, '');
+
+
+    if (valor.startsWith(" ")) {
+        msgNombre.textContent = "No puede iniciar con espacio ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+    if (/ {2,}/.test(valor)) {
+        msgNombre.textContent = "No puede tener múltiples espacios ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+
+    const soloNumeros = /^[0-9.]+$/.test(sinEspacios);
+    const mezclaNumerosSimbolos = /^[0-9+,.]+$/.test(sinEspacios);
+    const letras = (sinEspacios.match(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/g) || []).length;
+
+    if (soloNumeros) {
+        msgNombre.textContent = "El nombre no puede ser solo números ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    if (mezclaNumerosSimbolos && letras === 0) {
+        msgNombre.textContent = "Debe incluir letras además de números o símbolos ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    if (letras > 0 && letras < 3) {
+        msgNombre.textContent = "Debe contener al menos 3 letras válidas ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    if (sinEspacios.length < 3 || sinEspacios.length > 30) {
+        msgNombre.textContent = "Debe tener entre 3 y 30 caracteres válidos ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    if (tieneTresIguales(lower)) {
+        msgNombre.textContent = "No puede tener tres letras seguidas iguales ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    if (!/^[A-Za-z0-9 +=ÁÉÍÓÚáéíóúÑñ]+( [A-Za-z0-9 +=ÁÉÍÓÚáéíóúÑñ]+)*$/.test(valor)) {
+        msgNombre.textContent = "Solo se permiten letras, números, espacios y los símbolos + = ✖";
+        msgNombre.className = "msg error"; return false;
+    }
+
+    msgNombre.textContent = "Campo válido ✔";
+    msgNombre.className = "msg ok";
+    return true;
+}
+
+
+function validarDescripcion() {
+    const valor = descripcion.value;
+    const lower = valor.toLowerCase();
+    const sinEspacios = valor.replace(/\s+/g, '');
+
+    if (/^[ \n]/.test(valor)) {
+        msgDescripcion.textContent = "No puede iniciar con espacio o salto de línea ✖";
+        msgDescripcion.className = "msg error";
+        return false;
+    }
+
+    if (/ {2,}/.test(valor)) {
+        msgDescripcion.textContent = "No puede tener múltiples espacios ✖";
+        msgDescripcion.className = "msg error";
+        return false;
+    }
+
+    const lineas = valor.split("\n");
+    for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i].trim();
+        if (linea === "") {
+            msgDescripcion.textContent = "No se permiten saltos de línea vacíos ✖";
+            msgDescripcion.className = "msg error";
+            return false;
+        }
+
+        if (linea.replace(/\s+/g, '').length < 3) {
+            msgDescripcion.textContent = `Cada línea debe tener al menos 3 caracteres válidos ✖ (Error en la línea ${i + 1})`;
+            msgDescripcion.className = "msg error";
+            return false;
+        }
+
+        if (tieneTresIguales(linea)) {
+            msgDescripcion.textContent = `No puede tener tres letras seguidas iguales (línea ${i + 1}) ✖`;
+            msgDescripcion.className = "msg error";
+            return false;
+        }
+
+        if (!/^[A-Za-z0-9 +=:,().ÁÉÍÓÚáéíóúÑñ]+$/.test(linea)) {
+            msgDescripcion.textContent = `Solo se permiten letras, números, espacios y los símbolos + = , . : ( ) ✖ (línea ${i + 1})`;
+            msgDescripcion.className = "msg error";
+            return false;
+        }
+    }
+
+    const soloNumeros = /^[0-9.]+$/.test(sinEspacios);
+    const mezclaNumerosSimbolos = /^[0-9+,.]+$/.test(sinEspacios);
+    const letras = (sinEspacios.match(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/g) || []).length;
+
+    if (soloNumeros) {
+       
+    } else if (mezclaNumerosSimbolos && letras === 0) {
+        msgDescripcion.textContent = "Debe incluir letras además de números o símbolos ✖";
+        msgDescripcion.className = "msg error";
+        return false;
+    }
+
+    if (letras > 0 && letras < 3) {
+        msgDescripcion.textContent = "Debe contener al menos 3 letras válidas ✖";
+        msgDescripcion.className = "msg error";
+        return false;
+    }
+
+    if (sinEspacios.length < 3 || sinEspacios.length > 200) {
+        msgDescripcion.textContent = "Debe tener entre 3 y 200 caracteres válidos ✖";
+        msgDescripcion.className = "msg error";
+        return false;
+    }
+
+    msgDescripcion.textContent = "Campo válido ✔";
+    msgDescripcion.className = "msg ok";
+    return true;
+}
+
+
+function sanitizeSpaces(el) {
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    el.value = el.value.replace(/^ +/, '').replace(/ {2,}/g, ' ');
+    el.setSelectionRange(start, end);
+}
+
+
+function actualizarBoton() {
+    guardarBtn.disabled = !(validarNombre() && validarDescripcion());
+}
+
+
+nombre.addEventListener("input", (e) => {
+    sanitizeSpaces(e.target);
+    validarNombre();
+    actualizarBoton();
+});
+
+descripcion.addEventListener("input", (e) => {
+    sanitizeSpaces(e.target);
+    validarDescripcion();
+    actualizarBoton();
+});
+</script>
+
+</body>
+</html>

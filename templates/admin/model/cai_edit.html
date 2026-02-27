@@ -1,0 +1,121 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block tail %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const fechaEmision = document.getElementById('fecha_emision')
+  const fechaFinal = document.getElementById('fecha_final')
+  const rangoFinal = document.getElementById('rango_final')
+  const secuencia = document.getElementById('secuencia_actual')
+  const numCai = document.getElementById('num_cai')
+
+  if (numCai) {
+    numCai.setAttribute('maxlength', '37')
+    let caiError = document.getElementById('cai_error')
+    if (!caiError) {
+      caiError = document.createElement('div')
+      caiError.id = 'cai_error'
+      caiError.className = 'text-danger'
+      caiError.style.display = 'none'
+      numCai.parentElement.appendChild(caiError)
+    }
+
+    const setCaiError = (msg) => {
+      if (!msg) {
+        caiError.textContent = ''
+        caiError.style.display = 'none'
+        numCai.classList.remove('is-invalid')
+        return
+      }
+      caiError.textContent = msg
+      caiError.style.display = 'block'
+      numCai.classList.add('is-invalid')
+    }
+
+    const validarCai = () => {
+      const v = (numCai.value || '').trim()
+      if (!v) {
+        setCaiError('')
+        return true
+      }
+      if (v.length !== 37) {
+        setCaiError('Numero CAI debe de ser de 37 caracteres')
+        return false
+      }
+      setCaiError('')
+      return true
+    }
+
+    numCai.addEventListener('input', validarCai)
+    numCai.addEventListener('blur', validarCai)
+
+    const form = numCai.closest('form')
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        if (!validarCai()) {
+          e.preventDefault()
+          numCai.focus()
+        }
+      })
+    }
+  }
+
+  fechaFinal?.addEventListener('change', () => {
+    if (!fechaEmision || !fechaEmision.value || !fechaFinal.value) return
+    const inicio = new Date(fechaEmision.value)
+    const fin = new Date(fechaFinal.value)
+    if (fin < inicio) {
+      fechaFinal.value = ''
+      fechaFinal.classList.add('is-invalid')
+    } else {
+      fechaFinal.classList.remove('is-invalid')
+    }
+  })
+
+  let secError = null
+  if (secuencia) {
+    const wrapper = secuencia.parentElement
+    secError = document.createElement('div')
+    secError.id = 'sec_error'
+    secError.className = 'text-danger'
+    secError.style.display = 'none'
+    wrapper.appendChild(secError)
+  }
+
+  function setSecuenciaError(msg) {
+    if (!secError || !secuencia) return
+    if (msg) {
+      secError.textContent = msg
+      secError.style.display = 'block'
+      secuencia.classList.add('is-invalid')
+    } else {
+      secError.textContent = ''
+      secError.style.display = 'none'
+      secuencia.classList.remove('is-invalid')
+    }
+  }
+
+  function validarSecuencia() {
+    if (!rangoFinal || !secuencia) return
+    const rango = parseInt(rangoFinal.value, 10)
+    const sec = parseInt(secuencia.value, 10)
+    if (isNaN(rango) || isNaN(sec)) {
+      setSecuenciaError('')
+      return
+    }
+    if (sec > rango) {
+      setSecuenciaError('La secuencia actual no puede ser mayor que el rango final.')
+    } else {
+      setSecuenciaError('')
+    }
+  }
+
+  rangoFinal?.addEventListener('change', validarSecuencia)
+  secuencia?.addEventListener('input', validarSecuencia)
+})
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block tail %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const parametro = document.getElementById('Parametro') || document.getElementById('parametro') || document.querySelector('input[name="Parametro"], input[name="parametro"]')
+  const valor = document.getElementById('Valor') || document.getElementById('valor') || document.querySelector('input[name="Valor"], input[name="valor"]')
+
+  const ejecutarValidarNombre = (el) => {
+    if (!el || typeof window.validarNombre !== 'function') return true
+    try {
+      const r1 = window.validarNombre(el)
+      if (typeof r1 === 'boolean') return r1
+      if (typeof r1 === 'string') return r1.trim().length === 0
+      const r2 = window.validarNombre(el.value || '')
+      if (typeof r2 === 'boolean') return r2
+      if (typeof r2 === 'string') return r2.trim().length === 0
+      return true
+    } catch (e) {
+      return true
+    }
+  }
+
+  if (parametro) {
+    parametro.setAttribute('data-validacion', 'nombre')
+    parametro.addEventListener('input', () => {
+      const ok = ejecutarValidarNombre(parametro)
+      parametro.classList.toggle('is-invalid', ok === false)
+    })
+    parametro.addEventListener('blur', () => {
+      const ok = ejecutarValidarNombre(parametro)
+      parametro.classList.toggle('is-invalid', ok === false)
+    })
+  }
+
+  const soloNumeros = (el) => {
+    if (!el) return
+    el.setAttribute('inputmode', 'numeric')
+    el.setAttribute('pattern', '[0-9]*')
+    el.addEventListener('input', () => {
+      el.value = (el.value || '').replace(/\D+/g, '')
+    })
+    el.addEventListener('keydown', (ev) => {
+      const k = ev.key
+      if (k === 'Backspace' || k === 'Delete' || k === 'Tab' || k === 'Enter' || k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Home' || k === 'End') return
+      if (ev.ctrlKey || ev.metaKey) return
+      if (!/^\d$/.test(k)) ev.preventDefault()
+    })
+  }
+
+  soloNumeros(valor)
+})
+</script>
+{% endblock %}

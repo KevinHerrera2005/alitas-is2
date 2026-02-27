@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Alitas El Comelón</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .contenedor {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+            width: 370px;
+            text-align: center;
+        }
+        h2 { margin-bottom: 20px; color: #333; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            width: 100%;
+            background-color: #ff7b00;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background-color: #e46b00; }
+        a { color: #ff7b00; text-decoration: none; }
+        .alert { color: red; margin-bottom: 10px; }
+        .msg {
+            font-size: 0.85em;
+            text-align: left;
+            margin-top: -3px;
+            margin-bottom: 5px;
+        }
+        .ok { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <h2>Crear Cuenta</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('registro') }}">
+            <input type="text" data-validacion="nombre" name="nombre" placeholder="Nombre" required>
+            <div class="msg"></div>
+
+            <input type="text" data-validacion="apellido" name="apellido" placeholder="Apellido" required>
+            <div class="msg"></div>
+
+            <input type="text" data-validacion="username" name="username" placeholder="Usuario" required>
+            <div class="msg"></div>
+
+            <input type="email" data-validacion="correo" name="correo" placeholder="Correo" required>
+            <div class="msg"></div>
+
+            <input type="password" data-validacion="password" name="password" placeholder="Contraseña" required>
+            <div class="msg"></div>
+
+            <input type="password" data-validacion="confirmar" name="confirmar" placeholder="Confirmar contraseña" required>
+            <div class="msg"></div>
+
+            <input type="text" data-validacion="telefono" name="telefono" placeholder="Teléfono" required>
+            <div class="msg"></div>
+
+            <input type="text" data-validacion="direccion" name="direccion" placeholder="Dirección" required>
+            <div class="msg"></div>
+
+            <button id="btnRegistrar" type="submit">Registrarme</button>
+        </form>
+
+        <p>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión</a></p>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+</body>
+</html>

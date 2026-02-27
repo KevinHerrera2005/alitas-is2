@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>👨‍🍳 Panel del Jefe de Cocina | Alitas El Comelón 🍗</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: #f5f5f5;
+    }
+
+    .header {
+        background: #c40000;
+        padding: 18px;
+        text-align: center;
+        color: white;
+        font-size: 15px;
+        font-weight: bold;
+    }
+
+    .contenedor {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 80px;
+        flex-wrap: wrap;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .card {
+        width: 180px;
+        height: 150px;
+        border-radius: 12px;
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 600;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+        cursor: pointer;
+        transition: 0.25s;
+        text-align: center;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .card:hover {
+        transform: scale(1.07);
+        background: #ffe6e6;
+    }
+
+    footer {
+        background: #c40000;
+        color: white;
+        text-align: center;
+        padding: 15px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    👨‍🍳 Panel del Jefe de Cocina | Alitas El Comelón 🍗
+</div>
+
+<div class="contenedor">
+    <div class="card" onclick="window.location.href='{{ url_for('crud_recetas') }}'">
+        Recetas
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('insumo.index_view') }}'">
+        Insumos
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('categoriainsumo.index_view') }}'">
+        Categoría de los Insumos
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('categoria_recetas_admin.index_view') }}'">
+        Categoría de las Recetas
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('unidades_medida_admin.index_view') }}'">
+        Unidades de Medida
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('insumo_precio_historico_admin.index_view') }}'">
+        Histórico de insumos
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('receta_precio_historico_admin.index_view') }}'">
+        Histórico de recetas
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('orden_entrega_admin.index_view') }}'">
+        Órdenes
+    </div>
+
+    <div class="card" onclick="window.location.href='{{ url_for('historial_ordenes_repartidor_admin.index_view') }}'">
+        Historial de órdenes
+    </div>
+</div>
+
+<footer>
+    © 2025 Alitas El Comelón - Panel del Jefe de Cocina
+</footer>
+
+</body>
+</html>

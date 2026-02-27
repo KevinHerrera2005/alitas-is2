@@ -1,0 +1,1 @@
+from models.ordenes_proveedores_model import OrdenesProveedores as OrdenProveedor

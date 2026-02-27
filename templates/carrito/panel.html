@@ -1,0 +1,182 @@
+<div class="cart-overlay-box">
+  <div class="cart-panel">
+    <div class="cart-header">
+      <span>Carrito de compras</span>
+      <button type="button" class="cart-close" onclick="closeCartOverlay()">×</button>
+    </div>
+
+    <div class="cart-body">
+      {% if items %}
+        {% for item in items %}
+        <div class="cart-row" data-id-carrito="{{ item.id_carrito }}">
+          <div class="cart-row-main">
+            <div class="cart-row-name">{{ item.nombre }}</div>
+            <div class="cart-row-subtotal">
+              Lps. {{ "%.2f"|format(item.subtotal) }}
+            </div>
+          </div>
+
+          <div class="cart-row-bottom">
+            <span class="cart-row-unit">
+              Lps. {{ "%.2f"|format(item.precio_unit) }} c/u
+            </span>
+
+            <div class="cart-qty-control" data-id-carrito="{{ item.id_carrito }}">
+              <button type="button" class="qty-btn qty-minus">−</button>
+              <span class="qty-number">{{ item.cantidad }}</span>
+              <button type="button" class="qty-btn qty-plus">+</button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="cart-empty">Sin productos en el carrito.</p>
+      {% endif %}
+    </div>
+
+    <div class="cart-footer">
+      <div class="cart-total">
+        Total: <span class="cart-total-amount">
+          Lps. {{ "%.2f"|format(total_general) }}
+        </span>
+      </div>
+      <a href="{{ url_for('carrito_checkout') }}" class="cart-buy-btn">Comprar</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  #cartOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding-top: 20px;
+    z-index: 9999;
+  }
+
+  .cart-overlay-box {
+    height: 100%;
+  }
+
+  .cart-panel {
+    background: #fff;
+    width: 340px;
+    max-height: 75vh;
+    margin: 0 20px 20px 0;
+    padding: 16px;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+  }
+
+  .cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .cart-close {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .cart-body {
+    flex: 1;
+    overflow-y: auto;
+    font-size: 14px;
+  }
+
+  .cart-row {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .cart-row-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cart-row-name {
+    font-weight: 500;
+  }
+
+  .cart-row-subtotal {
+    font-weight: 600;
+  }
+
+  .cart-row-bottom {
+    margin-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .cart-row-unit {
+    color: #777;
+  }
+
+  .cart-qty-control {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  .qty-btn {
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .qty-number {
+    margin: 0 6px;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
+  }
+
+  .cart-empty {
+    margin-top: 16px;
+  }
+
+  .cart-footer {
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cart-total {
+    font-weight: 700;
+  }
+
+  .cart-buy-btn {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .cart-buy-btn:hover {
+    background: #218838;
+  }
+</style>

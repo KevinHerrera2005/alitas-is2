@@ -1,0 +1,175 @@
+{% extends 'admin/model/create.html' %}
+{% block tail %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const hiddenSelect = document.querySelector("select[name='insumos_ids']");
+      if (!hiddenSelect) return;
+
+      hiddenSelect.multiple = true;
+
+      const group  = hiddenSelect.closest(".form-group");
+      const parent = group ? group.parentNode : hiddenSelect.parentNode;
+
+      const wrapper = document.createElement("div");
+      wrapper.style.marginTop = "15px";
+
+      const label1 = document.createElement("label");
+      label1.textContent = "Este proveedor provee los siguientes insumos:";
+      wrapper.appendChild(label1);
+
+      const inputSearch = document.createElement("input");
+      inputSearch.type = "text";
+      inputSearch.placeholder = "Buscar insumo por nombre...";
+      inputSearch.className = "form-control";
+      inputSearch.style.margin = "6px 0 8px 0";
+      wrapper.appendChild(inputSearch);
+
+      const selectDisponibles = document.createElement("select");
+      selectDisponibles.id = "insumos_disponibles";
+      selectDisponibles.size = 6;
+      selectDisponibles.className = "form-control";
+      wrapper.appendChild(selectDisponibles);
+
+      const acciones = document.createElement("div");
+      acciones.style.display = "flex";
+      acciones.style.justifyContent = "space-between";
+      acciones.style.alignItems = "center";
+      acciones.style.marginTop = "6px";
+
+      const linkCrear = document.createElement("a");
+      linkCrear.href = "/admin/insumo/new/";
+      linkCrear.target = "_blank";
+      linkCrear.textContent = "➕ Crear insumo";
+      linkCrear.style.fontSize = "0.9rem";
+      acciones.appendChild(linkCrear);
+
+      const btnAgregar = document.createElement("button");
+      btnAgregar.type = "button";
+      btnAgregar.textContent = "Agregar insumo";
+      btnAgregar.className = "btn btn-sm btn-primary";
+      acciones.appendChild(btnAgregar);
+
+      wrapper.appendChild(acciones);
+
+      const label2 = document.createElement("label");
+      label2.textContent = "Insumos que provee este proveedor:";
+      label2.style.marginTop = "12px";
+      wrapper.appendChild(label2);
+
+      const selectProveedor = document.createElement("select");
+      selectProveedor.id = "insumos_proveedor";
+      selectProveedor.size = 6;
+      selectProveedor.className = "form-control";
+      wrapper.appendChild(selectProveedor);
+
+      const btnEliminar = document.createElement("button");
+      btnEliminar.type = "button";
+      btnEliminar.textContent = "Eliminar insumo del proveedor";
+      btnEliminar.className = "btn btn-sm btn-danger";
+      btnEliminar.style.marginTop = "8px";
+      wrapper.appendChild(btnEliminar);
+
+      if (group) {
+        group.style.display = "none";
+        parent.insertBefore(wrapper, group.nextSibling);
+      } else {
+        hiddenSelect.style.display = "none";
+        parent.insertBefore(wrapper, hiddenSelect.nextSibling);
+      }
+
+      const allOptions = Array.from(hiddenSelect.options).map(function (o) {
+        return {
+          value: o.value,
+          text:  o.text,
+          selected: o.selected
+        };
+      });
+
+      allOptions.forEach(function (o) {
+        if (!o.selected) return;
+        const opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.text;
+        selectProveedor.appendChild(opt);
+      });
+
+      function renderDisponibles(filtro) {
+        const term = (filtro || "").trim().toLowerCase();
+        const valoresProveedor = new Set(
+          Array.from(selectProveedor.options).map(function (o) {
+            return o.value;
+          })
+        );
+
+        selectDisponibles.innerHTML = "";
+        allOptions.forEach(function (o) {
+          if (valoresProveedor.has(o.value)) return;
+          if (term && !o.text.toLowerCase().includes(term)) return;
+          const opt = document.createElement("option");
+          opt.value = o.value;
+          opt.textContent = o.text;
+          selectDisponibles.appendChild(opt);
+        });
+      }
+
+      function syncHidden() {
+        const valoresProveedor = new Set(
+          Array.from(selectProveedor.options).map(function (o) {
+            return o.value;
+          })
+        );
+        Array.from(hiddenSelect.options).forEach(function (o) {
+          o.selected = valoresProveedor.has(o.value);
+        });
+      }
+
+      btnAgregar.addEventListener("click", function () {
+        const opt = selectDisponibles.options[selectDisponibles.selectedIndex];
+        if (!opt) {
+          alert("Selecciona un insumo para agregar.");
+          return;
+        }
+        const nuevo = document.createElement("option");
+        nuevo.value = opt.value;
+        nuevo.textContent = opt.textContent;
+        selectProveedor.appendChild(nuevo);
+        renderDisponibles(inputSearch.value);
+        syncHidden();
+      });
+
+      btnEliminar.addEventListener("click", function () {
+        const opt = selectProveedor.options[selectProveedor.selectedIndex];
+        if (!opt) {
+          alert("Selecciona un insumo para eliminar.");
+          return;
+        }
+        selectProveedor.remove(opt.index);
+        renderDisponibles(inputSearch.value);
+        syncHidden();
+      });
+
+      inputSearch.addEventListener("input", function () {
+        renderDisponibles(inputSearch.value);
+      });
+
+      const form = hiddenSelect.closest("form");
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          if (!selectProveedor.options.length) {
+            alert("Debes seleccionar al menos un insumo para este proveedor.");
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          syncHidden();
+        });
+      }
+
+      renderDisponibles("");
+      syncHidden();
+    });
+  </script>
+{% endblock %}

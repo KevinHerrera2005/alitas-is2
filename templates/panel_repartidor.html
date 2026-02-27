@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Panel del Repartidor | Alitas El Comelón</title>
+  <style>
+    body{
+      margin:0;
+      background:#f2f2f2;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    }
+    .top{
+      background:#000000;
+      color:#fff;
+      padding:14px 20px;
+      font-weight:700;
+    }
+    .wrap{
+      max-width:1100px;
+      margin:28px auto;
+      padding:0 16px;
+      display:flex;
+      gap:24px;
+      flex-wrap:wrap;
+    }
+    .card{
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.08);
+      width:210px;
+      height:120px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:.2s;
+    }
+    .card:hover{
+      transform:scale(1.05);
+    }
+    .card a{
+      color:#111;
+      text-decoration:none;
+      font-weight:600;
+    }
+    .footer{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      background:#000000;color:#fff;
+      text-align:center;padding:8px 0;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top">🚚 Panel del Repartidor | Alitas El Comelón</div>
+
+  <div class="wrap">
+
+    <div class="card">
+      <a href="{{ url_for('orden_entrega_admin.index_view') }}">&gt; Órdenes</a>
+    </div>
+
+    <div class="card">
+  <a href="{{ url_for('historial_ordenes_repartidor_admin.index_view') }}">&gt; Historial de órdenes</a>
+</div>
+
+
+  </div>
+
+  <div class="footer">© 2025 Alitas El Comelón - Panel del Repartidor</div>
+
+</body>
+</html>

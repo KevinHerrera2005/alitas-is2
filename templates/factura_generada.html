@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Factura {{ numero_factura }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: radial-gradient(circle at top, #f5f3ff 0, #e4ddff 40%, #dcd5ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .invoice-wrapper {
+            background: #ffffff;
+            width: 820px;
+            max-width: 100%;
+            margin: 30px auto;
+            padding: 32px 40px 36px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+            border-radius: 10px;
+            color: #111827;
+            box-sizing: border-box;
+        }
+
+        .logo-text {
+            text-align: center;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            margin-bottom: 8px;
+        }
+
+        .invoice-header-main {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .invoice-header-main h1 {
+            margin: 0;
+            font-size: 22px;
+            letter-spacing: 0.18em;
+        }
+
+        .business-info {
+            text-align: center;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 4px;
+            color: #4b5563;
+        }
+
+        .invoice-number-box {
+            margin: 20px 0 24px;
+            border: 1px solid #111827;
+            padding: 10px 18px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .section {
+            border: 1px solid #111827;
+            padding: 14px 18px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        .section p {
+            margin: 2px 0;
+        }
+
+        .section strong {
+            font-weight: 600;
+        }
+
+        .two-cols {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .two-cols .section {
+            margin-bottom: 0;
+        }
+
+        table.invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        table.invoice-table th,
+        table.invoice-table td {
+            border: 1px solid #111827;
+            padding: 8px 10px;
+        }
+
+        table.invoice-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        table.invoice-table th:nth-child(1),
+        table.invoice-table td:nth-child(1) {
+            width: 60px;
+            text-align: center;
+        }
+
+        table.invoice-table th:nth-child(3),
+        table.invoice-table th:nth-child(4),
+        table.invoice-table td:nth-child(3),
+        table.invoice-table td:nth-child(4) {
+            text-align: right;
+            width: 130px;
+        }
+
+        .item-description-main {
+            font-weight: 500;
+        }
+
+        .totals-box {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .totals-inner {
+            width: 300px;
+            font-size: 13px;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+
+        .totals-row span:first-child {
+            font-weight: 500;
+        }
+
+        .totals-row.total {
+            margin-top: 4px;
+            padding: 7px 10px;
+            background: #111827;
+            color: #ffffff;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 18px;
+            padding-top: 10px;
+            border-top: 1px solid #d1d5db;
+            font-size: 11px;
+            text-align: center;
+            color: #4b5563;
+            line-height: 1.4;
+        }
+
+        .footer-legend {
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+                padding: 0;
+            }
+
+            .invoice-wrapper {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-wrapper">
+        <div class="logo-text">
+            🍗 Alitas El Comelón 🍗
+        </div>
+
+        <div class="invoice-header-main">
+            <h1>FACTURA</h1>
+            <div class="business-info">
+                <div>{{ sucursal.Descripcion if sucursal else "Sucursal no definida" }}</div>
+                <div>
+                    {{ sucursal.direccion.Descripcion if sucursal and sucursal.direccion else "Dirección no definida" }}
+                </div>
+                <div>RTN: {{ rtn_emisor }}</div>
+                <div>Teléfono: {{ telefono_emisor }} | </div>
+            </div>
+        </div>
+
+        <div class="invoice-number-box">
+            FACTURA No. {{ numero_factura }}
+        </div>
+
+        {% set partes = numero_factura.split("-") %}
+        {% set eee = partes[0] if partes|length > 0 else "000" %}
+        {% set ppp = partes[1] if partes|length > 1 else "000" %}
+        {% set tt = partes[2] if partes|length > 2 else "00" %}
+        {% set rango_ini = "%06d"|format(cai.Rango_Inicial) if cai and cai.Rango_Inicial is not none else "000000" %}
+        {% set rango_fin = "%06d"|format(cai.Rango_Final) if cai and cai.Rango_Final is not none else "000000" %}
+
+        <div class="section">
+            <div class="section-title">INFORMACIÓN SAR (Sistema de Administración de Rentas)</div>
+            <p><strong>Número de CAI Autorizado:</strong> {{ cai.num_cai if cai and cai.num_cai else "N/A" }}</p>
+            <p><strong>Rango de Facturación Autorizado:</strong></p>
+            <p>Desde: {{ eee }}-{{ ppp }}-{{ tt }}-{{ rango_ini }}</p>
+            <p>Hasta: {{ eee }}-{{ ppp }}-{{ tt }}-{{ rango_fin }}</p>
+            <p><strong>Fecha de Emisión del CAI:</strong> {{ cai.Fecha_Emision.strftime("%d/%m/%Y") if cai and cai.Fecha_Emision else "N/A" }}</p>
+            <p><strong>Fecha de Vencimiento del CAI:</strong> {{ cai.Fecha_Final.strftime("%d/%m/%Y") if cai and cai.Fecha_Final else "N/A" }}</p>
+            <p><strong>Fecha de Emisión de Factura:</strong> {{ fecha_emision.strftime("%d/%m/%Y a las %H:%M") if fecha_emision else "N/A" }}</p>
+        </div>
+
+        <div class="two-cols">
+            <div class="section">
+                <div class="section-title">DATOS DEL CLIENTE</div>
+                <p>
+                    <strong>Nombre:</strong>
+                    {% if cliente %}
+                        {{ cliente.nombre }} {{ cliente.apellido }}
+                    {% else %}
+                        Cliente no identificado
+                    {% endif %}
+                </p>
+                <p><strong>RTN:</strong> {{ rtn_cliente }}</p>
+                <p>
+                    <strong>Dirección:</strong>
+                    {% if direccion %}
+                        {{ direccion.Descripcion }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p>
+                    <strong>Teléfono:</strong>
+                    {% if cliente %}
+                        {{ cliente.telefono }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+
+            </div>
+
+            <div class="section">
+                <div class="section-title">DATOS DE LA VENTA</div>
+                <p><strong>Fecha:</strong> {{ fecha_emision.strftime("%d/%m/%Y %H:%M") if fecha_emision else "N/A" }}</p>
+                <p><strong>Método de Pago:</strong> {{ metodo_pago_label or "No especificado" }}</p>
+                {% if tarjeta_ult4 %}
+                    <p><strong>Tarjeta:</strong> termina en {{ tarjeta_ult4 }}</p>
+                {% endif %}
+                {% if efectivo_label %}
+                    <p>{{ efectivo_label }}</p>
+                {% endif %}
+
+                <p>
+                    <strong>Atendido por:</strong>
+                    {% if empleado %}
+                        {{ empleado.Nombre }} {{ empleado.Apellido }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="section" style="margin-bottom: 10px;">
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Cant.</th>
+                        <th>Descripción</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.cantidad }}</td>
+                            <td class="item-description-main">
+                                {{ item.nombre }}
+                            </td>
+                            <td>
+                                L {{ "%.2f"|format(item.precio_unit) }}
+                            </td>
+                            <td>
+                                L {{ "%.2f"|format(item.subtotal) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="totals-box">
+                <div class="totals-inner">
+                    <div class="totals-row">
+                        <span>Subtotal:</span>
+                        <span>L {{ "%.2f"|format(subtotal) }}</span>
+                    </div>
+                    <div class="totals-row">
+                        <span>ISV 15%:</span>
+                        <span>L {{ "%.2f"|format(impuesto) }}</span>
+                    </div>
+                    <div class="totals-row total">
+                        <span>TOTAL A PAGAR:</span>
+                        <span>L {{ "%.2f"|format(total) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-legend">
+                ORIGINAL: Cliente | COPIA: Archivo Contable
+            </div>
+            <div>
+                Gracias por su compra. Esta factura es válida solo con sello y firma autorizada.
+            </div>
+            <div>
+                Factura generada con autorización SAR · CAI: {{ cai.num_cai if cai and cai.num_cai else "N/A" }}
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

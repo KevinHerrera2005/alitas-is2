@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cancelar pedido - Alitas El Comelón</title>
+  <style>
+    body{margin:0;padding:0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background-color:#f5f5f5}
+    .wrap{max-width:700px;margin:50px auto;padding:0 18px}
+    .card{background:#fff;border-radius:16px;padding:22px 22px 18px;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    h1{margin:0 0 8px 0;font-size:1.2rem;color:#111}
+    .sub{margin:0 0 16px 0;color:#666;font-size:.9rem}
+    .alert{color:red;margin:10px 0 14px 0;font-size:.9rem}
+    label{display:block;font-size:.85rem;color:#666;margin:10px 0 6px 0}
+    textarea{width:100%;min-height:110px;padding:10px 12px;border:1px solid #ccc;border-radius:12px;resize:vertical;font-family:inherit}
+    .msg{font-size:.85rem;text-align:left;margin-top:6px}
+    .ok{color:green}
+    .error{color:red}
+    .actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    .btn{padding:10px 16px;border-radius:999px;border:none;cursor:pointer;font-size:.9rem;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    .btn-danger{background:#c62828;color:#fff}
+    .btn-secondary{background:#fff;border:1px solid #ccc;color:#444}
+    .btn-danger:disabled{background:#ccc;color:#666;cursor:not-allowed}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Cancelar pedido</h1>
+      <p class="sub">Factura: <b>{{ orden.Numero_factura }}</b></p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <form method="POST">
+        <label for="motivo">Motivo de cancelación</label>
+        <textarea id="motivo" name="motivo" data-validacion="descripcion" placeholder="Escribe el motivo..." required>{{ motivo }}</textarea>
+        <div class="msg"></div>
+
+        <div class="actions">
+          <button id="btnConfirmarCancelacion" class="btn btn-danger" type="submit">Confirmar cancelación</button>
+          <a class="btn btn-secondary" href="{{ url_for('mis_pedidos_bp.mis_pedidos') }}">Volver</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const motivo = document.getElementById("motivo");
+      const btn = document.getElementById("btnConfirmarCancelacion");
+      if (!motivo || !btn) return;
+
+      const evaluar = () => {
+        const ok = typeof validarDescripcion === "function" ? validarDescripcion(motivo) : true;
+        btn.disabled = !ok;
+      };
+
+      motivo.addEventListener("input", evaluar);
+      evaluar();
+    });
+  </script>
+</body>
+</html>

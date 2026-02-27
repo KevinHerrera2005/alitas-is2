@@ -1,0 +1,535 @@
+{% extends 'admin/master.html' %}
+{% block body %}
+{% set min_date = model.Fecha_Inicio.strftime('%Y-%m-%d') if model.Fecha_Inicio else '' %}
+<div class="container-fluid">
+  <h2 class="mb-4">Editar orden #{{ model.ID_Orden_Proveedor }}</h2>
+
+  {% if form.errors %}
+  <div class="alert alert-danger">
+    <ul class="mb-0">
+      {% for field, errors in form.errors.items() %}
+        {% for e in errors %}
+          <li>{{ e }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <style>
+    .lock-field:disabled{
+      background:#e9ecef !important;
+      color:#495057 !important;
+      cursor:not-allowed !important;
+      opacity:1 !important;
+    }
+  </style>
+
+  <form method="post" action="">
+    {% for f in form if f.type == 'HiddenField' %}
+      {{ f() }}
+    {% endfor %}
+
+    <input type="hidden" name="recepciones_json" id="recepciones_json" value="">
+    <input type="hidden" id="Fecha_Inicio" value="{{ min_date }}">
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Proveedor</label>
+        <input class="form-control" readonly value="{% if model.proveedor %}{{ model.proveedor.Nombre_Proveedor if model.proveedor.Nombre_Proveedor is defined else (model.proveedor.Nombre if model.proveedor.Nombre is defined else model.proveedor) }}{% endif %}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Empleado encargado</label>
+        <input class="form-control" readonly value="{% if model.empleado %}{% if model.empleado.Nombre is defined %}{{ model.empleado.Nombre }}{% elif model.empleado.Nombre_Empleado is defined %}{{ model.empleado.Nombre_Empleado }}{% elif model.empleado.nombre is defined %}{{ model.empleado.nombre }}{% else %}{{ model.empleado }}{% endif %}{% endif %}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Fecha inicio</label>
+        <input class="form-control" readonly value="{{ min_date }}">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">{{ form.Fecha_Estimada.label.text }}</label>
+        {{ form.Fecha_Estimada(class_='form-control', id='Fecha_Estimada', type='date', min=min_date) }}
+        <div class="invalid-feedback" id="fe_est_feedback"></div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">{{ form.Fecha_Entregado.label.text }}</label>
+        {{ form.Fecha_Entregado(class_='form-control', id='Fecha_Entregado', type='date', min=min_date) }}
+        <div class="invalid-feedback" id="fe_ent_feedback"></div>
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">{{ form.Estado.label.text }}</label>
+        {{ form.Estado(class_='form-control', id='Estado') }}
+      </div>
+
+      {% if form.Numero_Factura is defined %}
+      <div class="col-md-4">
+        <label class="form-label">{{ form.Numero_Factura.label.text }}</label>
+        {{ form.Numero_Factura(class_='form-control', id='Numero_Factura', type='text', inputmode='numeric', pattern='[0-9]*', maxlength='14', autocomplete='off') }}
+        <div class="invalid-feedback" id="nf_feedback"></div>
+        <div class="form-text">Debe tener 14 dígitos. Solo números.</div>
+      </div>
+      {% endif %}
+
+      <div class="col-12">
+        <label class="form-label">{{ form.Comentarios.label.text }}</label>
+        {{ form.Comentarios(class_='form-control', id='Comentarios') }}
+      </div>
+
+      <div class="col-12" id="wrap_motivo" style="display:none;">
+        <label class="form-label">Motivo de cancelación</label>
+        <textarea class="form-control" id="Motivo_Cancelacion" name="Motivo_Cancelacion" rows="3">{{ (model.Motivo_Cancelacion if model.Motivo_Cancelacion is defined else '') }}</textarea>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h4 class="mb-2">Recepción de insumos</h4>
+    <div class="text-muted mb-3">
+      Para marcar como <b>Entregada</b>, debes ingresar <b>cantidad recibida</b> y <b>unidad recibida</b> en todos los insumos.
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Insumo</th>
+            <th style="width:160px;">Solicitada</th>
+            <th style="width:240px;">Unidad solicitada</th>
+            <th style="width:180px;">Cantidad recibida</th>
+            <th style="width:240px;">Unidad recibida</th>
+            <th style="width:240px;">Sucursal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in model.detalles %}
+          <tr class="detalle-row" data-detalle-id="{{ d.ID_Detalle }}">
+            <td>
+              {% if d.insumo %}
+                {{ d.insumo.Nombre_insumo if d.insumo.Nombre_insumo is defined else d.insumo }}
+              {% else %}
+                {{ d.ID_Insumo }}
+              {% endif %}
+            </td>
+
+            <td>
+              <input class="form-control form-control-sm lock-field" value="{{ d.Cantidad_Solicitada or '' }}" disabled readonly tabindex="-1">
+              <input type="hidden" name="det_solicitada_{{ d.ID_Detalle }}" value="{{ d.Cantidad_Solicitada or '' }}">
+            </td>
+
+            <td>
+              <select class="form-control form-control-sm lock-field" disabled tabindex="-1">
+                {% for u in unidades %}
+                <option value="{{ u.ID_Unidad }}" {% if u.ID_Unidad == d.ID_Unidad %}selected{% endif %}>
+                  {{ u.Nombre_Unidad if u.Nombre_Unidad is defined else (u.Nombre if u.Nombre is defined else u.ID_Unidad) }}
+                </option>
+                {% endfor %}
+              </select>
+              <input type="hidden" name="det_unidad_solicitada_{{ d.ID_Detalle }}" value="{{ d.ID_Unidad or 0 }}">
+            </td>
+
+            <td>
+              <input
+                class="form-control form-control-sm recibida"
+                name="det_recibida_{{ d.ID_Detalle }}"
+                value="{{ d.Cantidad_Recibida or '' }}"
+                type="text"
+                inputmode="numeric"
+                pattern="^[0-9]+([.,][0-9]+)?$"
+                autocomplete="off"
+                placeholder="0"
+              >
+            </td>
+
+            <td>
+              <select class="form-control form-control-sm unidad-recibida" name="det_unidad_recibida_{{ d.ID_Detalle }}">
+                <option value="">Seleccionar...</option>
+                {% for u in unidades %}
+                <option value="{{ u.ID_Unidad }}" {% if d.ID_Unidad_Recibida and u.ID_Unidad == d.ID_Unidad_Recibida %}selected{% endif %}>
+                  {{ u.Nombre_Unidad if u.Nombre_Unidad is defined else (u.Nombre if u.Nombre is defined else u.ID_Unidad) }}
+                </option>
+                {% endfor %}
+              </select>
+            </td>
+
+            <td>
+              {{ model.sucursal.Descripcion if model.sucursal and model.sucursal.Descripcion is defined else (model.sucursal if model.sucursal else '') }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary" id="btn-save">Guardar</button>
+      <a class="btn btn-secondary" href="{% if return_url %}{{ return_url }}{% else %}{{ url_for('.index_view') }}{% endif %}">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script>
+  function normalizarDecimalEnInput(el) {
+  if (!el) return;
+  const raw = String(el.value || '');
+  let out = '';
+  let usedSep = false;
+
+  for (const ch of raw) {
+    if (ch >= '0' && ch <= '9') {
+      out += ch;
+      continue;
+    }
+    if (!usedSep && (ch === '.' || ch === ',')) {
+      out += '.';
+      usedSep = true;
+    }
+  }
+
+  el.value = out;
+}
+
+
+  function parseFloatStrict(v) {
+  const s = String(v || '').trim().replace(',', '.');
+  if (!s) return null;
+  if (!/^\d+(\.\d+)?$/.test(s)) return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+
+  function getEstado() {
+    const el = document.getElementById('Estado');
+    return el ? Number(el.value) : 0;
+  }
+
+  function getFechaEntregado() {
+    const el = document.getElementById('Fecha_Entregado');
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function getMotivoCancelacion() {
+    const el = document.getElementById('Motivo_Cancelacion');
+    return el ? String(el.value || '').trim() : '';
+  }
+
+  function setNumeroFacturaError(msg) {
+    const el = document.getElementById('Numero_Factura');
+    const fb = document.getElementById('nf_feedback');
+    if (!el) return;
+    if (msg) {
+      el.classList.add('is-invalid');
+      if (fb) fb.textContent = msg;
+    } else {
+      el.classList.remove('is-invalid');
+      if (fb) fb.textContent = '';
+    }
+  }
+
+  function normalizarNumeroFactura() {
+    const el = document.getElementById('Numero_Factura');
+    if (!el) return;
+    const digits = String(el.value || '').replace(/\D/g, '').slice(0, 14);
+    if (el.value !== digits) el.value = digits;
+  }
+
+  function validarNumeroFactura() {
+    const el = document.getElementById('Numero_Factura');
+    if (!el) return true;
+
+    normalizarNumeroFactura();
+
+    const estado = getEstado();
+    const v = String(el.value || '').trim();
+
+    if (!v) {
+      if (estado === 2) {
+        setNumeroFacturaError('Debes ingresar el número de factura para marcar como "Entregada".');
+        return false;
+      }
+      setNumeroFacturaError('');
+      return true;
+    }
+
+    if (v.length !== 14) {
+      setNumeroFacturaError('El número de factura debe tener 14 dígitos.');
+      return false;
+    }
+
+    setNumeroFacturaError('');
+    return true;
+  }
+
+  function setFechaError(inputId, feedbackId, msg) {
+    const el = document.getElementById(inputId);
+    const fb = document.getElementById(feedbackId);
+    if (!el) return;
+    if (msg) {
+      el.classList.add('is-invalid');
+      if (fb) fb.textContent = msg;
+    } else {
+      el.classList.remove('is-invalid');
+      if (fb) fb.textContent = '';
+    }
+  }
+
+  function validarFechasContraInicio() {
+    const inicio = String((document.getElementById('Fecha_Inicio') || {}).value || '').trim();
+    const fe = String((document.getElementById('Fecha_Estimada') || {}).value || '').trim();
+    const fent = String((document.getElementById('Fecha_Entregado') || {}).value || '').trim();
+
+    let ok = true;
+
+    if (inicio && fe && fe < inicio) {
+      setFechaError('Fecha_Estimada', 'fe_est_feedback', 'La fecha estimada no puede ser una fecha antes de la fecha de inicio.');
+      ok = false;
+    } else {
+      setFechaError('Fecha_Estimada', 'fe_est_feedback', '');
+    }
+
+    if (inicio && fent && fent < inicio) {
+      setFechaError('Fecha_Entregado', 'fe_ent_feedback', 'La fecha entregada no puede ser una fecha antes de la fecha de inicio.');
+      ok = false;
+    } else {
+      setFechaError('Fecha_Entregado', 'fe_ent_feedback', '');
+    }
+
+    return ok;
+  }
+
+  function aplicarReglas() {
+    const estado = getEstado();
+    const fechaEst = document.getElementById('Fecha_Estimada');
+    const fechaEnt = document.getElementById('Fecha_Entregado');
+    const wrapMotivo = document.getElementById('wrap_motivo');
+    const motivo = document.getElementById('Motivo_Cancelacion');
+
+    if (fechaEst) fechaEst.disabled = (estado !== 1);
+    if (fechaEnt) fechaEnt.disabled = (estado !== 2);
+
+    if (wrapMotivo) wrapMotivo.style.display = (estado === 3) ? 'block' : 'none';
+    if (motivo) motivo.disabled = (estado !== 3);
+
+    const habilitarRecepcion = (estado === 2);
+    document.querySelectorAll('.recibida, .unidad-recibida').forEach(el => {
+      el.disabled = !habilitarRecepcion;
+    });
+
+    validarBotonGuardar();
+  }
+
+  function buildRecepcionesJson() {
+    const estado = getEstado();
+    const hidden = document.getElementById('recepciones_json');
+    if (!hidden) return [];
+
+    if (estado !== 2) {
+      hidden.value = '';
+      return [];
+    }
+
+    const rows = document.querySelectorAll('tr[data-detalle-id]');
+    const data = [];
+
+    rows.forEach(row => {
+      const detalleId = Number(row.getAttribute('data-detalle-id') || 0);
+      const cantInput = row.querySelector('.recibida');
+      const unidadSel = row.querySelector('.unidad-recibida');
+
+      const cant = parseFloatStrict(cantInput ? cantInput.value : '');
+      const unidadId = Number((unidadSel && unidadSel.value) || 0);
+
+      data.push({ detalle_id: detalleId, cantidad: cant, unidad_id: unidadId });
+    });
+
+    hidden.value = JSON.stringify(data);
+    return data;
+  }
+
+  function validarBotonGuardar() {
+    const estado = getEstado();
+    const btn = document.getElementById('btn-save');
+    if (!btn) return;
+
+    const nfOk = validarNumeroFactura();
+    const fechasOk = validarFechasContraInicio();
+
+    if (estado === 3) {
+      const motivoOk = !!getMotivoCancelacion();
+      btn.disabled = !(nfOk && fechasOk && motivoOk);
+      return;
+    }
+
+    if (estado !== 2) {
+      btn.disabled = !(nfOk && fechasOk);
+      return;
+    }
+
+    const fent = getFechaEntregado();
+    const fechaEntOk = !!fent;
+
+    const rows = document.querySelectorAll('tr[data-detalle-id]');
+    let okRecep = true;
+
+    rows.forEach(row => {
+      const cantInput = row.querySelector('.recibida');
+      const unidadSel = row.querySelector('.unidad-recibida');
+
+      const cant = parseFloatStrict(cantInput ? cantInput.value : '');
+      const unidadId = Number((unidadSel && unidadSel.value) || 0);
+
+      if (!(cant && cant > 0 && unidadId > 0)) okRecep = false;
+    });
+
+    btn.disabled = !(okRecep && nfOk && fechasOk && fechaEntOk);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const estadoEl = document.getElementById('Estado');
+    if (estadoEl) estadoEl.addEventListener('change', () => {
+      aplicarReglas();
+      buildRecepcionesJson();
+      validarNumeroFactura();
+      validarFechasContraInicio();
+      validarBotonGuardar();
+    });
+
+    const fe = document.getElementById('Fecha_Estimada');
+    if (fe) {
+      fe.addEventListener('input', () => { validarFechasContraInicio(); validarBotonGuardar(); });
+      fe.addEventListener('change', () => { validarFechasContraInicio(); validarBotonGuardar(); });
+    }
+
+    const fent = document.getElementById('Fecha_Entregado');
+    if (fent) {
+      fent.addEventListener('input', () => { validarFechasContraInicio(); validarBotonGuardar(); });
+      fent.addEventListener('change', () => { validarFechasContraInicio(); validarBotonGuardar(); });
+    }
+
+    const nf = document.getElementById('Numero_Factura');
+    if (nf) {
+      nf.addEventListener('input', () => {
+        validarNumeroFactura();
+        validarBotonGuardar();
+      });
+      nf.addEventListener('change', () => {
+        validarNumeroFactura();
+        validarBotonGuardar();
+      });
+    }
+
+    const mot = document.getElementById('Motivo_Cancelacion');
+    if (mot) {
+      mot.addEventListener('input', () => { validarBotonGuardar(); });
+      mot.addEventListener('change', () => { validarBotonGuardar(); });
+    }
+
+    document.querySelectorAll('.recibida').forEach(el => {
+      el.addEventListener('input', () => {
+        normalizarDecimalEnInput(el);
+        buildRecepcionesJson();
+        validarBotonGuardar();
+      });
+      el.addEventListener('change', () => {
+        normalizarDecimalEnInput(el);
+        buildRecepcionesJson();
+        validarBotonGuardar();
+      });
+      el.addEventListener('paste', () => {
+        setTimeout(() => {
+          normalizarDecimalEnInput(el);
+          buildRecepcionesJson();
+          validarBotonGuardar();
+        }, 0);
+      });
+    });
+
+    document.querySelectorAll('.unidad-recibida').forEach(el => {
+      el.addEventListener('input', () => {
+        buildRecepcionesJson();
+        validarBotonGuardar();
+      });
+      el.addEventListener('change', () => {
+        buildRecepcionesJson();
+        validarBotonGuardar();
+      });
+    });
+
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        aplicarReglas();
+
+        if (!validarFechasContraInicio()) {
+          e.preventDefault();
+          alert('Revisa las fechas: no pueden ser anteriores a la fecha de inicio.');
+          return;
+        }
+
+        const estado = getEstado();
+        const fechaEst = document.getElementById('Fecha_Estimada');
+
+        if (!validarNumeroFactura()) {
+          e.preventDefault();
+          alert('Revisa el número de factura. Debe tener 14 dígitos y solo números.');
+          return;
+        }
+
+        if (estado === 1 && fechaEst && !String(fechaEst.value || '').trim()) {
+          e.preventDefault();
+          alert('Debes ingresar la fecha estimada cuando el estado es "Enviada".');
+          return;
+        }
+
+        if (estado === 2) {
+          const fentVal = getFechaEntregado();
+          if (!fentVal) {
+            e.preventDefault();
+            alert('No puedes guardar como "Entregada" si no completas la fecha entregado.');
+            return;
+          }
+
+          const rows = document.querySelectorAll('tr[data-detalle-id]');
+          let okRecep = true;
+          rows.forEach(row => {
+            const cantInput = row.querySelector('.recibida');
+            const unidadSel = row.querySelector('.unidad-recibida');
+            const cant = parseIntStrict(cantInput ? cantInput.value : '');
+            const unidadId = Number((unidadSel && unidadSel.value) || 0);
+            if (!(cant && cant > 0 && unidadId > 0)) okRecep = false;
+          });
+
+          if (!okRecep) {
+            e.preventDefault();
+            alert('Para marcar como "Entregada", debes ingresar solo números en cantidad recibida y seleccionar unidad recibida en todos los insumos.');
+            return;
+          }
+
+          buildRecepcionesJson();
+        }
+
+        if (estado === 3) {
+          const m = getMotivoCancelacion();
+          if (!m) {
+            e.preventDefault();
+            alert('Debes escribir un motivo de cancelación.');
+            return;
+          }
+        }
+      });
+    }
+
+    aplicarReglas();
+    buildRecepcionesJson();
+    validarNumeroFactura();
+    validarFechasContraInicio();
+    validarBotonGuardar();
+  });
+</script>
+{% endblock %}

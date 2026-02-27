@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mis pedidos - Alitas El Comelón</title>
+  <style>
+    body{margin:0;padding:0;font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;background-color:#f5f5f5}
+    .page-wrapper{max-width:1100px;margin:30px auto;padding:0 20px}
+    .layout{display:grid;grid-template-columns:260px 1fr;gap:25px}
+    .sidebar{background:#fff;border-radius:14px;padding:18px 16px;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    .sidebar-title{font-size:.9rem;font-weight:600;margin-bottom:12px;color:#555}
+    .menu-list{list-style:none;margin:0;padding:0}
+    .menu-item{margin-bottom:6px}
+    .menu-link{display:flex;align-items:center;gap:8px;text-decoration:none;font-size:.9rem;color:#444;padding:10px 12px;border-radius:10px;transition:background-color .2s,color .2s}
+    .menu-link.active{background-color:#ffe0cf;color:#b03c00;font-weight:600}
+    .menu-link:hover{background-color:#f3f3f3}
+    .menu-link.logout{color:#c62828}
+    .menu-link.logout:hover{background-color:#ffe5e5}
+    .content{background:#fff;border-radius:14px;padding:22px 24px 26px;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    .title{margin:0 0 14px 0;font-size:1.2rem;color:#111}
+    .alert{color:red;margin:10px 0 14px 0;font-size:.9rem}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin:10px 0 14px 0;flex-wrap:wrap}
+    .searchbox{display:flex;gap:8px;align-items:center}
+    .searchbox input{padding:10px 12px;border:1px solid #ddd;border-radius:999px;min-width:260px;outline:none}
+    .searchbox button{padding:10px 14px;border:none;border-radius:999px;background:#111;color:#fff;cursor:pointer}
+    .meta{color:#666;font-size:.88rem}
+    .table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 10px;border-bottom:1px solid #eee;font-size:.9rem;color:#222;text-align:left;vertical-align:top}
+    th{color:#666;font-weight:700;font-size:.85rem}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:.8rem;background:#111;color:#fff}
+    .btn{display:inline-block;padding:8px 14px;border-radius:999px;border:none;text-decoration:none;font-size:.85rem;cursor:pointer;white-space:nowrap}
+    .btn-cancelar{background:#c62828;color:#fff}
+    .btn-cancelar[aria-disabled="true"]{background:#ccc;color:#666;cursor:not-allowed;pointer-events:none}
+    .btn-print{background:#111;color:#fff}
+    .btn-print[aria-disabled="true"]{background:#ccc;color:#666;cursor:not-allowed;pointer-events:none}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .pagination{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:16px;flex-wrap:wrap}
+    .page-link{padding:8px 12px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#111}
+    .page-link.active{background:#111;color:#fff;border-color:#111}
+    .page-link.disabled{color:#999;pointer-events:none}
+    @media (max-width:800px){.layout{grid-template-columns:1fr}.searchbox input{min-width:200px}.actions{justify-content:flex-start}}
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Mi cuenta</div>
+        <ul class="menu-list">
+          <li class="menu-item">
+            <a href="{{ url_for('usuario_cliente.perfil') }}" class="menu-link">
+              <span>👤</span><span>Información personal</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('tus_direcciones') }}" class="menu-link">
+              <span>📍</span><span>Direcciones de envío</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('mis_pedidos_bp.mis_pedidos') }}" class="menu-link active">
+              <span>📦</span><span>Mis pedidos</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('tus_metodos_pago') }}" class="menu-link">
+              <span>💳</span><span>Métodos de pago</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{ url_for('logout') }}" class="menu-link logout">
+              <span>⏻</span><span>Cerrar sesión</span>
+            </a>
+          </li>
+        </ul>
+      </aside>
+
+      <main class="content">
+        <h1 class="title">Mis pedidos</h1>
+<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;"><a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='pdf') }}">Exportar PDF</a><a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='excel') }}">Exportar Excel</a></div>
+
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
+        <div class="toolbar">
+          <form class="searchbox" method="GET" action="{{ url_for('mis_pedidos_bp.mis_pedidos') }}">
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por factura, nombre o apellido">
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+            <button type="submit">Buscar</button>
+          </form>
+          <div class="meta">
+            {% if total %}
+              Mostrando página {{ page }} de {{ total_pages }} · Total: {{ total }}
+            {% else %}
+              Total: 0
+            {% endif %}
+          </div>
+        </div>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Número factura</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Estado</th>
+              <th>Fecha creación</th>
+              <th>Motivo cancelación</th>
+              <th style="text-align:right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pedidos %}
+              <tr>
+                <td>{{ p.Numero_factura }}</td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.apellido }}</td>
+                <td><span class="badge">{{ p.estado_texto }}</span></td>
+                <td>{{ p.Fecha_Creacion }}</td>
+                <td>{{ p.Motivo_Cancelacion if p.Motivo_Cancelacion else "-" }}</td>
+                <td>
+                  <div class="actions">
+                    {% if p.Numero_factura %}
+                      <a class="btn btn-print" target="_blank" rel="noopener"
+                         href="{{ url_for('mis_pedidos_bp.imprimir_factura', numero_factura=p.Numero_factura) }}">
+                        Imprimir factura
+                      </a>
+                    {% else %}
+                      <a class="btn btn-print" aria-disabled="true">Imprimir factura</a>
+                    {% endif %}
+
+                    {% if p.puede_cancelar %}
+                      <a class="btn btn-cancelar" href="{{ url_for('cancelar_bp.cancelar', orden_id=p.ID_Orden_Entrega) }}">Cancelar</a>
+                    {% else %}
+                      <a class="btn btn-cancelar" aria-disabled="true">Cancelar</a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if pedidos|length == 0 %}
+          <div style="margin-top:12px;color:#666;font-size:.9rem;">No tienes pedidos todavía.</div>
+        {% endif %}
+
+        {% if total_pages > 1 %}
+          {% set start = 1 if page - 3 < 1 else page - 3 %}
+          {% set end = total_pages if page + 3 > total_pages else page + 3 %}
+          <div class="pagination">
+            <a class="page-link {{ 'disabled' if page <= 1 else '' }}"
+               href="{{ url_for('mis_pedidos_bp.mis_pedidos', q=q, page=page-1, per_page=per_page) }}">Anterior</a>
+
+            {% for pnum in range(start, end + 1) %}
+              <a class="page-link {{ 'active' if pnum == page else '' }}"
+                 href="{{ url_for('mis_pedidos_bp.mis_pedidos', q=q, page=pnum, per_page=per_page) }}">{{ pnum }}</a>
+            {% endfor %}
+
+            <a class="page-link {{ 'disabled' if page >= total_pages else '' }}"
+               href="{{ url_for('mis_pedidos_bp.mis_pedidos', q=q, page=page+1, per_page=per_page) }}">Siguiente</a>
+          </div>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

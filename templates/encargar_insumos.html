@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Encargar insumos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body{
+            background:#f3f4ff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .card-main{
+            max-width:1100px;
+            margin:40px auto;
+            border-radius:18px;
+            box-shadow:0 18px 40px rgba(15,23,42,.18);
+        }
+        .card-header{
+            border-bottom:none;
+            background:linear-gradient(135deg,#000000,#000000);
+            color:#fff;
+            border-radius:18px 18px 0 0 !important;
+        }
+        .box-label{
+            font-weight:600;
+            font-size:.9rem;
+            margin-bottom:4px;
+        }
+        select.form-select[size]{
+            height:auto;
+        }
+        textarea[readonly]{
+            background:#f9fafb;
+        }
+        .msg-capacidad{
+            color:#dc3545;
+            font-size:.9rem;
+            margin-top:6px;
+            display:none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card card-main">
+        <div class="card-header">
+            <h5 class="mb-0">
+                {% if todos %}
+                    Encargar insumos
+                {% else %}
+                    Encargar insumos faltantes
+                {% endif %}
+            </h5>
+        </div>
+
+        <div class="card-body">
+            <a href="{{ url_for('panel_encargado.panel') }}" class="btn btn-outline-secondary btn-sm mb-3">
+                ← Volver al panel del encargado
+            </a>
+
+            {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+            <div class="mt-3">
+                {% for categoria, mensaje in mensajes %}
+                <div class="alert alert-{{ categoria }} alert-dismissible fade show" role="alert">
+                    {{ mensaje }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form method="post" id="form-orden">
+                <input type="hidden" id="lineas-json" name="lineas_json">
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Sucursal de entrega</label>
+                        <select class="form-select" id="sucursal-id">
+                            <option value="" disabled {% if not sucursal_defecto_id %}selected{% endif %}>Selecciona una sucursal</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}" data-nombre="{{ s.nombre }}" data-direccion="{{ s.direccion }}" {% if s.id|string == sucursal_defecto_id|string %}selected{% endif %}>
+                                    {{ s.nombre }}{% if s.direccion %} — {{ s.direccion }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div id="alert-no-insumos" class="alert alert-info mb-3" style="display:none;">
+                    No hay insumos para esta sucursal.
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="box-label">Insumos en inventario para ordenar:</div>
+                        <select id="lista-insumos" class="form-select" size="8"></select>
+
+                        <div class="mt-2 d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-guardar-linea" id="btn-guardar-izq">
+                                Guardar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-linea" id="btn-eliminar-izq">
+                                Eliminar último
+                            </button>
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="box-label">Insumos seleccionados:</div>
+                            <textarea id="insumos-seleccionados" class="form-control" rows="4" readonly></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="box-label">Este insumo lo provee él/los siguientes proveedores:</div>
+                        <select id="lista-proveedores" class="form-select" size="6"></select>
+
+                        <div class="mt-2 d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-guardar-linea" id="btn-guardar-der">
+                                Guardar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-linea" id="btn-eliminar-der">
+                                Eliminar último
+                            </button>
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="box-label">Proveedores seleccionados:</div>
+                            <textarea id="proveedores-seleccionados" class="form-control" rows="4" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row g-3">
+                    <div class="col-sm-3">
+                        <label class="form-label">Stock mínimo</label>
+                        <input type="text" id="stock-minimo" class="form-control" readonly>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Stock máximo</label>
+                        <input type="text" id="stock-maximo" class="form-control" readonly>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Stock actual</label>
+                        <input type="text" id="stock-actual" class="form-control" readonly>
+                    </div>
+                    <div class="col-sm-3">
+                        <label class="form-label">Unidad</label>
+                        <input type="text" id="unidad-insumo" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-3">
+                    <div class="col-sm-4">
+                        <label class="form-label">Cantidad a pedir</label>
+                        <input type="number" step="0.01" min="0" id="cantidad" class="form-control">
+                        <div id="msg-capacidad" class="msg-capacidad">
+                            la cantidad a pedir sobrepasa nuestra capacidad de almacenamiento (fijate en el stock maximo)
+                        </div>
+                        <div class="form-text">
+                            Es la cantidad para el insumo y proveedor seleccionados.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary" id="btn-submit">
+                        Generar órdenes y enviar correos
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const DATA_URL = "{{ url_for('panel_encargado.encargar_insumos_data') }}";
+    let INSUMOS_DATA = {{ insumos|tojson }};
+    let LINEAS = [];
+
+    function num(v) {
+        if (v === null || v === undefined || v === '') return NaN;
+        return parseFloat(String(v).replace(',', '.'));
+    }
+
+    function buscarInsumoPorId(id) {
+        id = parseInt(id);
+        return INSUMOS_DATA.find(i => i.id === id) || null;
+    }
+
+    function setDisabledInputs(disabled) {
+        document.getElementById('btn-guardar-izq').disabled = disabled;
+        document.getElementById('btn-eliminar-izq').disabled = disabled;
+        document.getElementById('btn-guardar-der').disabled = disabled;
+        document.getElementById('btn-eliminar-der').disabled = disabled;
+        document.getElementById('lista-insumos').disabled = disabled;
+        document.getElementById('lista-proveedores').disabled = disabled;
+        document.getElementById('cantidad').disabled = disabled;
+    }
+
+    function pintarListaInsumos() {
+        const select = document.getElementById('lista-insumos');
+        select.innerHTML = '';
+
+        const alertNo = document.getElementById('alert-no-insumos');
+
+        if (!INSUMOS_DATA || INSUMOS_DATA.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'No hay insumos para esta sucursal';
+            opt.disabled = true;
+            opt.selected = true;
+            select.appendChild(opt);
+
+            alertNo.style.display = 'block';
+            setDisabledInputs(true);
+            limpiarCamposInsumo();
+            return;
+        }
+
+        alertNo.style.display = 'none';
+        setDisabledInputs(false);
+
+        INSUMOS_DATA.forEach(i => {
+            const opt = document.createElement('option');
+            opt.value = i.id;
+
+            const hasMin = i.stock_minimo !== null && i.stock_minimo !== undefined;
+            if (hasMin) {
+                opt.textContent = `${i.nombre} — stock ${i.stock_total}/${i.stock_minimo} (mín.)`;
+            } else {
+                opt.textContent = `${i.nombre} — stock ${i.stock_total}`;
+            }
+
+            select.appendChild(opt);
+        });
+
+        select.selectedIndex = 0;
+        actualizarProveedores();
+    }
+
+    function limpiarCamposInsumo() {
+        document.getElementById('lista-proveedores').innerHTML = '';
+        document.getElementById('stock-minimo').value = '';
+        document.getElementById('stock-maximo').value = '';
+        document.getElementById('stock-actual').value = '';
+        document.getElementById('unidad-insumo').value = '';
+        document.getElementById('cantidad').value = '';
+        document.getElementById('msg-capacidad').style.display = 'none';
+        document.getElementById('cantidad').classList.remove('is-invalid');
+    }
+
+    function validarCapacidad() {
+        const stockMaxEl = document.getElementById('stock-maximo');
+        const stockActEl = document.getElementById('stock-actual');
+        const cantidadEl = document.getElementById('cantidad');
+        const msg = document.getElementById('msg-capacidad');
+
+        const stockMax = num(stockMaxEl.value);
+        const stockAct = num(stockActEl.value);
+        const cant = num(cantidadEl.value);
+
+        if (isNaN(stockMax) || isNaN(stockAct) || isNaN(cant)) {
+            msg.style.display = 'none';
+            cantidadEl.classList.remove('is-invalid');
+            return true;
+        }
+
+        const totalLuego = stockAct + cant;
+
+        if (totalLuego > stockMax) {
+            msg.style.display = 'block';
+            cantidadEl.classList.add('is-invalid');
+            return false;
+        }
+
+        msg.style.display = 'none';
+        cantidadEl.classList.remove('is-invalid');
+        return true;
+    }
+
+    function actualizarProveedores() {
+        const selectInsumo = document.getElementById('lista-insumos');
+        const selectProv = document.getElementById('lista-proveedores');
+        const stockMin = document.getElementById('stock-minimo');
+        const stockMax = document.getElementById('stock-maximo');
+        const stockAct = document.getElementById('stock-actual');
+        const unidad = document.getElementById('unidad-insumo');
+        const cantidad = document.getElementById('cantidad');
+
+        const insumoId = selectInsumo.value;
+        const data = buscarInsumoPorId(insumoId);
+
+        if (!data) {
+            limpiarCamposInsumo();
+            return;
+        }
+
+        selectProv.innerHTML = '';
+        (data.proveedores || []).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre + (p.email ? ' (' + p.email + ')' : ' (sin correo)');
+            selectProv.appendChild(opt);
+        });
+
+        stockMin.value = (data.stock_minimo ?? '') === null ? '' : (data.stock_minimo ?? '');
+        stockMax.value = (data.stock_maximo ?? '') === null ? '' : (data.stock_maximo ?? '');
+        stockAct.value = data.stock_total ?? '';
+        unidad.value = data.unidad ?? '';
+        cantidad.value = data.faltante ?? 0;
+
+        validarCapacidad();
+    }
+
+    function actualizarResumenes() {
+        const txtInsumos = document.getElementById('insumos-seleccionados');
+        const txtProvs = document.getElementById('proveedores-seleccionados');
+        const hidden = document.getElementById('lineas-json');
+
+        const mapInsumos = new Map();
+
+        LINEAS.forEach(l => {
+            const clave = String(l.sucursal_id) + "|" + String(l.insumo_id);
+            const existente = mapInsumos.get(clave) || {
+                insumo_nombre: l.insumo_nombre,
+                unidad: l.unidad,
+                sucursal_nombre: l.sucursal_nombre,
+                total: 0
+            };
+            existente.total += Number(l.cantidad || 0);
+            mapInsumos.set(clave, existente);
+        });
+
+        const lineasInsumos = [];
+        mapInsumos.forEach(v => {
+            lineasInsumos.push(v.insumo_nombre + ": " + v.total + " " + v.unidad + " — " + v.sucursal_nombre);
+        });
+        txtInsumos.value = lineasInsumos.join("\n");
+
+        const lineasProv = LINEAS.map(l => {
+            return l.proveedor_nombre + " → " + l.sucursal_nombre + ": " + l.insumo_nombre + ": " + l.cantidad + " " + l.unidad;
+        });
+        txtProvs.value = lineasProv.join("\n");
+
+        hidden.value = JSON.stringify(LINEAS);
+    }
+
+    function agregarLinea() {
+        const selectSucursal = document.getElementById('sucursal-id');
+        if (!selectSucursal.value) {
+            alert('Selecciona una sucursal.');
+            return;
+        }
+
+        const selectInsumo = document.getElementById('lista-insumos');
+        const selectProv = document.getElementById('lista-proveedores');
+        const cantidadInput = document.getElementById('cantidad');
+
+        const optIns = selectInsumo.options[selectInsumo.selectedIndex];
+        if (!optIns || !optIns.value) {
+            alert('Selecciona un insumo.');
+            return;
+        }
+
+        const optProv = selectProv.options[selectProv.selectedIndex];
+        if (!optProv) {
+            alert('Selecciona un proveedor para ese insumo.');
+            return;
+        }
+
+        const dataInsumo = buscarInsumoPorId(optIns.value);
+        if (!dataInsumo) {
+            alert('No se encontraron datos del insumo.');
+            return;
+        }
+
+        if (!validarCapacidad()) {
+            alert('la cantidad a pedir sobrepasa nuestra capacidad de almacenamiento (fijate en el stock maximo)');
+            return;
+        }
+
+        const cantidadVal = String(cantidadInput.value || '').trim();
+        const cantidadNum = parseFloat(cantidadVal.replace(',', '.'));
+        if (isNaN(cantidadNum) || cantidadNum <= 0) {
+            alert('La cantidad debe ser mayor que cero.');
+            return;
+        }
+
+        const provData = (dataInsumo.proveedores || []).find(p => p.id === parseInt(optProv.value));
+        if (!provData) {
+            alert('El proveedor seleccionado no es válido para este insumo.');
+            return;
+        }
+        if (!provData.email) {
+            alert('El proveedor seleccionado no tiene definido un email.');
+            return;
+        }
+
+        const optSuc = selectSucursal.options[selectSucursal.selectedIndex];
+        const sucursalId = parseInt(selectSucursal.value);
+        const sucursalNombre = optSuc ? (optSuc.getAttribute('data-nombre') || optSuc.textContent.trim()) : '';
+        const sucursalDireccion = optSuc ? (optSuc.getAttribute('data-direccion') || '') : '';
+
+        LINEAS.push({
+            sucursal_id: sucursalId,
+            sucursal_nombre: sucursalNombre,
+            sucursal_direccion: sucursalDireccion,
+            insumo_id: parseInt(optIns.value),
+            insumo_nombre: dataInsumo.nombre,
+            proveedor_id: provData.id,
+            proveedor_nombre: provData.nombre + ' (' + provData.email + ')',
+            cantidad: cantidadNum,
+            unidad: dataInsumo.unidad
+        });
+
+        actualizarResumenes();
+    }
+
+    function eliminarUltimaLinea() {
+        if (LINEAS.length === 0) return;
+        LINEAS.pop();
+        actualizarResumenes();
+    }
+
+    async function cargarInsumosSucursal(sucursalId) {
+        const r = await fetch(`${DATA_URL}?sucursal_id=${encodeURIComponent(sucursalId)}`, { cache: 'no-store' });
+        const j = await r.json();
+        INSUMOS_DATA = (j && j.ok) ? (j.insumos || []) : [];
+        pintarListaInsumos();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const selectSucursal = document.getElementById('sucursal-id');
+        const selectInsumo = document.getElementById('lista-insumos');
+        const cantidad = document.getElementById('cantidad');
+
+        selectSucursal.addEventListener('change', () => {
+            if (!selectSucursal.value) return;
+            cargarInsumosSucursal(selectSucursal.value);
+        });
+
+        selectInsumo.addEventListener('change', actualizarProveedores);
+        cantidad.addEventListener('input', validarCapacidad);
+        cantidad.addEventListener('change', validarCapacidad);
+
+        document.querySelectorAll('.btn-guardar-linea').forEach(btn => btn.addEventListener('click', agregarLinea));
+        document.querySelectorAll('.btn-eliminar-linea').forEach(btn => btn.addEventListener('click', eliminarUltimaLinea));
+
+        pintarListaInsumos();
+
+        if (selectSucursal.value && (!INSUMOS_DATA || INSUMOS_DATA.length === 0)) {
+            cargarInsumosSucursal(selectSucursal.value);
+        }
+
+        document.getElementById('form-orden').addEventListener('submit', (e) => {
+            if (LINEAS.length === 0) {
+                e.preventDefault();
+                alert('Debes guardar al menos un insumo con su proveedor y cantidad.');
+                return;
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

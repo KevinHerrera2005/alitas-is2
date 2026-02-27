@@ -1,0 +1,135 @@
+<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;"><a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='proveedor', formato='pdf') }}">Exportar PDF</a><a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='proveedor', formato='excel') }}">Exportar Excel</a></div>
+{% extends 'admin/model/edit.html' %}
+
+{% block body %}
+{{ super() }}
+
+<style>
+    .lock-field:disabled{
+        background:#e9ecef !important;
+        color:#495057 !important;
+        cursor:not-allowed !important;
+        opacity:1 !important;
+    }
+</style>
+
+<div class="mt-4">
+    <h4 class="mb-2">Recepción de insumos</h4>
+    <p class="text-muted mb-3">
+        Para marcar como <strong>Entregada</strong>, debes ingresar <strong>cantidad recibida</strong> y <strong>unidad recibida</strong> en todos los insumos.
+    </p>
+
+    <input type="hidden" name="recepciones_json" id="recepciones-json">
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+            <thead>
+                <tr>
+                    <th style="min-width:220px">Insumo</th>
+                    <th style="min-width:160px">Solicitada</th>
+                    <th style="min-width:220px">Unidad solicitada</th>
+                    <th style="min-width:170px">Cantidad recibida</th>
+                    <th style="min-width:180px">Unidad recibida</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in model.detalles %}
+                {% set unidad_txt = 'N/D' %}
+                {% if d.unidad %}
+                    {% if d.unidad.Nombre_Unidad is defined %}
+                        {% set unidad_txt = d.unidad.Nombre_Unidad %}
+                    {% else %}
+                        {% set unidad_txt = d.unidad.Nombre %}
+                    {% endif %}
+                {% endif %}
+
+                <tr data-detalle-id="{{ d.ID_Detalle }}">
+                    <td>{{ d.insumo.Nombre_insumo if d.insumo else 'N/D' }}</td>
+
+                    <td>
+                        <input class="form-control lock-field"
+                               type="text"
+                               value="{{ d.Cantidad_Solicitada }}"
+                               disabled
+                               readonly
+                               tabindex="-1">
+                        <input type="hidden"
+                               name="det_solicitada_{{ d.ID_Detalle }}"
+                               value="{{ d.Cantidad_Solicitada }}">
+                    </td>
+
+                    <td>
+                        <input class="form-control lock-field"
+                               type="text"
+                               value="{{ unidad_txt }}"
+                               disabled
+                               readonly
+                               tabindex="-1">
+                        <input type="hidden"
+                               name="det_unidad_solicitada_{{ d.ID_Detalle }}"
+                               value="{{ d.ID_Unidad or 0 }}">
+                    </td>
+
+                    <td>
+                        <input type="number" step="0.01" min="0"
+                               class="form-control rec-cantidad"
+                               value="{{ d.Cantidad_Recibida if d.Cantidad_Recibida is not none else '' }}">
+                    </td>
+
+                    <td>
+                        <select class="form-select rec-unidad">
+                            <option value="">Seleccionar...</option>
+                            {% for u in unidades %}
+                                <option value="{{ u.ID_Unidad }}"
+                                    {% if d.ID_Unidad_Recibida and u.ID_Unidad == d.ID_Unidad_Recibida %}selected{% endif %}>
+                                    {{ u.Nombre_Unidad if u.Nombre_Unidad is defined else u.Nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    function buildRecepciones() {
+        const rows = document.querySelectorAll('tr[data-detalle-id]');
+        const data = [];
+
+        rows.forEach(row => {
+            const detalleId = parseInt(row.getAttribute('data-detalle-id'));
+            const cantidadEl = row.querySelector('.rec-cantidad');
+            const unidadEl = row.querySelector('.rec-unidad');
+
+            const cantidadRaw = cantidadEl && cantidadEl.value != null ? String(cantidadEl.value).trim() : '';
+            const unidadRaw = unidadEl && unidadEl.value != null ? String(unidadEl.value).trim() : '';
+
+            const cantidad = parseFloat(cantidadRaw.replace(',', '.'));
+            const unidadId = parseInt(unidadRaw);
+
+            data.push({
+                detalle_id: detalleId,
+                cantidad: isNaN(cantidad) ? 0 : cantidad,
+                unidad_id: isNaN(unidadId) ? 0 : unidadId
+            });
+        });
+
+        return data;
+    }
+
+    const form = document.querySelector('form.admin-form') || document.querySelector('form');
+    if (!form) return;
+
+    form.addEventListener('submit', function () {
+        const hidden = document.getElementById('recepciones-json');
+        if (!hidden) return;
+        hidden.value = JSON.stringify(buildRecepciones());
+    });
+})();
+</script>
+
+{% endblock %}

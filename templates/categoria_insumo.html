@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Categorías</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+  <div class="container py-4">
+
+    <h4>📋 Lista de Categorías</h4>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{{ url_for('login_jefe.panel_jefe') }}" class="btn btn-primary btn-sm">
+       Volver al panel principal
+    </a>
+</div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('crear_categoria_insumo.formulario_crear_categoria_insumo') }}" 
+           class="btn btn-primary btn-sm">
+            Crear categoría
+        </a>
+
+        <div>
+            <label><b>Buscar</b></label>
+            <input type="text" id="buscador" class="form-control" style="width: 220px;">
+        </div>
+    </div>
+
+    <table class="table table-striped table-bordered">
+<thead class="table-dark">
+    <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+    </tr>
+</thead>
+
+<tbody>
+    {% for c in categorias %}
+    <tr>
+        <td>{{ c.ID_Categoria }}</td>
+        <td>{{ c.Nombre_Categoria }}</td>
+        <td>{{ c.descripcion }}</td>
+
+        <td>
+            {% if c.estado == 1 %}
+                <span class="text-success fw-bold">Activo</span>
+            {% else %}
+                <span class="text-danger fw-bold">Inactivo</span>
+            {% endif %}
+        </td>
+
+        <td>
+          <form action="{{ url_for('categoria_insumo.eliminar_categoria', id=c.ID_Categoria) }}" method="POST" onsubmit="return confirm('¿Eliminar esta categoría?')">
+            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+          </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-center text-muted">No hay categorías registradas</td></tr>
+    {% endfor %}
+</tbody>
+
+
+    </table>
+  </div>
+
+<script>
+const buscador = document.getElementById("buscador");
+
+buscador.addEventListener("keydown", function(e) {
+    const invalid = /[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]/;
+
+    if (invalid.test(e.key)) {
+        e.preventDefault();
+        return;
+    }
+
+    if (e.key === " " && buscador.value.length === 0) {
+        e.preventDefault();
+        return;
+    }
+
+    const cursor = buscador.selectionStart;
+    const valor = buscador.value;
+    if (e.key === " " && valor[cursor - 1] === " ") {
+        e.preventDefault();
+        return;
+    }
+});
+
+buscador.addEventListener("input", () => {
+    buscador.value = buscador.value
+        .replace(/^ +/, "")
+        .replace(/ {2,}/g, " ");
+
+    filtrarCategorias();
+});
+
+function filtrarCategorias() {
+    const filtro = buscador.value.toLowerCase();
+    const filas = document.querySelectorAll("table tbody tr");
+
+    filas.forEach(fila => {
+        const nombre = fila.querySelector("td:nth-child(2)").textContent.toLowerCase();
+
+        const coincide = nombre.startsWith(filtro);
+
+        if (filtro === "" || coincide) {
+            fila.style.display = "";
+        } else {
+            fila.style.display = "none";
+        }
+    });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

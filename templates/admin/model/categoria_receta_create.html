@@ -1,0 +1,7 @@
+{% extends 'admin/model/create.html' %}
+
+{# Cargamos las validaciones al final de la página #}
+{% block tail %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+{% endblock %}

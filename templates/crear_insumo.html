@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Insumo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .msg { font-size: 0.85em; margin-top: 3px; }
+        .ok { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+
+    <h2 class="mb-4">📦 Crear Insumo</h2>
+
+    <div class="card shadow-sm p-4">
+
+        <form id="formInsumo" action="{{ url_for('crear_insumo.guardar_insumo') }}" method="POST">
+
+        
+            <div class="mb-3">
+                <label class="form-label">Nombre del Insumo *</label>
+                <input type="text" id="nombre" name="nombre" class="form-control" required>
+                <div id="msgNombre" class="msg"></div>
+            </div>
+
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Stock Total *</label>
+                    <input type="number" id="stock_total" name="stock_total" step="0.01" class="form-control" required>
+                    <div id="msgTotal" class="msg"></div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Stock Mínimo *</label>
+                    <input type="number" id="stock_minimo" name="stock_minimo" step="0.01" class="form-control" required>
+                    <div id="msgMinimo" class="msg"></div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Precio (Lps) *</label>
+                    <input type="number" id="precio" name="precio_lempiras" step="0.01" class="form-control" required>
+                    <div id="msgPrecio" class="msg"></div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">Peso *</label>
+                    <input type="number" id="peso" name="peso_individual" step="0.01" class="form-control" required>
+                    <div id="msgPeso" class="msg"></div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Unidad de medida *</label>
+                    <select name="ID_Unidad" class="form-select" required>
+                        <option value="">-- Selecciona una unidad --</option>
+                        {% for u in unidades %}
+                        <option value="{{ u.ID_Unidad }}">{{ u.Nombre }} ({{ u.abreviatura }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">
+    Categoría *
+    <a href="{{ url_for('categoria_insumo.listar_categorias') }}"
+       class="btn btn-success btn-sm ms-2">
+        ➕ Agregar
+    </a>
+</label>
+
+                    <select name="ID_Categoria" class="form-select" required>
+                        <option value="">-- Selecciona una categoría --</option>
+                        {% for c in categorias %}
+                        <option value="{{ c.ID_Categoria }}">{{ c.Nombre_Categoria }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button id="guardarBtn" class="btn btn-primary" disabled>Guardar Insumo</button>
+            </div>
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+function tieneTresIguales(valor) {
+    return /([a-záéíóúñ])\1\1/i.test(valor.replace(/\s+/g, ''));
+}
+
+function validarNombre() {
+    const nombre = document.getElementById("nombre");
+    const msg = document.getElementById("msgNombre");
+    const valor = nombre.value.trim();
+    const sinEspacios = valor.replace(/\s+/g, '');
+
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]+$/.test(valor)) {
+        msg.textContent = "Solo se permiten letras y números (sin símbolos) ✖";
+        msg.className = "msg error"; 
+        return false;
+    }
+
+    if (/^[0-9]+$/.test(sinEspacios)) {
+        msg.textContent = "El nombre no puede ser solo números ✖";
+        msg.className = "msg error"; 
+        return false;
+    }
+
+    if (valor.startsWith(" ")) {
+        msg.textContent = "No puede iniciar con espacio ✖";
+        msg.className = "msg error"; return false;
+    }
+
+    if (/ {2,}/.test(valor)) {
+        msg.textContent = "No puede tener múltiples espacios ✖";
+        msg.className = "msg error"; return false;
+    }
+
+    if (tieneTresIguales(valor)) {
+        msg.textContent = "No puede tener tres letras seguidas iguales ✖";
+        msg.className = "msg error"; return false;
+    }
+
+    if (!/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(valor)) {
+        msg.textContent = "Debe incluir letras ✖";
+        msg.className = "msg error"; return false;
+    }
+
+    if (sinEspacios.length < 3 || sinEspacios.length > 30) {
+        msg.textContent = "Debe tener entre 3 y 30 caracteres válidos ✖";
+        msg.className = "msg error"; return false;
+    }
+
+    const existentes = {{ nombres|tojson }};
+    if (existentes.includes(valor.toLowerCase())) {
+        msg.textContent = "Este insumo ya existe ✖";
+        msg.className = "msg error";
+        return false;
+    }
+
+    msg.textContent = "Campo válido ✔";
+    msg.className = "msg ok";
+    return true;
+}
+function validarNumero(inputId, msgId) {
+    const el = document.getElementById(inputId);
+    const msg = document.getElementById(msgId);
+    const valor = el.value.trim();
+
+    if (valor === "" || isNaN(valor) || valor <= 0) {
+        msg.textContent = "Debe ingresar un número válido mayor que 0 ✖";
+        msg.className = "msg error"; 
+        return false;
+    }
+
+    msg.textContent = "Campo válido ✔";
+    msg.className = "msg ok";
+    return true;
+}
+
+
+function actualizarBoton() {
+    const listo = 
+        validarNombre() &&
+        validarNumero("stock_total","msgTotal") &&
+        validarNumero("stock_minimo","msgMinimo") &&
+        validarNumero("precio","msgPrecio") &&
+        validarNumero("peso","msgPeso");
+
+    document.getElementById("guardarBtn").disabled = !listo;
+}
+
+function validarSelects() {
+    const unidad = document.querySelector('select[name="ID_Unidad"]').value;
+    const categoria = document.querySelector('select[name="ID_Categoria"]').value;
+
+    return unidad !== "" && categoria !== "";
+}
+
+
+document.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("input", actualizarBoton);
+});
+</script>
+<script>
+    
+const inputNombre = document.getElementById("nombre");
+
+inputNombre.addEventListener("keydown", function(e) {
+    const valor = inputNombre.value;
+
+    if (e.key === " " && valor.length === 0) {
+        e.preventDefault();
+        return;
+    }
+
+    const cursor = inputNombre.selectionStart;
+    if (e.key === " " && valor[cursor - 1] === " ") {
+        e.preventDefault();
+        return;
+    }
+});
+
+inputNombre.addEventListener("input", function(e) {
+    inputNombre.value = inputNombre.value
+        .replace(/^ +/, "")     
+        .replace(/ {2,}/g, " "); 
+});
+</script>
+
+</body>
+</html>

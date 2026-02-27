@@ -1,0 +1,32 @@
+{% import 'admin/layout.html' as layout with context -%}
+{% extends 'admin/base.html' %}
+
+{% block page_body %}
+
+  <div class="container{% if config.get('FLASK_ADMIN_FLUID_LAYOUT', False) %}-fluid{% endif %}">
+    <div style="background:{{ panel_color|default('#343a40') }};color:#fff;padding:14px 16px;text-align:center;font-weight:600;font-size:18px;">
+      {{ admin_view.admin.name }}
+    </div>
+    <style>
+  .nav-tabs a[href*="/export/"],
+  .nav-tabs a[href$="/export/"] {
+    display: none !important;
+  }
+</style>
+
+    {{ layout.messages() }}
+
+    {% if admin_view and admin_view.model %}
+      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin:12px 0;">
+        {% set _rk = admin_view.model.__name__|lower %}
+        <a class="btn btn-sm btn-danger" href="{{ url_for('reports.exportar', reporte=_rk, formato='pdf') }}">Exportar PDF</a>
+        <a class="btn btn-sm btn-success" href="{{ url_for('reports.exportar', reporte=_rk, formato='excel') }}">Exportar Excel</a>
+      </div>
+    {% endif %}
+
+
+    {% set render_ctx = h.resolve_ctx() %}
+
+    {% block body %}{% endblock %}
+  </div>
+{% endblock %}

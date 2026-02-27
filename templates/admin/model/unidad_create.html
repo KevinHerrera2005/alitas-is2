@@ -1,0 +1,6 @@
+{% extends 'admin/model/create.html' %}
+
+{% block tail_js %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+{% endblock %}

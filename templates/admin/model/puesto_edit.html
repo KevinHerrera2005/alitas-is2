@@ -1,0 +1,10 @@
+{% extends 'admin/model/edit.html' %}
+{% block tail %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='js/validaciones.js') }}"></script>
+  <script>
+    if (typeof conectarValidacionesGenerales === "function") {
+      conectarValidacionesGenerales();
+    }
+  </script>
+{% endblock %}
