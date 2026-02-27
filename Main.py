@@ -3,7 +3,6 @@ import re
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from credenciales.base_de_datos import obtener_connection_string, obtener_db_name
-
 sys.modules["Main"] = sys.modules[__name__]
 import ssl
 import smtplib
