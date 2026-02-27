@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 from flask import current_app
 from reportlab.lib import colors
@@ -169,7 +169,7 @@ def _header_block(report_title: str, printed_by: str) -> Table:
         leading=11,
     )
 
-    left = [
+    text_block = [
         Paragraph(report_title, title_style),
         Paragraph(f"Empresa: {_nombre_empresa()}", meta_style),
         Paragraph(f"Impreso por: {printed_by}", meta_style),
@@ -177,7 +177,6 @@ def _header_block(report_title: str, printed_by: str) -> Table:
     ]
 
     logo_path = _ruta_logo()
-    right = ""
     if logo_path:
         try:
             img = RLImage(logo_path)
@@ -187,16 +186,17 @@ def _header_block(report_title: str, printed_by: str) -> Table:
                 scale = target_w / float(iw)
                 img.drawWidth = target_w
                 img.drawHeight = float(ih) * scale
-            right = img
+            t = Table([[img, text_block]], colWidths=[1.8 * inch, None])
         except Exception:
-            right = ""
+            t = Table([[text_block]], colWidths=[None])
+    else:
+        t = Table([[text_block]], colWidths=[None])
 
-    t = Table([[left, right]], colWidths=[None, 2.2 * inch])
     t.setStyle(
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("TOPPADDING", (0, 0), (-1, -1), 0),
@@ -302,12 +302,11 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
             ws.cell(row=row, column=col).fill = fondo
 
     max_col = max(1, len(columns))
-    last_col = get_column_letter(max(8, max_col))
+    last_col = get_column_letter(max(4, max_col))
 
     ws.column_dimensions["A"].width = 22
-    ws.column_dimensions["B"].width = 2
-    ws.column_dimensions["C"].width = 16
-    ws.column_dimensions["D"].width = 40
+    ws.column_dimensions["B"].width = 16
+    ws.column_dimensions["C"].width = 40
 
     logo_path = _ruta_logo()
     if logo_path:
@@ -326,22 +325,22 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.row_dimensions[5].height = 20
     ws.row_dimensions[6].height = 10
 
-    ws.merge_cells(f"C2:{last_col}2")
-    ws["C2"] = report_title
-    ws["C2"].font = Font(bold=True, name="Calibri", size=16)
-    ws["C2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws.merge_cells(f"B2:{last_col}2")
+    ws["B2"] = report_title
+    ws["B2"].font = Font(bold=True, name="Calibri", size=16)
+    ws["B2"].alignment = Alignment(horizontal="left", vertical="center")
 
-    ws["C3"] = "Empresa:"
-    ws["D3"] = _nombre_empresa()
-    ws["C4"] = "Impreso por:"
-    ws["D4"] = printed_by
-    ws["C5"] = "Fecha/Hora:"
-    ws["D5"] = _ahora_str()
+    ws["B3"] = "Empresa:"
+    ws["C3"] = _nombre_empresa()
+    ws["B4"] = "Impreso por:"
+    ws["C4"] = printed_by
+    ws["B5"] = "Fecha/Hora:"
+    ws["C5"] = _ahora_str()
 
     for r in range(3, 6):
-        ws[f"C{r}"].font = Font(bold=True, name="Calibri", size=11)
+        ws[f"B{r}"].font = Font(bold=True, name="Calibri", size=11)
+        ws[f"B{r}"].alignment = Alignment(horizontal="left", vertical="center")
         ws[f"C{r}"].alignment = Alignment(horizontal="left", vertical="center")
-        ws[f"D{r}"].alignment = Alignment(horizontal="left", vertical="center")
 
     start_row = 8
 
