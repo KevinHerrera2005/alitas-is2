@@ -111,11 +111,12 @@ def ejecutar_init_sql_si_aplica(odbc_conn_str, init_sql_path, db_name):
     print("[INIT] init.sql ejecutado.")
 
 ## poner sus credenciales aqui su sa  con la contrasseña y su nombre del sql o sea DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-5FSTOOH\SQLEXPRESS")
+#kevin credenciales: DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-5FSTOOH\SQLEXPRESS")  
 DB_DRIVER = os.getenv("ODBC_DRIVER", "ODBC Driver 17 for SQL Server")
-DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-8S6NK4G\SQLEXPRESS")
+DB_SERVER = os.getenv("DB_SERVER", r"DESKTOP-5FSTOOH\SQLEXPRESS")
 DB_NAME = os.getenv("DB_NAME", "ALITAS EL COMELON SF")
 DB_USER = os.getenv("DB_USER", "sa")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "z41ss1l0")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "kevin190305")
 DB_TRUST_CERT = os.getenv("DB_TRUST_CERT", "yes")
 
 connection_string = (
@@ -402,7 +403,6 @@ def bootstrap_app(flask_app):
         flask_app,
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
-        template_mode="bootstrap4",
     )
 
     admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))
