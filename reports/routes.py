@@ -35,15 +35,6 @@ def _formatear_dt(val: Any) -> Any:
     return val
 
 
-def _estado_humano(val: Any) -> str:
-    if val is None:
-        return ""
-    try:
-        return "Activo" if int(val) == 1 else "Inactivo"
-    except Exception:
-        return str(val)
-
-
 def _estado_orden_humano(val: Any) -> str:
     if val is None:
         return ""
@@ -121,7 +112,7 @@ def _reportes_personalizados() -> Dict[str, Tuple[str, List[str], Any]]:
     return {
         "ordenes_estado": (
             "Órdenes por Estado",
-            ["id", "estado", "cliente", "total", "fecha"],
+            ["estado", "cantidad"],
             lambda: _reporte_ordenes_estado(),
         ),
     }
@@ -130,19 +121,13 @@ def _reportes_personalizados() -> Dict[str, Tuple[str, List[str], Any]]:
 def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
     try:
         Orden = load_models().get("OrdenEntrega")
-        Cliente = load_models().get("Cliente")
     except Exception:
         return ["estado", "cantidad"], []
 
     if not Orden:
         return ["estado", "cantidad"], []
 
-    q = db.session.query(Orden.estado, db.func.count(Orden.id))
-
-    if Cliente and hasattr(Orden, "cliente_id") and hasattr(Cliente, "id"):
-        q = q.outerjoin(Cliente, Cliente.id == Orden.cliente_id)
-
-    q = q.group_by(Orden.estado).all()
+    q = db.session.query(Orden.estado, db.func.count(Orden.id)).group_by(Orden.estado).all()
 
     cols = ["estado", "cantidad"]
     rows: List[List[Any]] = []
@@ -158,27 +143,30 @@ def exportar(reporte: str):
     formato = (request.args.get("formato") or "pdf").lower().strip()
     modelo = (request.args.get("modelo") or "").strip()
 
+    if not modelo:
+        modelo = reporte
+
     reportes_custom = _reportes_personalizados()
     if reporte in reportes_custom:
         titulo, _, fn = reportes_custom[reporte]
         cols, rows = fn()
     else:
         models = load_models()
-        if not modelo:
-            abort(400, "Falta el parámetro modelo")
         model_cls = None
-        for k, v in models.items():
+        for _, v in models.items():
             if _modelo_key(v) == modelo.lower():
                 model_cls = v
                 break
+
         if not model_cls:
             abort(404, "Modelo no encontrado")
+
         titulo = f"Reporte: {model_cls.__name__}"
         cols, rows = _columnas_y_filas_amigables(model_cls)
 
     usuario = _usuario_impresion()
 
-    if formato == "excel" or formato == "xlsx":
+    if formato in ("excel", "xlsx"):
         content = generar_excel(titulo, cols, rows, usuario)
         resp = make_response(content)
         resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
