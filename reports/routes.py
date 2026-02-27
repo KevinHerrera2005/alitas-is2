@@ -58,6 +58,39 @@ def _texto_o_vacio(obj: Any) -> str:
         return ""
 
 
+def _models_registry() -> Dict[str, Any]:
+    load_models()
+
+    for attr in ("_sa_registry", "registry"):
+        reg = getattr(db.Model, attr, None)
+        if reg is not None:
+            cr = getattr(reg, "_class_registry", None)
+            if isinstance(cr, dict) and cr:
+                out = {}
+                for k, v in cr.items():
+                    if isinstance(k, str) and isinstance(v, type) and not k.startswith("_"):
+                        out[k] = v
+                if out:
+                    return out
+
+    cr = getattr(db.Model, "_decl_class_registry", None)
+    if isinstance(cr, dict) and cr:
+        out = {}
+        for k, v in cr.items():
+            if isinstance(k, str) and isinstance(v, type) and not k.startswith("_"):
+                out[k] = v
+        if out:
+            return out
+
+    out = {}
+    for cls in db.Model.__subclasses__():
+        try:
+            out[cls.__name__] = cls
+        except Exception:
+            pass
+    return out
+
+
 def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[List[Any]]]:
     mapper = inspect(model_cls)
     fk_to_rel: Dict[str, str] = {}
@@ -113,7 +146,7 @@ def _estado_orden_humano(val: Any) -> str:
 
 
 def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
-    models = load_models() or {}
+    models = _models_registry()
     Orden = models.get("OrdenEntrega") or models.get("Orden_Entrega") or models.get("OrdenEntregaModel")
 
     if not Orden:
@@ -142,9 +175,9 @@ def exportar(reporte: str):
         titulo, fn = reportes_custom[key]
         cols, rows = fn()
     else:
-        models = load_models() or {}
+        models = _models_registry()
         if not models:
-            abort(500, "No se pudieron cargar los modelos (load_models devolvió vacío).")
+            abort(500, "No se pudieron cargar los modelos desde el registry de SQLAlchemy.")
 
         if not modelo:
             modelo = key
