@@ -6,7 +6,7 @@ from flask_login import current_user, login_required
 from sqlalchemy import inspect
 
 from models import db, load_models
-from reports.generators import render_excel, render_pdf
+from reports.generators import generar_excel, generar_pdf
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/reportes")
 
@@ -167,13 +167,13 @@ def exportar(reporte: str):
     usuario = _usuario_impresion()
 
     if formato in ("excel", "xlsx"):
-        content = render_excel(titulo, cols, rows, usuario)
+        content = generar_excel(titulo, cols, rows, usuario)
         resp = make_response(content)
         resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         resp.headers["Content-Disposition"] = f'attachment; filename="{key}.xlsx"'
         return resp
 
-    content = render_pdf(titulo, cols, rows, usuario)
+    content = generar_pdf(titulo, cols, rows, usuario)
     resp = make_response(content)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'attachment; filename="{key}.pdf"'
