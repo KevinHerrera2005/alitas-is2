@@ -1,252 +1,272 @@
 from datetime import datetime
 from io import BytesIO
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 from flask import current_app
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Spacer, Table, TableStyle, Paragraph
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from openpyxl import Workbook
-from openpyxl.utils import get_column_letter
-from openpyxl.styles import Alignment, Font
 from openpyxl.drawing.image import Image as XLImage
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.table import Table as XLTable
+from openpyxl.worksheet.table import TableStyleInfo
 
 
 Cell = Any
 ColumnSpec = Tuple[str, Callable[[Any], Any]]
 
 
-def _company_name() -> str:
-    return current_app.config.get("COMPANY_NAME", "Mi Empresa")
+class NumberedCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
+
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        total_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.setFont("Helvetica", 8)
+            ancho = self._pagesize[0]
+            self.drawCentredString(ancho / 2, 0.48 * inch, f"Página {self._pageNumber}/{total_pages}")
+            canvas.Canvas.showPage(self)
+        canvas.Canvas.save(self)
 
 
-def _logo_path() -> Optional[str]:
+def _nombre_empresa() -> str:
+    return current_app.config.get("COMPANY_NAME", "Alitas El Comelon")
+
+
+def _ruta_logo() -> Optional[str]:
     return current_app.config.get("COMPANY_LOGO_PATH")
 
 
-def _now_str() -> str:
+def _ahora_str() -> str:
     tz = current_app.config.get("REPORTS_TIMEZONE")
     now = datetime.now(tz) if tz else datetime.now()
     return now.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def _texto(val: Any) -> str:
+    if val is None:
+        return ""
+    try:
+        if isinstance(val, (list, tuple, set)):
+            parts = [_texto(v) for v in list(val)]
+            parts = [p for p in parts if p]
+            return ", ".join(parts)
+        return str(val)
+    except Exception:
+        return ""
 
-def render_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
+
+def _necesita_landscape(cols: int) -> bool:
+    try:
+        max_cols_portrait = int(current_app.config.get("REPORTS_MAX_COLS_PORTRAIT", 7))
+    except Exception:
+        max_cols_portrait = 7
+    return cols > max_cols_portrait
+
+
+def _particionar_columnas(columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> List[Tuple[List[str], List[List[Any]]]]:
+    try:
+        max_cols = int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 10))
+    except Exception:
+        max_cols = 10
+
+    cols = list(columns)
+    out = []
+    i = 0
+    while i < len(cols):
+        chunk_cols = cols[i : i + max_cols]
+        chunk_rows = []
+        for r in rows:
+            rr = list(r)
+            chunk_rows.append(rr[i : i + max_cols])
+        out.append((chunk_cols, chunk_rows))
+        i += max_cols
+    return out
+
+
+def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     buf = BytesIO()
-
-    def _needs_landscape(cols: Sequence[str], data_rows: Sequence[Sequence[Any]]) -> bool:
-        if len(cols) >= 7:
-            return True
-        for r in data_rows[:40]:
-            for v in r:
-                s = "" if v is None else str(v)
-                if len(s) > 55:
-                    return True
-        return False
-
-    page_size = landscape(letter) if _needs_landscape(columns, rows) else letter
+    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
 
     doc = SimpleDocTemplate(
         buf,
         pagesize=page_size,
-        leftMargin=0.45 * inch,
-        rightMargin=0.45 * inch,
-        topMargin=1.25 * inch,
-        bottomMargin=0.85 * inch,
+        leftMargin=0.6 * inch,
+        rightMargin=0.6 * inch,
+        topMargin=0.7 * inch,
+        bottomMargin=0.8 * inch,
+        title=report_title,
+        author=_nombre_empresa(),
     )
 
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
-        "ReportTitle",
-        parent=styles["Heading2"],
+        "TitleCustom",
+        parent=styles["Heading1"],
         fontName="Helvetica-Bold",
-        fontSize=13,
-        spaceAfter=8,
-        alignment=1,
+        fontSize=16,
+        spaceAfter=10,
     )
-    cell_style = ParagraphStyle(
-        "Cell",
+    meta_style = ParagraphStyle(
+        "MetaCustom",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=7.8,
-        leading=9.2,
-        wordWrap="CJK",
-    )
-    header_cell_style = ParagraphStyle(
-        "HeaderCell",
-        parent=cell_style,
-        fontName="Helvetica-Bold",
-        alignment=1,
-    )
-    normal_style = ParagraphStyle(
-        "NormalSmall",
-        parent=styles["Normal"],
-        fontSize=8.5,
-        leading=10,
+        fontSize=9,
+        textColor=colors.grey,
+        spaceAfter=8,
     )
 
-    def _cell(v: Any, is_header: bool = False) -> Paragraph:
-        s = "" if v is None else str(v)
-        s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        return Paragraph(s, header_cell_style if is_header else cell_style)
+    story = []
 
-    data: List[List[Any]] = [[_cell(c, True) for c in columns]]
-    for r in rows:
-        data.append([_cell(v, False) for v in r])
+    logo_path = _ruta_logo()
+    if logo_path:
+        try:
+            img = ImageReader(logo_path)
+            iw, ih = img.getSize()
+            max_w = 1.6 * inch
+            scale = max_w / float(iw)
+            story.append(Table([[img]], colWidths=[max_w], rowHeights=[ih * scale]))
+            story.append(Spacer(1, 0.08 * inch))
+        except Exception:
+            pass
 
-    available_width = doc.width
+    story.append(Paragraph(report_title, title_style))
+    story.append(Paragraph(f"Empresa: {_nombre_empresa()}", meta_style))
+    story.append(Paragraph(f"Impreso por: {printed_by}", meta_style))
+    story.append(Paragraph(f"Fecha/Hora: {_ahora_str()}", meta_style))
+    story.append(Spacer(1, 0.15 * inch))
 
-    def _estimate_width(col_idx: int) -> float:
-        max_len = len(str(columns[col_idx]))
-        for r in rows[:200]:
-            if col_idx < len(r):
-                s = "" if r[col_idx] is None else str(r[col_idx])
-                max_len = max(max_len, len(s))
-        w = 12 + (max_len * 2.6)
-        w = max(55, min(w, 220))
-        return w
+    secciones = _particionar_columnas(columns, rows)
 
-    raw_widths = [_estimate_width(i) for i in range(len(columns))]
-    total = sum(raw_widths) if raw_widths else 1
-    scale = min(1.0, available_width / total) if total > 0 else 1.0
-    col_widths = [w * scale for w in raw_widths]
+    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+        data = [list(cols_chunk)]
+        for r in rows_chunk:
+            data.append([_texto(v) for v in r])
 
-    if sum(col_widths) < available_width and col_widths:
-        extra = available_width - sum(col_widths)
-        add = extra / len(col_widths)
-        col_widths = [w + add for w in col_widths]
+        table = Table(data, repeatRows=1)
 
-    table = Table(data, hAlign="LEFT", repeatRows=1, colWidths=col_widths)
-    table.setStyle(
-        TableStyle(
+        style = TableStyle(
             [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 9),
+                ("FONTSIZE", (0, 1), (-1, -1), 8),
                 ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.whitesmoke),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
                 ("LEFTPADDING", (0, 0), (-1, -1), 4),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-                ("TOPPADDING", (0, 0), (-1, -1), 3),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
             ]
         )
-    )
+        table.setStyle(style)
+        story.append(table)
 
-    story = [
-        Paragraph(report_title, title_style),
-        Spacer(1, 0.10 * inch),
-        table,
-        Spacer(1, 0.10 * inch),
-        Paragraph(f"Registros: {max(len(rows), 0)}", normal_style),
-    ]
+        if idx < len(secciones) - 1:
+            story.append(PageBreak())
 
-    company = _company_name()
-    logo = _logo_path()
-    printed_at = _now_str()
-
-    def on_page(canvas, doc_obj):
-        width, height = page_size
-        canvas.saveState()
-
-        header_y_top = height - 0.55 * inch
-        if logo:
-            try:
-                img = ImageReader(logo)
-                canvas.drawImage(
-                    img,
-                    doc_obj.leftMargin,
-                    height - 0.92 * inch,
-                    width=0.70 * inch,
-                    height=0.70 * inch,
-                    preserveAspectRatio=True,
-                    mask="auto",
-                )
-            except Exception:
-                pass
-
-        canvas.setFont("Helvetica-Bold", 12)
-        canvas.drawString(doc_obj.leftMargin + (0.82 * inch), header_y_top, company)
-
-        canvas.setFont("Helvetica", 10)
-        canvas.drawString(doc_obj.leftMargin + (0.82 * inch), header_y_top - 14, report_title)
-
-        canvas.setLineWidth(1)
-        canvas.line(doc_obj.leftMargin, height - 1.02 * inch, width - doc_obj.rightMargin, height - 1.02 * inch)
-
-        footer_y = 0.55 * inch
-        canvas.setLineWidth(1)
-        canvas.line(doc_obj.leftMargin, footer_y + 18, width - doc_obj.rightMargin, footer_y + 18)
-
-        canvas.setFont("Helvetica", 8.5)
-        canvas.drawString(doc_obj.leftMargin, footer_y + 6, f"Imprimió: {printed_by}")
-        canvas.drawString(doc_obj.leftMargin, footer_y - 6, f"Fecha/Hora: {printed_at}")
-
-        page_text = f"Página {canvas.getPageNumber()}"
-        canvas.drawCentredString(width / 2, footer_y, page_text)
-
-        canvas.restoreState()
-
-    doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
+    doc.build(story, canvasmaker=NumberedCanvas)
     return buf.getvalue()
 
 
+def _auto_anchos(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
+    widths = [len(str(c)) if c is not None else 0 for c in columns]
+    for r in rows:
+        for i, v in enumerate(r):
+            s = _texto(v)
+            if i < len(widths):
+                widths[i] = max(widths[i], len(s))
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = min(max(w + 2, 10), 45)
 
-def render_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> bytes:
+
+def _excel_partes(report_title: str, printed_by: str):
+    header_fill = PatternFill("solid", fgColor="111827")
+    header_font = Font(bold=True, color="FFFFFF", name="Calibri", size=11)
+    body_font = Font(name="Calibri", size=10)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left = Alignment(horizontal="left", vertical="top", wrap_text=True)
+
+    thin = Side(style="thin", color="D1D5DB")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    return header_fill, header_font, body_font, center, left, border
+
+
+def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     wb = Workbook()
     ws = wb.active
     ws.title = "Reporte"
 
-    company = _company_name()
-    logo = _logo_path()
-    printed_at = _now_str()
+    ws["A1"] = report_title
+    ws["A2"] = f"Empresa: {_nombre_empresa()}"
+    ws["A3"] = f"Impreso por: {printed_by}"
+    ws["A4"] = f"Fecha/Hora: {_ahora_str()}"
 
-    if logo:
+    start_row = 6
+    for i, col in enumerate(columns, start=1):
+        ws.cell(row=start_row, column=i, value=col)
+
+    for r_idx, r in enumerate(rows, start=start_row + 1):
+        for c_idx, v in enumerate(r, start=1):
+            ws.cell(row=r_idx, column=c_idx, value=_texto(v))
+
+    header_fill, header_font, body_font, center, left, border = _excel_partes(report_title, printed_by)
+
+    max_col = len(columns)
+    max_row = start_row + len(rows)
+
+    for c in range(1, max_col + 1):
+        cell = ws.cell(row=start_row, column=c)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
+    for r in range(start_row + 1, max_row + 1):
+        for c in range(1, max_col + 1):
+            cell = ws.cell(row=r, column=c)
+            cell.font = body_font
+            cell.alignment = left
+            cell.border = border
+
+    _auto_anchos(ws, columns, rows)
+
+    try:
+        ref = f"A{start_row}:{get_column_letter(max_col)}{max_row}"
+        tab = XLTable(displayName="TablaReporte", ref=ref)
+        style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
+        tab.tableStyleInfo = style
+        ws.add_table(tab)
+    except Exception:
+        pass
+
+    logo_path = _ruta_logo()
+    if logo_path:
         try:
-            img = XLImage(logo)
-            img.height = 72
-            img.width = 72
-            ws.add_image(img, "A1")
+            img = XLImage(logo_path)
+            img.width = 160
+            img.height = 55
+            ws.add_image(img, "H1")
         except Exception:
             pass
-
-    ws["C1"] = company
-    ws["C1"].font = Font(bold=True, size=14)
-    ws["C2"] = report_title
-    ws["C2"].font = Font(bold=True, size=12)
-    ws["C3"] = f"Fecha/Hora: {printed_at}"
-    ws["C3"].font = Font(size=10)
-
-    header_row = 5
-
-    for col_idx, col_name in enumerate(columns, start=1):
-        cell = ws.cell(row=header_row, column=col_idx, value=col_name)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-
-    data_row = header_row
-    for r in rows:
-        data_row += 1
-        for col_idx, v in enumerate(r, start=1):
-            value = "" if v is None else str(v)
-            cell = ws.cell(row=data_row, column=col_idx, value=value)
-            cell.alignment = Alignment(vertical="top", wrap_text=True)
-
-    ws.freeze_panes = ws["A6"]
-
-    for col_idx in range(1, len(columns) + 1):
-        max_len = 10
-        for r_idx in range(header_row, data_row + 1):
-            val = ws.cell(row=r_idx, column=col_idx).value
-            if val is None:
-                continue
-            max_len = max(max_len, min(len(str(val)), 70))
-        ws.column_dimensions[get_column_letter(col_idx)].width = max_len + 2
 
     out = BytesIO()
     wb.save(out)
