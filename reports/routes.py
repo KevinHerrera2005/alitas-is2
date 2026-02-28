@@ -39,6 +39,7 @@ def _texto_o_vacio(obj: Any) -> str:
         return ""
     for attr in (
         "Nombre", "nombre",
+        "Nombre_Puesto", "nombre_puesto",
         "Descripcion", "descripcion",
         "Nombre_usuario", "username", "usuario", "email",
         "Nombre_Impuesto", "Nombre_insumo", "Nombre_receta",
