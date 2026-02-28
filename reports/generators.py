@@ -236,6 +236,386 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
     ncols = len(columns)
     head_fs, body_fs = _font_sizes_for_cols(ncols)
 
+    cols_chunk = list(columns)
+    rows_chunk = [list(r) for r in rows]
+    secciones = [(cols_chunk, rows_chunk)]
+
+    wrap_style = ParagraphStyle(
+        name="WrapCell",
+        fontName="Helvetica",
+        fontSize=body_fs,
+        leading=body_fs + 3,
+        wordWrap="CJK",
+        splitLongWords=1,
+    )
+
+    def _escape_para(s: str) -> str:
+        s = str(s)
+        s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return s
+
+    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+        data = [list(cols_chunk)]
+
+        for r in rows_chunk:
+            fila = []
+            for v in r:
+                s = _texto(v)
+                s = _escape_para(s).replace("\n", "<br/>")
+                fila.append(Paragraph(s, wrap_style))
+            data.append(fila)
+
+        col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
+        table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
+
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), head_fs),
+
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 1), (-1, -1), body_fs),
+
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+
+            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#9CA3AF")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+
+        table.setStyle(TableStyle(style_cmds))
+        story.append(table)
+
+        if idx < len(secciones) - 1:
+            story.append(PageBreak())
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+    return buf.getvalue()
+    buf = BytesIO()
+    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
+
+    left_margin = 0.6 * inch
+    right_margin = 0.6 * inch
+    top_margin = 0.7 * inch
+    bottom_margin = 0.8 * inch
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=page_size,
+        leftMargin=left_margin,
+        rightMargin=right_margin,
+        topMargin=top_margin,
+        bottomMargin=bottom_margin,
+        title=report_title,
+        author=_nombre_empresa(),
+    )
+
+    avail_width = page_size[0] - left_margin - right_margin
+
+    story = []
+    story.append(_header_block(report_title, printed_by))
+    story.append(Spacer(1, 0.15 * inch))
+
+    ncols = len(columns)
+    head_fs, body_fs = _font_sizes_for_cols(ncols)
+
+    if _should_split(ncols):
+        secciones = _particionar_columnas(columns, rows)
+    else:
+        secciones = [(list(columns), [list(r) for r in rows])]
+
+    wrap_style = ParagraphStyle(
+        name="WrapCell",
+        fontName="Helvetica",
+        fontSize=body_fs,
+        leading=body_fs + 3,
+        wordWrap="CJK",
+        splitLongWords=1,
+    )
+
+    def _escape_para(s: str) -> str:
+        s = str(s)
+        s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return s
+
+    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+        data = [list(cols_chunk)]
+
+        for r in rows_chunk:
+            fila = []
+            for v in r:
+                s = _texto(v)
+                s = _escape_para(s).replace("\n", "<br/>")
+                fila.append(Paragraph(s, wrap_style))
+            data.append(fila)
+
+        col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
+        table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
+
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), head_fs),
+
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 1), (-1, -1), body_fs),
+
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+
+            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#9CA3AF")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+
+        table.setStyle(TableStyle(style_cmds))
+        story.append(table)
+
+        if idx < len(secciones) - 1:
+            story.append(PageBreak())
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+    return buf.getvalue()
+    buf = BytesIO()
+    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
+
+    left_margin = 0.6 * inch
+    right_margin = 0.6 * inch
+    top_margin = 0.7 * inch
+    bottom_margin = 0.8 * inch
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=page_size,
+        leftMargin=left_margin,
+        rightMargin=right_margin,
+        topMargin=top_margin,
+        bottomMargin=bottom_margin,
+        title=report_title,
+        author=_nombre_empresa(),
+    )
+
+    avail_width = page_size[0] - left_margin - right_margin
+
+    story = []
+    story.append(_header_block(report_title, printed_by))
+    story.append(Spacer(1, 0.15 * inch))
+
+    ncols = len(columns)
+    head_fs, body_fs = _font_sizes_for_cols(ncols)
+
+    if _should_split(ncols):
+        secciones = _particionar_columnas(columns, rows)
+    else:
+        secciones = [(list(columns), [list(r) for r in rows])]
+
+    wrap_style = ParagraphStyle(
+        name="WrapCell",
+        fontName="Helvetica",
+        fontSize=body_fs,
+        leading=body_fs + 2,
+        wordWrap="CJK",
+    )
+
+    def _escape_para(s: str) -> str:
+        s = str(s)
+        s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return s
+
+    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+
+        data = [list(cols_chunk)]
+
+        for r in rows_chunk:
+            fila = []
+            for v in r:
+                s = _texto(v)
+                s = _escape_para(s).replace("\n", "<br/>")
+                fila.append(Paragraph(s, wrap_style))
+            data.append(fila)
+
+        col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
+
+        table = Table(
+            data,
+            repeatRows=1,
+            colWidths=col_widths,
+            hAlign="LEFT"
+        )
+
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), head_fs),
+
+            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTSIZE", (0, 1), (-1, -1), body_fs),
+
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+
+            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#9CA3AF")),
+
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+             [colors.whitesmoke, colors.lightgrey]),
+
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]
+
+        table.setStyle(TableStyle(style_cmds))
+
+        story.append(table)
+
+        if idx < len(secciones) - 1:
+            story.append(PageBreak())
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+
+    return buf.getvalue()
+    buf = BytesIO()
+    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
+
+    left_margin = 0.6 * inch
+    right_margin = 0.6 * inch
+    top_margin = 0.7 * inch
+    bottom_margin = 0.8 * inch
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=page_size,
+        leftMargin=left_margin,
+        rightMargin=right_margin,
+        topMargin=top_margin,
+        bottomMargin=bottom_margin,
+        title=report_title,
+        author=_nombre_empresa(),
+    )
+
+    avail_width = page_size[0] - left_margin - right_margin
+
+    story = []
+    story.append(_header_block(report_title, printed_by))
+    story.append(Spacer(1, 0.15 * inch))
+
+    ncols = len(columns)
+    head_fs, body_fs = _font_sizes_for_cols(ncols)
+
+    if _should_split(ncols):
+        secciones = _particionar_columnas(columns, rows)
+    else:
+        secciones = [(list(columns), [list(r) for r in rows])]
+
+    wrap_style = ParagraphStyle(
+        name="WrapCell",
+        fontName="Helvetica",
+        fontSize=body_fs,
+        leading=body_fs + 2,
+        wordWrap="CJK",
+    )
+
+    def _escape_para(s: str) -> str:
+        s = s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        return s
+
+    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+        dir_idx = None
+        for i, c in enumerate(cols_chunk):
+            if (c or "").strip().lower() == "direccion":
+                dir_idx = i
+                break
+
+        data = [list(cols_chunk)]
+        for r in rows_chunk:
+            fila = []
+            for i, v in enumerate(r):
+                if dir_idx is not None and i == dir_idx:
+                    s = _texto(v)
+                    s = _escape_para(s).replace("\n", "<br/>")
+                    fila.append(Paragraph(s, wrap_style))
+                else:
+                    fila.append(_texto(v))
+            data.append(fila)
+
+        col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
+        table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
+
+        style_cmds = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), head_fs),
+            ("FONTSIZE", (0, 1), (-1, -1), body_fs),
+            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#9CA3AF")),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]
+
+        if dir_idx is not None:
+            style_cmds.append(("VALIGN", (dir_idx, 1), (dir_idx, -1), "TOP"))
+
+        table.setStyle(TableStyle(style_cmds))
+        story.append(table)
+
+        if idx < len(secciones) - 1:
+            story.append(PageBreak())
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+    return buf.getvalue()
+    buf = BytesIO()
+    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
+
+    left_margin = 0.6 * inch
+    right_margin = 0.6 * inch
+    top_margin = 0.7 * inch
+    bottom_margin = 0.8 * inch
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=page_size,
+        leftMargin=left_margin,
+        rightMargin=right_margin,
+        topMargin=top_margin,
+        bottomMargin=bottom_margin,
+        title=report_title,
+        author=_nombre_empresa(),
+    )
+
+    avail_width = page_size[0] - left_margin - right_margin
+
+    story = []
+    story.append(_header_block(report_title, printed_by))
+    story.append(Spacer(1, 0.15 * inch))
+
+    ncols = len(columns)
+    head_fs, body_fs = _font_sizes_for_cols(ncols)
+
     if _should_split(ncols):
         secciones = _particionar_columnas(columns, rows)
     else:
