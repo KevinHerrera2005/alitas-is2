@@ -52,47 +52,46 @@ class UserLogin(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    try:
+
         pref, real_id = user_id.split("-", 1)
         real_id = int(real_id)
-    except Exception:
+
+        if pref == "G":
+            g = Gerente.query.get(real_id)
+            if not g:
+                return None
+            return UserLogin(
+                tipo="gerente",
+                db_id=g.ID_gerente,
+                nombre=g.Username,
+                id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
+            )
+
+        if pref == "E":
+            empleado = Empleado.query.get(real_id)
+            if not empleado:
+                return None
+            return UserLogin(
+                tipo="empleado",
+                db_id=empleado.ID_Empleado,
+                nombre=empleado.Nombre,
+                id_puesto=empleado.ID_Puesto,
+                id_sucursal=getattr(empleado, "ID_sucursal", None) or getattr(empleado, "id_sucursal", None),
+            )
+
+        if pref == "C":
+            usuario = ClienteModel.query.get(real_id)
+            if not usuario:
+                return None
+            return UserLogin(
+                tipo="cliente",
+                db_id=usuario.ID_Usuario_ClienteF,
+                nombre=usuario.nombre,
+                id_sucursal=getattr(usuario, "ID_sucursal", None) or getattr(usuario, "id_sucursal", None),
+            )
+
         return None
 
-    if pref == "G":
-        g = Gerente.query.get(real_id)
-        if not g:
-            return None
-        return UserLogin(
-            tipo="gerente",
-            db_id=g.ID_gerente,
-            nombre=g.Username,
-            id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
-        )
-
-    if pref == "E":
-        empleado = Empleado.query.get(real_id)
-        if not empleado:
-            return None
-        return UserLogin(
-            tipo="empleado",
-            db_id=empleado.ID_Empleado,
-            nombre=empleado.Nombre,
-            id_puesto=empleado.ID_Puesto,
-            id_sucursal=getattr(empleado, "ID_sucursal", None) or getattr(empleado, "id_sucursal", None),
-        )
-
-    if pref == "C":
-        usuario = ClienteModel.query.get(real_id)
-        if not usuario:
-            return None
-        return UserLogin(
-            tipo="cliente",
-            db_id=usuario.ID_Usuario_ClienteF,
-            nombre=usuario.nombre,
-            id_sucursal=getattr(usuario, "ID_sucursal", None) or getattr(usuario, "id_sucursal", None),
-        )
-
-    return None
 
 
 def _enviar_codigo_confirmacion(destino: str, codigo: str):
@@ -191,6 +190,7 @@ def login():
                 id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
             )
             login_user(user)
+            session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
             return redirect(url_for("panel_gerente.panel"))
 
@@ -204,6 +204,7 @@ def login():
                 id_sucursal=getattr(empleado, "ID_sucursal", None) or getattr(empleado, "id_sucursal", None),
             )
             login_user(user)
+            session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
 
             if empleado.ID_Puesto == 1:
@@ -228,6 +229,7 @@ def login():
                 id_sucursal=getattr(usuario, "ID_sucursal", None) or getattr(usuario, "id_sucursal", None),
             )
             login_user(user)
+            session["inicio_sesion_de_la_persona"] = user.nombre
             session["cliente_id"] = usuario.ID_Usuario_ClienteF
             return redirect(url_for("pagina_principal_bp.menu"))
 
@@ -240,6 +242,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop("inicio_sesion_de_la_persona", None)
     session.pop("cliente_id", None)
     session.pop("registro_pendiente", None)
     flash("Sesión cerrada correctamente.", "info")
@@ -385,6 +388,7 @@ def confirmar_correo():
             id_sucursal=getattr(nuevo_usuario, "ID_sucursal", None) or getattr(nuevo_usuario, "id_sucursal", None),
         )
         login_user(user)
+        session["inicio_sesion_de_la_persona"] = user.nombre
         session["cliente_id"] = nuevo_usuario.ID_Usuario_ClienteF
         session.pop("registro_pendiente", None)
 

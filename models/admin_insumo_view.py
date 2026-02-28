@@ -1,3 +1,6 @@
+from datetime import datetime
+import traceback
+
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.base import expose
 from flask_login import current_user
@@ -5,6 +8,7 @@ from flask import redirect, url_for, flash, request, jsonify
 from sqlalchemy.exc import IntegrityError
 from wtforms.validators import ValidationError
 
+from mensajes_logs import logger_
 from models.unidades_medida_model import Unidades_medida
 from models.categoria_insumo_model import CategoriaInsumo
 from models.insumo_model import Insumo
@@ -12,7 +16,13 @@ from models.insumo_model import Insumo
 
 class SecureModelView(ModelView):
     def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
+        try:
+            return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "admin_insumo", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "admin_insumo", fecha)
+            raise
 
     def inaccessible_callback(self, name, **kwargs):
         flash("No tienes permiso para acceder a esta sección.", "danger")
@@ -96,9 +106,13 @@ class InsumoAdmin(SecureModelView):
         },
     }
 
+    def _log_admin_insumo(self, level, message):
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log(level, message, "admin_insumo", fecha)
+
     def _sucursal_id_actual(self):
-        sid = getattr(current_user, "id_sucursal", None) or getattr(current_user, "ID_sucursal", None)
         try:
+            sid = getattr(current_user, "id_sucursal", None) or getattr(current_user, "ID_sucursal", None)
             return int(sid) if sid is not None else None
         except Exception:
             return None
@@ -206,6 +220,8 @@ class InsumoAdmin(SecureModelView):
 
             return jsonify({"unidad_tipo": tu, "categoria_tipo": tc})
         except Exception as e:
+            self._log_admin_insumo("error", f"Error en tipo_lookup de insumos: {str(e)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
             return jsonify({"error": str(e)}), 500
 
     def create_form(self, obj=None):
@@ -254,14 +270,28 @@ class InsumoAdmin(SecureModelView):
 
     def handle_view_exception(self, exc):
         if isinstance(exc, ValidationError):
+            self._log_admin_insumo("error", f"ValidationError en la vista de insumos: {str(exc)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
             flash(str(exc), "error")
             return True
 
         if isinstance(exc, ValueError):
+            self._log_admin_insumo("error", f"ValueError en la vista de insumos: {str(exc)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
             flash(str(exc), "error")
             return True
 
+        self._log_admin_insumo("error", f"Error en la vista de insumos: {str(exc)}")
+        self._log_admin_insumo("debug", traceback.format_exc())
         return super().handle_view_exception(exc)
+
+    def get_list(self, page, sort_column, sort_desc, search, filters, page_size=None):
+        try:
+            return super().get_list(page, sort_column, sort_desc, search, filters, page_size=page_size)
+        except Exception as e:
+            self._log_admin_insumo("error", f"Error al cargar listado de insumos: {str(e)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
+            raise
 
     def on_model_change(self, form, model, is_created):
         sid = self._sucursal_id_actual()
@@ -278,16 +308,51 @@ class InsumoAdmin(SecureModelView):
 
         return super().on_model_change(form, model, is_created)
 
+    def create_model(self, form):
+        try:
+            creado = super().create_model(form)
+            if creado:
+                nombre_insumo = getattr(getattr(form, "Nombre_insumo", None), "data", "") or ""
+                self._log_admin_insumo("info", f"Se creó el insumo: {nombre_insumo}")
+            return creado
+        except Exception as e:
+            self._log_admin_insumo("error", f"Error al crear insumo: {str(e)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
+            try:
+                self.session.rollback()
+            except Exception as rollback_error:
+                self._log_admin_insumo("error", f"Error en rollback al crear insumo: {str(rollback_error)}")
+            flash(f"Error al crear el insumo: {str(e)}", "error")
+            return False
+
+    def update_model(self, form, model):
+        try:
+            actualizado = super().update_model(form, model)
+            if actualizado:
+                self._log_admin_insumo("info", f"Se actualizó el insumo ID {getattr(model, 'ID_Insumo', 'N/D')}")
+            return actualizado
+        except Exception as e:
+            self._log_admin_insumo("error", f"Error al editar insumo ID {getattr(model, 'ID_Insumo', 'N/D')}: {str(e)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
+            try:
+                self.session.rollback()
+            except Exception as rollback_error:
+                self._log_admin_insumo("error", f"Error en rollback al editar insumo ID {getattr(model, 'ID_Insumo', 'N/D')}: {str(rollback_error)}")
+            flash(f"Error al actualizar el insumo: {str(e)}", "error")
+            return False
+
     def delete_model(self, model):
         try:
             self.session.delete(model)
             self.session.commit()
+            self._log_admin_insumo("info", f"Se eliminó el insumo ID {getattr(model, 'ID_Insumo', 'N/D')}")
             return True
-        except IntegrityError:
-            self.session.rollback()
-            flash("Este insumo ya cuenta con historial, no se puede eliminar", "error")
-            return False
         except Exception as e:
-            self.session.rollback()
+            self._log_admin_insumo("error", f"Error al eliminar el insumo ID {getattr(model, 'ID_Insumo', 'N/D')}: {str(e)}")
+            self._log_admin_insumo("debug", traceback.format_exc())
+            try:
+                self.session.rollback()
+            except Exception as rollback_error:
+                self._log_admin_insumo("error", f"Error en rollback al eliminar insumo ID {getattr(model, 'ID_Insumo', 'N/D')}: {str(rollback_error)}")
             flash(f"Error al eliminar el insumo: {str(e)}", "error")
             return False
