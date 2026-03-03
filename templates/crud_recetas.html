@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Recetas | Alitas El Comelón</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
@@ -20,6 +19,7 @@
             text-align: center;
             padding: 20px;
         }
+
         .btn-action {
             margin-top: 8px;
             display: inline-block;
@@ -29,9 +29,10 @@
             border-radius: 6px;
             text-decoration: none;
             font-size: 14px;
-            border:none;
-    }   
-        .btn-action1{
+            border: none;
+        }
+
+        .btn-action1 {
             margin-top: 8px;
             display: inline-block;
             background-color: #ff0000;
@@ -40,8 +41,8 @@
             border-radius: 6px;
             text-decoration: none;
             font-size: 14px;
-            outline:none;
-            border:none;
+            outline: none;
+            border: none;
         }
 
         nav {
@@ -59,9 +60,14 @@
             transition: 0.3s;
         }
 
-        nav a:hover { color: #ffcc00; }
+        nav a:hover {
+            color: #ffcc00;
+        }
 
-        .contenedor { width: 90%; margin: 30px auto; }
+        .contenedor {
+            width: 90%;
+            margin: 30px auto;
+        }
 
         .categoria h2 {
             color: #b80000;
@@ -79,7 +85,7 @@
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         .boton-estado {
@@ -90,8 +96,15 @@
             cursor: pointer;
         }
 
-        .activo { background-color: #28a745; color: white; }
-        .inactivo { background-color: #dc3545; color: white; }
+        .activo {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .inactivo {
+            background-color: #dc3545;
+            color: white;
+        }
 
         .boton-ver {
             margin-top: 8px;
@@ -117,8 +130,10 @@
 
 <header>
     <h1>👨‍🍳 Panel de recetas</h1>
-<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;"><a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='receta', formato='pdf') }}">Exportar PDF</a><a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='receta', formato='excel') }}">Exportar Excel</a></div>
-
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;">
+        <a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='receta', formato='pdf') }}">Exportar PDF</a>
+        <a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='receta', formato='excel') }}">Exportar Excel</a>
+    </div>
 </header>
 
 <nav>
@@ -129,12 +144,9 @@
 <div class="contenedor">
     {% for categoria, items in categorias.items() %}
     <div class="categoria" id="cat-{{ loop.index }}">
-
         <h2 class="d-flex justify-content-between align-items-center">
             <span>{{ categoria }}</span>
-
-            <button class="btn-action1" type="button"
-                    onclick='eliminarCategoria({{ categoria|tojson }})'>
+            <button class="btn-action1" type="button" onclick='eliminarCategoria({{ categoria|tojson }}, this)'>
                 Eliminar categoría
             </button>
         </h2>
@@ -142,13 +154,13 @@
         <div class="items">
             {% for item in items %}
             <div class="item">
-
                 <div class="nombre fw-bold">{{ item.nombre }}</div>
                 <div class="descripcion text-secondary">{{ item.descripcion }}</div>
                 <div class="precio text-danger fw-bold">{{ item.precio }}</div>
 
                 <button
                     class="boton-estado {{ 'activo' if item.activo == 1 else 'inactivo' }}"
+                    type="button"
                     onclick="toggleEstado({{ item.id }}, this)">
                     {{ 'Activo' if item.activo == 1 else 'Inactivo' }}
                 </button>
@@ -157,16 +169,19 @@
                     Ver ingredientes
                 </a>
 
-                <button class="btn-action" type="button"
-                        onclick="window.location.href='{{ url_for('editar_receta', id_receta=item.id) }}'">
+                <button
+                    class="btn-action"
+                    type="button"
+                    onclick="window.location.href='{{ url_for('editar_receta', id_receta=item.id) }}'">
                     Editar
                 </button>
 
-                <button class="btn-action1" type="button"
-                        onclick="confirmarEliminacion({{ item.id }})">
+                <button
+                    class="btn-action1"
+                    type="button"
+                    onclick="confirmarEliminacion({{ item.id }}, this)">
                     Eliminar
                 </button>
-
             </div>
             {% endfor %}
         </div>
@@ -180,7 +195,11 @@
 
 <script>
 function leerJsonSeguro(texto) {
-    try { return JSON.parse(texto); } catch (e) { return null; }
+    try {
+        return JSON.parse(texto);
+    } catch (e) {
+        return null;
+    }
 }
 
 function fetchJsonConError(url, opciones) {
@@ -195,14 +214,32 @@ function fetchJsonConError(url, opciones) {
     });
 }
 
+const solicitudesActivas = new Set();
+
+function bloquearBoton(boton) {
+    if (!boton) return;
+    boton.disabled = true;
+}
+
+function desbloquearBoton(boton) {
+    if (!boton) return;
+    boton.disabled = false;
+}
+
 function toggleEstado(idReceta, boton) {
-    fetch("{{ url_for('toggle_receta_estado') }}", {
+    const clave = "toggle_" + idReceta;
+
+    if (solicitudesActivas.has(clave)) return;
+
+    solicitudesActivas.add(clave);
+    bloquearBoton(boton);
+
+    fetchJsonConError("{{ url_for('toggle_receta_estado') }}", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_receta: idReceta })
     })
-    .then(res => res.json())
-    .then(data => {
+    .then((data) => {
         if (data.nuevo_estado === 1) {
             boton.classList.remove("inactivo");
             boton.classList.add("activo");
@@ -213,22 +250,44 @@ function toggleEstado(idReceta, boton) {
             boton.textContent = "Inactivo";
         }
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+        solicitudesActivas.delete(clave);
+        desbloquearBoton(boton);
+    });
 }
 
-function confirmarEliminacion(idReceta) {
+function confirmarEliminacion(idReceta, boton) {
     if (!confirm("¿Eliminar receta?")) return;
+
+    const clave = "eliminar_receta_" + idReceta;
+
+    if (solicitudesActivas.has(clave)) return;
+
+    solicitudesActivas.add(clave);
+    bloquearBoton(boton);
 
     const base = "{{ url_for('eliminar_receta', id_receta=0) }}";
     const url = base.replace("/0", "/" + idReceta);
 
     fetchJsonConError(url, { method: "DELETE" })
         .then(() => location.reload())
-        .catch((err) => alert(err.message || "No se pudo eliminar la receta."));
+        .catch((err) => {
+            alert(err.message || "No se pudo eliminar la receta.");
+            solicitudesActivas.delete(clave);
+            desbloquearBoton(boton);
+        });
 }
 
-function eliminarCategoria(nombreCategoria) {
+function eliminarCategoria(nombreCategoria, boton) {
     if (!confirm("¿Eliminar categoría?")) return;
+
+    const clave = "eliminar_categoria_" + nombreCategoria;
+
+    if (solicitudesActivas.has(clave)) return;
+
+    solicitudesActivas.add(clave);
+    bloquearBoton(boton);
 
     const base = "{{ url_for('eliminar_categoria', nombre_categoria='__CAT__') }}";
     const url = base.replace("__CAT__", encodeURIComponent(nombreCategoria));
@@ -240,6 +299,8 @@ function eliminarCategoria(nombreCategoria) {
         })
         .catch((err) => {
             alert(err.message || "No se pudo eliminar la categoría.");
+            solicitudesActivas.delete(clave);
+            desbloquearBoton(boton);
         });
 }
 </script>

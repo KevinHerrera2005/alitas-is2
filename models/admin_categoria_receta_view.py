@@ -1,9 +1,10 @@
-from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
-from flask import redirect, url_for, flash
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import func
+from mensajes_logs import logger_
+from datetime import datetime
 import traceback
+
+from flask_admin import expose
+from flask_admin.contrib.sqla import ModelView
+from sqlalchemy import func
 
 from models.categoria_recetas_model import Categoria_recetas
 
@@ -40,71 +41,76 @@ class CategoriaRecetaAdmin(ModelView):
             "id": "catreceta_descripcion",
         },
     }
+
+    # Este bloque solo pinta el panel en rojo.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
 
-    def is_accessible(self):
-        return (
-            current_user.is_authenticated
-            and getattr(current_user, "tipo", None) == "empleado"
-        )
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_receta_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_busqueda", fecha)
 
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
+    # Este botón sirve para abrir la pantalla de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        return super().create_view()
 
-    def handle_view_exception(self, exc):
-        traceback.print_exc()
-        flash(str(exc), "danger")
-        return False
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_receta_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_editar", fecha)
 
-    def on_model_change(self, form, model, is_created):
-        nombre = (form.Nombre_categoria_receta.data or "").strip()
-        if not nombre:
-            raise ValueError("El nombre de la categoría es obligatorio.")
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_receta_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_eliminar", fecha)
 
-        nombre_lower = nombre.lower()
-        session = self.session
 
-        q = session.query(Categoria_recetas).filter(
-            func.lower(Categoria_recetas.Nombre_categoria_receta) == nombre_lower
-        )
+    # Este bloque se ejecuta cuando guardas una categoría nueva.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("error", str(error), "categoria_receta_guardar_adentro", fecha)
+                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_guardar_adentro", fecha)
 
-        if getattr(model, "id_categoria_receta", None):
-            q = q.filter(
-                Categoria_recetas.id_categoria_receta != model.id_categoria_receta
-            )
-
-        existentes = [c for c in q.all() if c is not model]
-        if existentes:
-            raise ValueError("Esta categoría ya existe.")
-
-        model.Nombre_categoria_receta = nombre
-
-        if hasattr(form, "descripcion"):
-            model.descripcion = (form.descripcion.data or "").strip()
-
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("error", str(error), "categoria_receta_update", fecha)
+                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_update", fecha)
+    # Este bloque elimina el registro en la base de datos.
     def delete_model(self, model):
         try:
             self.session.delete(model)
             self.session.commit()
-            flash("La categoría de receta fue eliminada correctamente.", "success")
             return True
-        except IntegrityError:
-            self.session.rollback()
-            flash(
-                "No se puede eliminar esta categoría porque está relacionada con una o más recetas.",
-                "danger",
-            )
-            return False
-        except Exception:
-            self.session.rollback()
-            flash(
-                "No se pudo eliminar la categoría por un error inesperado.",
-                "danger",
-            )
-            return False
+        except Exception as error:
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("error", str(error), "categoria_receta_eliminar_de_bd", fecha)
+                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_eliminar_de_bd", fecha)
+
 def _normalizar_texto(raw):
     if raw is None:
         return None

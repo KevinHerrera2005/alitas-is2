@@ -1,13 +1,12 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
+import traceback
 
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
-from flask import redirect, url_for, flash
-from sqlalchemy import inspect as sa_inspect
 
 from models.insumo_precio_historico_model import InsumoPrecioHistorico
-from models.insumo_model import Insumo
-from models.empleado_model import Empleado
 
 
 class InsumoPrecioHistoricoAdmin(ModelView):
@@ -52,74 +51,39 @@ class InsumoPrecioHistoricoAdmin(ModelView):
             else "—"
         ),
     }
+
+    # Este bloque solo pinta el panel en rojo.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
 
-    def _es_empleado(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
-
-    def _empleado_id(self):
-        if not current_user.is_authenticated:
-            return None
-        for attr in ("ID_Empleado", "id_empleado", "db_id", "id"):
-            v = getattr(current_user, attr, None)
-            if v is not None:
-                try:
-                    return int(v)
-                except Exception:
-                    pass
-        return None
-
-    def _empleado_sucursal(self):
-        if not current_user.is_authenticated:
-            return None
-        for attr in ("ID_sucursal", "id_sucursal", "sucursal_id"):
-            v = getattr(current_user, attr, None)
-            if v is not None:
-                try:
-                    return int(v)
-                except Exception:
-                    pass
-        emp_id = self._empleado_id()
-        if emp_id is None:
-            return None
-        emp = Empleado.query.get(emp_id)
-        if not emp:
-            return None
-        v = getattr(emp, "ID_sucursal", None) or getattr(emp, "id_sucursal", None)
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
         try:
-            return int(v)
-        except Exception:
-            return None
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_busqueda", fecha)
 
-    def _col_sucursal(self, model_cls):
-        cols = {c.key for c in sa_inspect(model_cls).columns}
-        for n in ("ID_sucursal", "id_sucursal", "SucursalID", "sucursal_id"):
-            if n in cols:
-                return getattr(model_cls, n)
-        return None
+    # Este botón sirve para ver el detalle de un registro.
+    @expose("/details/")
+    def details_view(self):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_detalle", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_detalle", fecha)
 
-    def _aplicar_filtro_sucursal(self, q):
-        if not self._es_empleado():
-            return q
-        suc = self._empleado_sucursal()
-        if not suc:
-            return q.filter(False)
-        suc_col = self._col_sucursal(Insumo)
-        if suc_col is None:
-            return q.filter(False)
-        return q.join(Insumo, Insumo.ID_Insumo == InsumoPrecioHistorico.ID_Insumo).filter(suc_col == int(suc))
-
-    def get_query(self):
-        return self._aplicar_filtro_sucursal(super().get_query())
-
-    def get_count_query(self):
-        return self._aplicar_filtro_sucursal(super().get_count_query())
-
-    def is_accessible(self):
-        return self._es_empleado()
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
+    # Este botón sirve para exportar el historial.
+    @expose("/export/<export_type>/")
+    def export(self, export_type):
+        try:
+            return super().export(export_type)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_exportar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_exportar", fecha)
+        

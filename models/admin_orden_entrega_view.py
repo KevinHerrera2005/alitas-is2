@@ -1,5 +1,9 @@
 from datetime import datetime
+import traceback
 
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from flask import request
@@ -72,6 +76,8 @@ class OrdenEntregaAdmin(ModelView):
     form_widget_args = {
         "Motivo_Cancelacion": {"rows": 3},
     }
+
+    # Este bloque solo pinta el panel en negro.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#000000")
         return super().render(template, **kwargs)
@@ -290,6 +296,80 @@ class OrdenEntregaAdmin(ModelView):
             )
         )
 
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_busqueda", fecha)
+            return "Error al abrir el listado de órdenes de entrega.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir la pantalla de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_crear", fecha)
+            return "Error al abrir o procesar la creación de la orden.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_editar", fecha)
+            return "Error al abrir o procesar la edición de la orden.", 500
+
+    # Este botón sirve para ver el detalle de una orden.
+    @expose("/details/")
+    def details_view(self):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_detalle", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_detalle", fecha)
+            return "Error al abrir el detalle de la orden.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_eliminar", fecha)
+            return "Error al procesar la eliminación de la orden.", 500
+
+    # Este bloque valida y prepara los cambios al guardar.
     def on_model_change(self, form, model, is_created):
         if not hasattr(form, "estado"):
             return
@@ -342,11 +422,45 @@ class OrdenEntregaAdmin(ModelView):
 
         self._guardar_historial_si_aplica(model, anterior_estado, nuevo_estado, motivo)
 
-    def is_accessible(self):
-        return current_user.is_authenticated
+    # Este bloque se ejecuta cuando guardas una orden nueva.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_guardar_crear", fecha)
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_guardar_editar", fecha)
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        try:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_borrar_bd", fecha)
+            return False
 
     def is_visible(self):
         return True
+
+
 def validar_cambio_estado_orden(estado_actual, estado_nuevo):
     try:
         actual = int(estado_actual)

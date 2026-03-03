@@ -1,6 +1,10 @@
+from mensajes_logs import logger_
+from datetime import datetime
+import traceback
+
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
-from flask import redirect, url_for, flash
 from wtforms import SelectField
 
 from models import db
@@ -52,69 +56,108 @@ class UnidadesMedidaAdmin(ModelView):
             ]
         }
     }
+
+    # Este bloque solo pinta el panel en rojo.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
-    def is_accessible(self):
-        return (
-            current_user.is_authenticated
-            and getattr(current_user, "tipo", None) == "empleado"
-        )
 
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
-
-    def handle_view_exception(self, exc):
-        flash(str(exc), "danger")
-        return False
-
-    def on_model_change(self, form, model, is_created):
-        nombre = (form.Nombre.data or "").strip()
-        abrev = (form.abreviatura.data or "").strip()
-        tipo_raw = str(form.Tipo.data).strip() if form.Tipo.data is not None else ""
-
-        if not nombre:
-            raise ValueError("El nombre de la unidad es obligatorio.")
-
-        if not abrev:
-            raise ValueError("La abreviatura es obligatoria.")
-
-        if not tipo_raw:
-            raise ValueError("El tipo es obligatorio.")
-
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
         try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_busqueda", fecha)
+
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+            return super().create_view()
+
+
+    # Este botón sirve para abrir la pantalla de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_editar", fecha)
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_eliminar", fecha)
+
+    # Este bloque valida y prepara los datos cuando guardas al crear o editar.
+    def on_model_change(self, form, model, is_created):
+        try:
+            nombre = (form.Nombre.data or "").strip()
+            abrev = (form.abreviatura.data or "").strip()
+            tipo_raw = str(form.Tipo.data).strip() if form.Tipo.data is not None else ""
+
+            if not nombre:
+                raise ValueError("El nombre de la unidad es obligatorio.")
+
+            if not abrev:
+                raise ValueError("La abreviatura es obligatoria.")
+
+            if not tipo_raw:
+                raise ValueError("El tipo es obligatorio.")
+
             tipo_int = int(tipo_raw)
-        except ValueError:
-            raise ValueError("El tipo debe ser un número entero.")
+            abrev = abrev.upper()
 
-        abrev = abrev.upper()
-
-        with db.session.no_autoflush:
-            q_nombre = Unidades_medida.query.filter(
-                db.func.lower(Unidades_medida.Nombre) == nombre.lower()
-            )
-
-            if not is_created and getattr(model, "ID_Unidad", None) is not None:
-                q_nombre = q_nombre.filter(
-                    Unidades_medida.ID_Unidad != model.ID_Unidad
+            with db.session.no_autoflush:
+                q_nombre = Unidades_medida.query.filter(
+                    db.func.lower(Unidades_medida.Nombre) == nombre.lower()
                 )
 
-            if q_nombre.first():
-                raise ValueError("Ya existe una unidad con ese nombre.")
+                if not is_created and getattr(model, "ID_Unidad", None) is not None:
+                    q_nombre = q_nombre.filter(
+                        Unidades_medida.ID_Unidad != model.ID_Unidad
+                    )
 
-            q_abrev = Unidades_medida.query.filter(
-                db.func.lower(Unidades_medida.abreviatura) == abrev.lower()
-            )
+                if q_nombre.first():
+                    raise ValueError("Ya existe una unidad con ese nombre.")
 
-            if not is_created and getattr(model, "ID_Unidad", None) is not None:
-                q_abrev = q_abrev.filter(
-                    Unidades_medida.ID_Unidad != model.ID_Unidad
+                q_abrev = Unidades_medida.query.filter(
+                    db.func.lower(Unidades_medida.abreviatura) == abrev.lower()
                 )
 
-            if q_abrev.first():
-                raise ValueError("Ya existe una unidad con esa abreviatura.")
+                if not is_created and getattr(model, "ID_Unidad", None) is not None:
+                    q_abrev = q_abrev.filter(
+                        Unidades_medida.ID_Unidad != model.ID_Unidad
+                    )
 
-        model.Nombre = nombre
-        model.abreviatura = abrev
-        model.Tipo = tipo_int
+                if q_abrev.first():
+                    raise ValueError("Ya existe una unidad con esa abreviatura.")
+
+            model.Nombre = nombre
+            model.abreviatura = abrev
+            model.Tipo = tipo_int
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida_guardar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_guardar", fecha)
+    # Este bloque se ejecuta cuando guardas una unidad nueva.
+    def create_model(self, form):
+        return super().create_model(form)
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        return super().update_model(form, model)
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        self.session.delete(model)
+        self.session.commit()
+        return True

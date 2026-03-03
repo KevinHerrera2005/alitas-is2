@@ -1,11 +1,12 @@
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
-from flask import redirect, url_for, flash, request
+from flask_admin.base import expose
+from flask import flash, request, redirect
 from wtforms import SelectField
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 import traceback
+from datetime import datetime
 
+from mensajes_logs import logger_
 from models.categoria_insumo_model import CategoriaInsumo
 
 
@@ -24,7 +25,6 @@ def fmt_estado(view, context, model, name):
 
 
 class CategoriaAdmin(ModelView):
-    
     create_template = "admin/model/categoria_create.html"
     edit_template = "admin/model/categoria_edit.html"
 
@@ -71,21 +71,82 @@ class CategoriaAdmin(ModelView):
         "tipo": {"id": "categoria_tipo"},
         "estado": {"id": "categoria_estado"},
     }
+
+    def _silenciar_log_listado(self):
+        return request.args.get("_origen_log") in ("create", "edit", "delete")
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
 
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
-
     def handle_view_exception(self, exc):
-        traceback.print_exc()
         flash(str(exc), "danger")
         return False
+
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            if not self._silenciar_log_listado():
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("error", str(error), "categoria_insumo", fecha)
+                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo", fecha)
+        flash("No se pudo cargar el listado de categorías.", "danger")
+        return ""
+
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_boton_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_boton_crear", fecha)
+        flash("No se pudo abrir la pantalla de crear categoría.", "danger")
+        return redirect(self.get_url(".index_view", _origen_log="create"))
+
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_boton_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_boton_editar", fecha)
+        flash("No se pudo abrir o procesar la edición.", "danger")
+        return redirect(self.get_url(".index_view", _origen_log="edit"))
+
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            id_value = request.form.get("id") or request.args.get("id")
+            if not id_value:
+                raise ValueError("No se recibió el ID para eliminar.")
+
+            model = super().get_one(id_value)
+            if model is None:
+                raise ValueError("La categoría no existe.")
+
+            self.delete_model(model)
+            return redirect(self.get_url(".index_view", _origen_log="delete"))
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_boton_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_boton_eliminar", fecha)
+        flash("No se pudo eliminar la categoría.", "danger")
+        return redirect(self.get_url(".index_view", _origen_log="delete"))
+
+    def get_list(self, page, sort_column, sort_desc, search, filters, page_size=None):
+        try:
+            return super().get_list(page, sort_column, sort_desc, search, filters, page_size=page_size)
+        except Exception as error:
+            if not self._silenciar_log_listado():
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("error", str(error), "categoria_insumo_delete", fecha)
+                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_delete", fecha)
+        flash("No se pudo cargar el listado de categorías.", "danger")
+        return 0, []
 
     def create_form(self, obj=None):
         form = super().create_form(obj)
@@ -93,7 +154,7 @@ class CategoriaAdmin(ModelView):
         if "estado" in form._fields:
             form._fields.pop("estado")
 
-        if hasattr(form, "tipo") and (form.tipo.data is None):
+        if hasattr(form, "tipo") and form.tipo.data is None:
             form.tipo.data = 1
 
         return form
@@ -103,98 +164,86 @@ class CategoriaAdmin(ModelView):
 
         if request.method == "GET" and obj is not None:
             if hasattr(form, "tipo"):
-                try:
-                    form.tipo.data = int(getattr(obj, "tipo", 1) or 1)
-                except Exception:
-                    form.tipo.data = 1
+                tipo_val = validar_tipo_categoria(getattr(obj, "tipo", 1))
+                form.tipo.data = tipo_val if tipo_val is not None else 1
 
             if hasattr(form, "estado"):
-                try:
-                    form.estado.data = int(getattr(obj, "estado", 1) or 1)
-                except Exception:
-                    form.estado.data = 1
+                form.estado.data = validar_estado_categoria(getattr(obj, "estado", 1))
 
         return form
 
     def on_model_change(self, form, model, is_created):
-        try:
-            print("=== DEBUG on_model_change ===")
-            print("is_created =", is_created, "method =", getattr(request, "method", None))
-            print("pk =", getattr(model, "ID_Categoria", None))
-            print("tipo antes =", getattr(model, "tipo", None), "estado antes =", getattr(model, "estado", None))
+        nombre_raw = getattr(form, "Nombre_categoria").data or ""
+        nombre = " ".join(str(nombre_raw).strip().split())
 
-            nombre_raw = getattr(form, "Nombre_categoria").data or ""
-            nombre = " ".join(str(nombre_raw).strip().split())
+        if not nombre:
+            raise ValueError("El nombre de la categoría es obligatorio.")
 
-            if not nombre:
-                raise ValueError("El nombre de la categoría es obligatorio.")
+        session = self.session
+        nombre_lower = nombre.lower()
 
-            session = self.session
-            nombre_lower = nombre.lower()
+        with session.no_autoflush:
+            q = session.query(CategoriaInsumo.ID_Categoria).filter(
+                func.lower(func.ltrim(func.rtrim(CategoriaInsumo.Nombre_categoria))) == nombre_lower
+            )
 
-            with session.no_autoflush:
-                q = session.query(CategoriaInsumo.ID_Categoria).filter(
-                    func.lower(func.ltrim(func.rtrim(CategoriaInsumo.Nombre_categoria))) == nombre_lower
-                )
+            model_id = getattr(model, "ID_Categoria", None)
+            if model_id is not None:
+                q = q.filter(CategoriaInsumo.ID_Categoria != model_id)
 
-                model_id = getattr(model, "ID_Categoria", None)
-                if model_id is not None:
-                    q = q.filter(CategoriaInsumo.ID_Categoria != model_id)
+            if q.first() is not None:
+                raise ValueError("Esta categoría ya existe.")
 
-                if q.first() is not None:
-                    raise ValueError("Esta categoría ya existe.")
+        tipo_val = getattr(form, "tipo").data if hasattr(form, "tipo") else None
+        if tipo_val not in (1, 2, 3):
+            raise ValueError("Debes seleccionar el tipo de la categoría (Sólido/Líquido/Medición).")
 
-            tipo_val = getattr(form, "tipo").data if hasattr(form, "tipo") else None
-            if tipo_val not in (1, 2, 3):
-                raise ValueError("Debes seleccionar el tipo de la categoría (Sólido/Líquido/Medición).")
+        model.Nombre_categoria = nombre
+        model.descripcion = (getattr(form, "descripcion").data or "").strip() or None
+        model.tipo = int(tipo_val)
 
-            model.Nombre_categoria = nombre
-            model.descripcion = (getattr(form, "descripcion").data or "").strip() or None
-            model.tipo = int(tipo_val)
+        if is_created:
+            model.estado = 1
+        else:
+            est_val = getattr(form, "estado").data if hasattr(form, "estado") else 1
+            model.estado = 1 if int(est_val) == 1 else 0
 
-            if is_created:
-                model.estado = 1
-            else:
-                est_val = getattr(form, "estado").data if hasattr(form, "estado") else 1
-                model.estado = 1 if int(est_val) == 1 else 0
-
-            session.flush()
-
-            print("tipo después set =", getattr(model, "tipo", None), "estado después set =", getattr(model, "estado", None))
-            print("=== /DEBUG on_model_change ===")
-
-        except Exception as e:
-            print("=== ERROR en on_model_change ===")
-            traceback.print_exc()
-            print("=== /ERROR ===")
-            raise
+        session.flush()
 
     def after_model_change(self, form, model, is_created):
+        self.session.refresh(model)
+
+    def create_model(self, form):
         try:
-            print("=== DEBUG after_model_change ===")
-            print("pk =", getattr(model, "ID_Categoria", None))
-            self.session.refresh(model)
-            print("tipo en DB (refresh) =", getattr(model, "tipo", None), "estado en DB (refresh) =", getattr(model, "estado", None))
-            print("=== /DEBUG after_model_change ===")
-        except Exception:
-            print("=== ERROR en after_model_change ===")
-            traceback.print_exc()
-            print("=== /ERROR ===")
+            model = self.build_new_instance()
+            form.populate_obj(model)
+            self.session.add(model)
+            self._on_model_change(form, model, True)
+            self.session.commit()
+            self.after_model_change(form, model, True)
+            return model
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_guardar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_guardar", fecha)
+        self.session.rollback()
+        flash("No se pudo crear la categoría.", "danger")
+        return False
 
     def update_model(self, form, model):
         try:
-            ok = super().update_model(form, model)
-            print("=== DEBUG update_model ===")
-            print("update_model ok =", ok, "pk =", getattr(model, "ID_Categoria", None))
-            self.session.refresh(model)
-            print("tipo final =", getattr(model, "tipo", None), "estado final =", getattr(model, "estado", None))
-            print("=== /DEBUG update_model ===")
-            return ok
-        except Exception:
-            print("=== ERROR en update_model ===")
-            traceback.print_exc()
-            print("=== /ERROR ===")
-            raise
+            form.populate_obj(model)
+            self._on_model_change(form, model, False)
+            self.session.commit()
+            self.after_model_change(form, model, False)
+            return True
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_actualizar_cambios", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_actualizar_cambios", fecha)
+        self.session.rollback()
+        flash("No se pudo actualizar la categoría.", "danger")
+        return False
 
     def delete_model(self, model):
         try:
@@ -202,17 +251,14 @@ class CategoriaAdmin(ModelView):
             self.session.commit()
             flash("Categoría eliminada correctamente.", "success")
             return True
-        except IntegrityError:
-            self.session.rollback()
-            flash(
-                "No se puede eliminar la categoría porque está siendo utilizada por uno o más insumos.",
-                "danger",
-            )
-            return False
-        except Exception:
-            self.session.rollback()
-            flash("No se pudo eliminar la categoría por un error", "danger")
-            return False
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_eliminar", fecha)
+        self.session.rollback()
+        flash("No se pudo eliminar la categoría.", "danger")
+        return False
+
 
 def _normalizar_texto(raw):
     if raw is None:
@@ -242,6 +288,7 @@ def validar_descripcion_categoria(raw, min_len=0, max_len=200, permitir_none=Tru
         return None
     return out
 
+
 def validar_tipo_categoria(raw):
     if raw is None:
         return None
@@ -264,9 +311,19 @@ def validar_tipo_categoria(raw):
 
 
 def validar_estado_categoria(raw, default=1):
-    try:
-        out = int(raw)
-    except Exception:
+    if raw is None:
         return int(default)
-    return 1 if out == 1 else 0
 
+    if isinstance(raw, float):
+        if not raw.is_integer():
+            return int(default)
+        raw = int(raw)
+
+    s = str(raw).strip()
+    if s == "":
+        return int(default)
+    if not s.isdigit():
+        return int(default)
+
+    out = int(s)
+    return 1 if out == 1 else 0
