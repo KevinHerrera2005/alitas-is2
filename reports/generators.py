@@ -103,42 +103,75 @@ def _necesita_landscape(cols: int) -> bool:
     return cols > max_cols_portrait
 
 
+def _split_threshold() -> int:
+    try:
+        return int(current_app.config.get("REPORTS_SPLIT_THRESHOLD", 18))
+    except Exception:
+        return 18
+
+
+def _max_cols_per_table() -> int:
+    try:
+        return int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 18))
+    except Exception:
+        return 18
+
+
+def _anchor_cols_count() -> int:
+    try:
+        return int(current_app.config.get("REPORTS_SPLIT_ANCHOR_COLS", 1))
+    except Exception:
+        return 1
+
+
 def _should_split(columns_count: int) -> bool:
-    try:
-        max_cols = int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 12))
-    except Exception:
-        max_cols = 12
-    return columns_count > max_cols
+    return columns_count > _split_threshold()
 
 
-def _particionar_columnas(columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> List[Tuple[List[str], List[List[Any]]]]:
-    try:
-        max_cols = int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 12))
-    except Exception:
-        max_cols = 12
-
+def _particionar_columnas_con_anclas(
+    columns: Sequence[str],
+    rows: Sequence[Sequence[Any]],
+) -> List[Tuple[List[str], List[List[Any]]]]:
     cols = list(columns)
+    if not cols:
+        return [([], [])]
+
+    max_cols = _max_cols_per_table()
+    anclas = max(0, min(_anchor_cols_count(), len(cols)))
+    if anclas >= len(cols):
+        return [(cols, [list(r) for r in rows])]
+
+    ancla_cols = cols[:anclas]
+    resto_cols = cols[anclas:]
+
+    chunk_size = max(1, max_cols - anclas)
+
     out = []
     i = 0
-    while i < len(cols):
-        chunk_cols = cols[i : i + max_cols]
+    while i < len(resto_cols):
+        chunk_cols = ancla_cols + resto_cols[i : i + chunk_size]
         chunk_rows = []
         for r in rows:
             rr = list(r)
-            chunk_rows.append(rr[i : i + max_cols])
+            ancla_vals = rr[:anclas]
+            resto_vals = rr[anclas:]
+            chunk_rows.append(ancla_vals + resto_vals[i : i + chunk_size])
         out.append((chunk_cols, chunk_rows))
-        i += max_cols
+        i += chunk_size
+
     return out
 
 
 def _font_sizes_for_cols(ncols: int) -> Tuple[float, float]:
-    if ncols >= 16:
+    if ncols >= 20:
         return 7.0, 6.5
-    if ncols >= 12:
+    if ncols >= 16:
         return 7.5, 7.0
-    if ncols >= 9:
+    if ncols >= 12:
         return 8.0, 7.5
-    return 9.0, 8.0
+    if ncols >= 9:
+        return 8.5, 8.0
+    return 9.0, 8.5
 
 
 def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> List[float]:
@@ -155,11 +188,11 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
                 m = max(m, len(_texto(r[i])))
         maxlens.append(m)
 
-    weights = [max(5, min(42, x)) for x in maxlens]
+    weights = [max(5, min(50, x)) for x in maxlens]
     total = sum(weights) if weights else 1
 
-    min_w = 0.55 * inch if n >= 10 else 0.65 * inch
-    max_w = 1.7 * inch if n >= 10 else 2.4 * inch
+    min_w = 0.62 * inch if n >= 12 else 0.72 * inch
+    max_w = 2.2 * inch if n >= 12 else 2.8 * inch
 
     widths = []
     for w in weights:
@@ -196,10 +229,10 @@ def _header_block(report_title: str, printed_by: str) -> Table:
 
     title = _normalizar_etiqueta(report_title)
     text_block = [
-        Paragraph(title, title_style),
-        Paragraph(f"Empresa: {_nombre_empresa()}", meta_style),
-        Paragraph(f"Impreso por: {printed_by}", meta_style),
-        Paragraph(f"Fecha/Hora: {_ahora_str()}", meta_style),
+        Paragraph(_escape_para(title), title_style),
+        Paragraph(_escape_para(f"Empresa: {_nombre_empresa()}"), meta_style),
+        Paragraph(_escape_para(f"Impreso por: {printed_by}"), meta_style),
+        Paragraph(_escape_para(f"Fecha/Hora: {_ahora_str()}"), meta_style),
     ]
 
     logo_path = _ruta_logo()
@@ -261,7 +294,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
     story.append(Spacer(1, 0.15 * inch))
 
     if _should_split(len(columns)):
-        secciones = _particionar_columnas(columns, rows)
+        secciones = _particionar_columnas_con_anclas(columns, rows)
     else:
         secciones = [(list(columns), [list(r) for r in rows])]
 
@@ -275,8 +308,8 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             fontSize=head_fs,
             leading=head_fs + 2,
             alignment=1,
-            wordWrap="CJK",
-            splitLongWords=1,
+            wordWrap="LTR",
+            splitLongWords=0,
         )
 
         wrap_cell = ParagraphStyle(
@@ -284,7 +317,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             fontName="Helvetica",
             fontSize=body_fs,
             leading=body_fs + 2,
-            wordWrap="CJK",
+            wordWrap="LTR",
             splitLongWords=1,
         )
 
@@ -299,7 +332,6 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             data.append(fila)
 
         col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
-
         table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
 
         style_cmds = [
