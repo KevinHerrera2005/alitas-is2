@@ -1,0 +1,26 @@
+2026-03-04 16:54:02 | ERROR | Kevin | Expected an expression, got 'end of print statement'
+2026-03-04 16:54:02 | ERROR | Kevin | Traceback (most recent call last):
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\proyecto\models\panel_contador.py", line 18, in panel
+    return render_template("panel_contador.html")
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\flask\templating.py", line 149, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\proyecto\templates\panel_contador.html", line 78, in template
+    <a href="{{  }}">&gt; Facturas</a>
+    ^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: Expected an expression, got 'end of print statement'
+
