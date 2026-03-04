@@ -1,5 +1,8 @@
-from datetime import date
+from datetime import date, datetime
 import re
+import traceback
+
+from mensajes_logs import logger_
 
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
@@ -58,43 +61,6 @@ class CAIAdmin(ModelView):
     CAI_RAW_LEN = 32
     CAI_REGEX = re.compile(r"^[A-Z0-9]{6}(?:-[A-Z0-9]{6}){4}-[A-Z0-9]{2}$")
 
-    def _quitar_flash_default_admin(self):
-        flashes = session.get("_flashes", [])
-        if not flashes:
-            return
-        filtrados = []
-        for cat, msg in flashes:
-            if isinstance(msg, str) and msg.strip().lower().startswith("record was successfully"):
-                continue
-            filtrados.append((cat, msg))
-        session["_flashes"] = filtrados
-
-    @expose("/new/", methods=("GET", "POST"))
-    def create_view(self):
-        resp = super().create_view()
-        if request.method == "POST":
-            self._quitar_flash_default_admin()
-        return resp
-
-    @expose("/edit/", methods=("GET", "POST"))
-    def edit_view(self):
-        resp = super().edit_view()
-        if request.method == "POST":
-            self._quitar_flash_default_admin()
-        return resp
-
-    def _format_sucursal(self, model):
-        suc = getattr(model, "sucursal", None)
-        if suc:
-            return suc.Descripcion
-        suc = Sucursal.query.get(model.ID_sucursal) if model.ID_sucursal else None
-        return suc.Descripcion if suc else ""
-
-    column_formatters = {
-        "estado": lambda v, c, m, p: "Activo" if m.estado == 1 else "Inactivo",
-        "sucursal_col": lambda v, c, m, p: v._format_sucursal(m),
-    }
-
     form_overrides = {
         "Rango_Inicial": IntegerField,
         "Rango_Final": IntegerField,
@@ -122,6 +88,21 @@ class CAIAdmin(ModelView):
         "num_cai": {"id": "num_cai", "maxlength": str(CAI_TOTAL_LEN), "autocomplete": "off"},
     }
 
+    def render(self, template, **kwargs):
+        kwargs.setdefault("panel_color", "#0d47a1")
+        return super().render(template, **kwargs)
+
+    def _quitar_flash_default_admin(self):
+        flashes = session.get("_flashes", [])
+        if not flashes:
+            return
+        filtrados = []
+        for cat, msg in flashes:
+            if isinstance(msg, str) and msg.strip().lower().startswith("record was successfully"):
+                continue
+            filtrados.append((cat, msg))
+        session["_flashes"] = filtrados
+
     def _cargar_choices(self, form):
         form.ID_sucursal.choices = [(str(s.ID_sucursal), s.Descripcion) for s in Sucursal.query.all()]
         form.estado.choices = [("1", "Activo"), ("0", "Inactivo")]
@@ -131,9 +112,6 @@ class CAIAdmin(ModelView):
         self._cargar_choices(form)
         form.estado.data = "1"
         return form
-    def render(self, template, **kwargs):
-        kwargs.setdefault("panel_color", "#0d47a1")
-        return super().render(template, **kwargs)
 
     def edit_form(self, obj=None):
         form = super().edit_form(obj)
@@ -262,3 +240,106 @@ class CAIAdmin(ModelView):
                 flash("Este CAI quedó inactivo automáticamente.", "danger")
         else:
             flash("CAI guardado correctamente.", "success")
+
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_busqueda", fecha)
+            return "Error al abrir el listado de CAI.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir y procesar la vista de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            resp = super().create_view()
+            if request.method == "POST":
+                self._quitar_flash_default_admin()
+            return resp
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_crear", fecha)
+            return "Error al abrir o procesar la creación del CAI.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            resp = super().edit_view()
+            if request.method == "POST":
+                self._quitar_flash_default_admin()
+            return resp
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_editar", fecha)
+            return "Error al abrir o procesar la edición del CAI.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_eliminar", fecha)
+            return "Error al procesar la eliminación del CAI.", 500
+
+    # Este bloque se ejecuta cuando guardas un CAI nuevo.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_guardar_crear", fecha)
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_guardar_editar", fecha)
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        try:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "cai_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "cai_borrar_bd", fecha)
+            return False

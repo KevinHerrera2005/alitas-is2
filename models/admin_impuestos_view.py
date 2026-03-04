@@ -1,11 +1,15 @@
+from datetime import datetime
+import traceback
+
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.actions import action
-from flask_login import current_user
-from flask import redirect, url_for, flash, request
+from flask import flash, request
 from wtforms import SelectField, SelectMultipleField
 from wtforms.validators import ValidationError
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError
 
 from models import db
 from models.impuestos_model import Impuesto, ImpuestoCategoria
@@ -14,25 +18,8 @@ from models.insumo_model import Insumo
 
 
 class ImpuestoAdmin(ModelView):
-    def render(self, template, **kwargs):
-        kwargs.setdefault("panel_color", "#0d47a1")
-        return super().render(template, **kwargs)
     create_template = "admin/model/impuesto_create.html"
     edit_template = "admin/model/impuesto_edit.html"
-
-    def is_accessible(self):
-        return (
-            current_user.is_authenticated
-            and getattr(current_user, "tipo", None) == "empleado"
-            and getattr(current_user, "id_puesto", None) == 10
-        )
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
-
-    def is_visible(self):
-        return self.is_accessible()
 
     column_list = (
         "Nombre_Impuesto",
@@ -93,6 +80,13 @@ class ImpuestoAdmin(ModelView):
             coerce=int,
         )
     }
+
+    def render(self, template, **kwargs):
+        kwargs.setdefault("panel_color", "#0d47a1")
+        return super().render(template, **kwargs)
+
+    def is_visible(self):
+        return True
 
     def _build_categoria_choices(self):
         categorias = CategoriaInsumo.query.order_by(
@@ -178,9 +172,6 @@ class ImpuestoAdmin(ModelView):
         model.ID_Categoria = int(form.categorias_ids.data[0])
 
     def _sincronizar_categorias(self, form, model):
-        """
-        Activa / desactiva filas en Impuesto_Categoria según lo elegido.
-        """
         self.session.flush()
 
         seleccionadas = set(form.categorias_ids.data or [])
@@ -209,17 +200,8 @@ class ImpuestoAdmin(ModelView):
 
         self.session.flush()
 
-    def _recalcular_precios_insumos(self, model: Impuesto):
-        """
-        Recalcula el precio de todos los insumos cuyas categorías
-        están asociadas a este impuesto (ImpuestoCategoria.Activo = 1).
-
-        precio_lempiras = precio_base * (1 + tasa/100)
-        """
-        try:
-            tasa = float(model.tasa or 0)
-        except (TypeError, ValueError):
-            tasa = 0.0
+    def _recalcular_precios_insumos(self, model):
+        tasa = float(model.tasa or 0)
 
         if tasa <= 0:
             return
@@ -260,6 +242,93 @@ class ImpuestoAdmin(ModelView):
         self._sincronizar_categorias(form, model)
         self._recalcular_precios_insumos(model)
 
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_busqueda", fecha)
+            return "Error al abrir el listado de impuestos.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir la pantalla de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_crear", fecha)
+            return "Error al abrir o procesar la creación del impuesto.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_editar", fecha)
+            return "Error al abrir o procesar la edición del impuesto.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_eliminar", fecha)
+            return "Error al procesar la eliminación del impuesto.", 500
+
+    # Este bloque se ejecuta cuando guardas un impuesto nuevo.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_guardar_crear", fecha)
+            flash("No se pudo guardar el impuesto.", "danger")
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_guardar_editar", fecha)
+            flash("No se pudo guardar la edición del impuesto.", "danger")
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
     def delete_model(self, model):
         try:
             self.session.query(ImpuestoCategoria).filter_by(
@@ -270,18 +339,15 @@ class ImpuestoAdmin(ModelView):
             self.session.commit()
             flash("Impuesto eliminado correctamente.", "success")
             return True
-        except IntegrityError:
+        except Exception as error:
             self.session.rollback()
-            flash(
-                "No se puede eliminar el impuesto por restricciones de la base de datos.",
-                "danger",
-            )
-            return False
-        except Exception:
-            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_borrar_bd", fecha)
             flash("No se pudo eliminar el impuesto.", "danger")
             return False
 
+    # Este botón sirve para activar los impuestos seleccionados.
     @action("activar", "Activar seleccionados", "¿Activar los impuestos seleccionados?")
     def action_activar(self, ids):
         try:
@@ -290,10 +356,14 @@ class ImpuestoAdmin(ModelView):
             ).update({"activo": 1}, synchronize_session=False)
             self.session.commit()
             flash("Impuestos activados.", "success")
-        except Exception:
+        except Exception as error:
             self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_activar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_activar", fecha)
             flash("No se pudo activar.", "danger")
 
+    # Este botón sirve para inactivar los impuestos seleccionados.
     @action(
         "inactivar",
         "Inactivar seleccionados",
@@ -306,6 +376,9 @@ class ImpuestoAdmin(ModelView):
             ).update({"activo": 0}, synchronize_session=False)
             self.session.commit()
             flash("Impuestos inactivados.", "success")
-        except Exception:
+        except Exception as error:
             self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_inactivar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_inactivar", fecha)
             flash("No se pudo inactivar.", "danger")

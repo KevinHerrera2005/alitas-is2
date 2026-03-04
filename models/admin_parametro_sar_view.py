@@ -1,11 +1,17 @@
+from datetime import datetime
+import re
+import traceback
+
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from wtforms import StringField
 from wtforms.validators import DataRequired, Length
 
-from models import db
 from models.parametro_sar_model import ParametroSAR
 
-import re
+
 class ParametroSARAdmin(ModelView):
     create_template = "admin/model/parametro_sar_create.html"
     edit_template = "admin/model/parametro_sar_edit.html"
@@ -43,6 +49,72 @@ class ParametroSARAdmin(ModelView):
         },
     }
 
+    def render(self, template, **kwargs):
+        kwargs.setdefault("panel_color", "#0d47a1")
+        return super().render(template, **kwargs)
+
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_busqueda", fecha)
+            return "Error al abrir el listado de parámetros SAR.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir y procesar la vista de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_crear", fecha)
+            return "Error al abrir o procesar la creación del parámetro SAR.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_editar", fecha)
+            return "Error al abrir o procesar la edición del parámetro SAR.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_eliminar", fecha)
+            return "Error al procesar la eliminación del parámetro SAR.", 500
+
     def on_model_change(self, form, model, is_created):
         nombre = (form.Parametro.data or "").strip()
         valor = (form.Valor.data or "").strip()
@@ -54,9 +126,42 @@ class ParametroSARAdmin(ModelView):
 
         model.Parametro = nombre
         model.Valor = valor
-    def render(self, template, **kwargs):
-        kwargs.setdefault("panel_color", "#0d47a1")
-        return super().render(template, **kwargs)
+
+    # Este bloque se ejecuta cuando guardas un parámetro nuevo.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_guardar_crear", fecha)
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_guardar_editar", fecha)
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        try:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "parametro_sar_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "parametro_sar_borrar_bd", fecha)
+            return False
+
 
 def _normalizar_texto(raw):
     if raw is None:

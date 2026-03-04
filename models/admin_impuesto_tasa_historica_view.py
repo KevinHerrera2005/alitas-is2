@@ -1,7 +1,10 @@
+from datetime import datetime, timedelta
+import traceback
+
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
-from flask import redirect, url_for, flash
-from datetime import timedelta  
 
 
 class ImpuestoTasaHistoricaAdmin(ModelView):
@@ -43,16 +46,21 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
             else "—"
         ),
     }
-    
-    def render(self, template, **kwargs):
-        kwargs.setdefault("panel_color", "#0d47a1")
-        return super().render(template, **kwargs)
+
     create_template = "admin/model/impuesto_create.html"
     edit_template = "admin/model/impuesto_edit.html"
 
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
+    def render(self, template, **kwargs):
+        kwargs.setdefault("panel_color", "#0d47a1")
+        return super().render(template, **kwargs)
 
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
+    # Este botón sirve para visualizar el listado general.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "impuesto_tasa_historica_visualizar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_tasa_historica_visualizar", fecha)
+            return "Error al visualizar el historial de tasas de impuestos.", 500
