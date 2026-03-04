@@ -84,7 +84,7 @@ def _separar_camel(s: str) -> str:
     return "".join(out)
 
 
-def _normalizar_frase(s: Any) -> str:
+def _normalizar_etiqueta_base(s: Any) -> str:
     txt = _texto(s).strip()
     if not txt:
         return ""
@@ -95,45 +95,24 @@ def _normalizar_frase(s: Any) -> str:
     return txt
 
 
-def _quitar_id_en_nombre_columna(label: str) -> str:
+def _quitar_prefijo_id(label: str) -> str:
     t = (label or "").strip()
     u = t.upper()
-
     if u.startswith("ID "):
-        t = t[3:].strip()
-        u = t.upper()
-
-    if u.endswith(" ID"):
-        t = t[:-3].strip()
-        u = t.upper()
-
+        return t[3:].strip()
+    if u.startswith("ID_"):
+        return t[3:].strip()
+    if u.startswith("ID"):
+        rest = t[2:].strip()
+        if rest:
+            return rest
     return t
 
 
-def _title_case_es(frase: str) -> str:
-    parts = [p for p in (frase or "").split(" ") if p]
-    out = []
-    for p in parts:
-        if len(p) == 1:
-            out.append(p.upper())
-        else:
-            out.append(p[:1].upper() + p[1:].lower())
-    return " ".join(out)
-
-
 def _label_columna(s: Any) -> str:
-    base = _normalizar_frase(s)
-    base = _quitar_id_en_nombre_columna(base)
-    return _title_case_es(base)
-
-
-def _titulo_reporte(s: Any) -> str:
-    base = _normalizar_frase(s)
-    base = base.strip()
-    if not base:
-        return ""
-    base = base.lower()
-    return base[:1].upper() + base[1:]
+    base = _normalizar_etiqueta_base(s)
+    base = _quitar_prefijo_id(base)
+    return base.upper()
 
 
 def _necesita_landscape(cols: int) -> bool:
@@ -232,8 +211,8 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
     weights = [max(6, min(60, x)) for x in maxlens]
     total = sum(weights) if weights else 1
 
-    min_w = 0.78 * inch if n >= 10 else 0.9 * inch
-    max_w = 2.4 * inch if n >= 10 else 3.0 * inch
+    min_w = 0.85 * inch if n >= 10 else 0.95 * inch
+    max_w = 2.6 * inch if n >= 10 else 3.2 * inch
 
     widths = []
     for w in weights:
@@ -249,16 +228,15 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
     return widths
 
 
-def _header_block(report_title: str, printed_by: str, avail_width: float) -> Table:
+def _header_block(report_title: str, printed_by: str) -> Table:
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
-        "TitleBar",
-        parent=styles["Normal"],
+        "TitleCustom",
+        parent=styles["Heading1"],
         fontName="Helvetica-Bold",
-        fontSize=14,
-        textColor=colors.white,
-        leading=16,
+        fontSize=16,
+        spaceAfter=6,
     )
     meta_style = ParagraphStyle(
         "MetaCustom",
@@ -269,26 +247,8 @@ def _header_block(report_title: str, printed_by: str, avail_width: float) -> Tab
         leading=11,
     )
 
-    titulo = _titulo_reporte(report_title)
-    titulo = _escape_para(titulo)
-
-    title_bar = Table(
-        [[Paragraph(titulo, title_style)]],
-        colWidths=[avail_width],
-    )
-    title_bar.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#111827")),
-                ("LEFTPADDING", (0, 0), (-1, -1), 10),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-                ("TOPPADDING", (0, 0), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ]
-        )
-    )
-
-    meta_block = [
+    text_block = [
+        Paragraph(_escape_para(report_title), title_style),
         Paragraph(_escape_para(f"Empresa: {_nombre_empresa()}"), meta_style),
         Paragraph(_escape_para(f"Impreso por: {printed_by}"), meta_style),
         Paragraph(_escape_para(f"Fecha/Hora: {_ahora_str()}"), meta_style),
@@ -298,52 +258,43 @@ def _header_block(report_title: str, printed_by: str, avail_width: float) -> Tab
     if logo_path:
         try:
             img = RLImage(logo_path)
-            target_w = 1.4 * inch
+            target_w = 1.6 * inch
             iw, ih = img.imageWidth, img.imageHeight
             if iw and ih:
                 scale = target_w / float(iw)
                 img.drawWidth = target_w
                 img.drawHeight = float(ih) * scale
-            meta_table = Table([[img, meta_block]], colWidths=[1.6 * inch, avail_width - (1.6 * inch)])
+            t = Table([[img, text_block]], colWidths=[1.8 * inch, None])
         except Exception:
-            meta_table = Table([[meta_block]], colWidths=[avail_width])
+            t = Table([[text_block]], colWidths=[None])
     else:
-        meta_table = Table([[meta_block]], colWidths=[avail_width])
+        t = Table([[text_block]], colWidths=[None])
 
-    meta_table.setStyle(
+    t.setStyle(
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ]
-        )
-    )
-
-    wrapper = Table([[title_bar], [meta_table]], colWidths=[avail_width])
-    wrapper.setStyle(
-        TableStyle(
-            [
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]
         )
     )
-    return wrapper
+    return t
 
 
 def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     buf = BytesIO()
 
-    page_size = landscape(letter) if _necesita_landscape(len(columns)) else letter
+    cols_fmt = [_label_columna(c) for c in columns]
+
+    page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
 
     left_margin = 0.6 * inch
     right_margin = 0.6 * inch
-    top_margin = 0.65 * inch
+    top_margin = 0.7 * inch
     bottom_margin = 0.8 * inch
 
     doc = SimpleDocTemplate(
@@ -353,17 +304,15 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         rightMargin=right_margin,
         topMargin=top_margin,
         bottomMargin=bottom_margin,
-        title=_titulo_reporte(report_title),
+        title=report_title,
         author=_nombre_empresa(),
     )
 
     avail_width = page_size[0] - left_margin - right_margin
 
-    cols_fmt = [_label_columna(c) for c in columns]
-
     story = []
-    story.append(_header_block(report_title, printed_by, avail_width))
-    story.append(Spacer(1, 0.18 * inch))
+    story.append(_header_block(report_title, printed_by))
+    story.append(Spacer(1, 0.15 * inch))
 
     if _should_split(len(cols_fmt)):
         secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
@@ -378,7 +327,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             name="WrapHeader",
             fontName="Helvetica-Bold",
             fontSize=head_fs,
-            leading=head_fs + 2,
+            leading=head_fs + 1,
             alignment=1,
             wordWrap="LTR",
             splitLongWords=0,
@@ -409,6 +358,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         style_cmds = [
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+
             ("ALIGN", (0, 0), (-1, 0), "CENTER"),
             ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
 
@@ -486,10 +436,9 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.row_dimensions[6].height = 10
 
     ws.merge_cells(f"A2:{last_col}2")
-    ws["A2"] = _titulo_reporte(report_title)
-    ws["A2"].font = Font(bold=True, name="Calibri", size=16, color="FFFFFF")
+    ws["A2"] = report_title
+    ws["A2"].font = Font(bold=True, name="Calibri", size=16)
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
-    ws["A2"].fill = PatternFill("solid", fgColor="111827")
 
     ws["A3"] = "Empresa:"
     ws["B3"] = _nombre_empresa()

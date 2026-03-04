@@ -83,12 +83,25 @@ def _normalizar_frase(s: Any) -> str:
     return txt
 
 
-def _titulo_reporte(s: Any) -> str:
-    base = _normalizar_frase(s).strip()
-    if not base:
+def _title_case_es(frase: str) -> str:
+    if not frase:
         return ""
-    base = base.lower()
-    return base[:1].upper() + base[1:]
+    minusculas = {"de", "del", "la", "las", "el", "los", "y", "o", "en", "por", "para", "a", "al"}
+    palabras = [p for p in frase.split(" ") if p]
+    out = []
+    for i, p in enumerate(palabras):
+        pl = p.lower()
+        if i != 0 and pl in minusculas:
+            out.append(pl)
+        else:
+            out.append(pl[:1].upper() + pl[1:])
+    return " ".join(out)
+
+
+def _titulo_humano(s: Any) -> str:
+    base = _normalizar_frase(s)
+    base = base.strip()
+    return _title_case_es(base)
 
 
 def _models_registry() -> Dict[str, Any]:
@@ -207,7 +220,7 @@ def exportar(reporte: str):
     if key in reportes_custom:
         titulo, fn = reportes_custom[key]
         cols, rows = fn()
-        titulo_final = f"Reporte: {_titulo_reporte(titulo)}"
+        titulo_final = f"REPORTE: {_titulo_humano(titulo)}"
     else:
         models = _models_registry()
         if not models:
@@ -228,7 +241,7 @@ def exportar(reporte: str):
         if not model_cls:
             abort(404, f"Modelo no encontrado: {modelo}")
 
-        titulo_final = f"Reporte: {_titulo_reporte(model_cls.__name__)}"
+        titulo_final = f"REPORTE: {_titulo_humano(model_cls.__name__)}"
         cols, rows = _columnas_y_filas(model_cls)
 
     usuario = _usuario_impresion()
