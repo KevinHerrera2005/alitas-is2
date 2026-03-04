@@ -59,6 +59,30 @@ def _texto_o_vacio(obj: Any) -> str:
         return ""
 
 
+def _separar_camel(s: str) -> str:
+    if not s:
+        return ""
+    out = []
+    prev = ""
+    for ch in s:
+        if prev and ch.isupper() and (prev.islower() or (prev.isupper() and len(out) > 0 and out[-1][-1].islower())):
+            out.append(" ")
+        out.append(ch)
+        prev = ch
+    return "".join(out)
+
+
+def _label(s: Any) -> str:
+    txt = str(s or "").strip()
+    if not txt:
+        return ""
+    txt = txt.replace("_", " ").replace("-", " ")
+    txt = " ".join(txt.split())
+    txt = _separar_camel(txt)
+    txt = " ".join(txt.split())
+    return txt.upper()
+
+
 def _models_registry() -> Dict[str, Any]:
     load_models()
 
@@ -109,12 +133,12 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
     getters = []
 
     for col in mapper.columns:
-        columnas.append(col.key)
+        columnas.append(_label(col.key))
         getters.append(lambda obj, k=col.key: _formatear_valor(getattr(obj, k, None)))
 
         rel_key = fk_to_rel.get(col.key)
         if rel_key:
-            columnas.append(rel_key)
+            columnas.append(_label(rel_key))
             getters.append(lambda obj, rk=rel_key: _texto_o_vacio(getattr(obj, rk, None)))
 
     records = model_cls.query.limit(limit).all()
@@ -124,7 +148,7 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
 
 def _reportes_personalizados() -> Dict[str, Tuple[str, Any]]:
     return {
-        "ordenes_estado": ("Órdenes por Estado", _reporte_ordenes_estado),
+        "ordenes_estado": ("ÓRDENES POR ESTADO", _reporte_ordenes_estado),
     }
 
 
@@ -136,13 +160,13 @@ def _estado_orden_humano(val: Any) -> str:
     except Exception:
         return str(val)
     if n == 0:
-        return "Pendiente"
+        return "PENDIENTE"
     if n == 1:
-        return "En camino"
+        return "EN CAMINO"
     if n == 2:
-        return "Entregada"
+        return "ENTREGADA"
     if n == 3:
-        return "Cancelada"
+        return "CANCELADA"
     return str(n)
 
 
@@ -151,11 +175,11 @@ def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
     Orden = models.get("OrdenEntrega") or models.get("Orden_Entrega") or models.get("OrdenEntregaModel")
 
     if not Orden:
-        return ["estado", "cantidad"], []
+        return ["ESTADO", "CANTIDAD"], []
 
     q = db.session.query(Orden.estado, db.func.count(1)).group_by(Orden.estado).all()
 
-    cols = ["estado", "cantidad"]
+    cols = ["ESTADO", "CANTIDAD"]
     rows: List[List[Any]] = []
     for estado, cantidad in q:
         rows.append([_estado_orden_humano(estado), int(cantidad) if cantidad is not None else 0])
@@ -175,6 +199,7 @@ def exportar(reporte: str):
     if key in reportes_custom:
         titulo, fn = reportes_custom[key]
         cols, rows = fn()
+        titulo_final = f"REPORTE: {titulo}"
     else:
         models = _models_registry()
         if not models:
@@ -195,19 +220,19 @@ def exportar(reporte: str):
         if not model_cls:
             abort(404, f"Modelo no encontrado: {modelo}")
 
-        titulo = f"Reporte: {model_cls.__name__}"
+        titulo_final = f"REPORTE: {_label(model_cls.__name__)}"
         cols, rows = _columnas_y_filas(model_cls)
 
     usuario = _usuario_impresion()
 
     if formato in ("excel", "xlsx"):
-        content = generar_excel(titulo, cols, rows, usuario)
+        content = generar_excel(titulo_final, cols, rows, usuario)
         resp = make_response(content)
         resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         resp.headers["Content-Disposition"] = f'attachment; filename="{key}.xlsx"'
         return resp
 
-    content = generar_pdf(titulo, cols, rows, usuario)
+    content = generar_pdf(titulo_final, cols, rows, usuario)
     resp = make_response(content)
     resp.headers["Content-Type"] = "application/pdf"
     resp.headers["Content-Disposition"] = f'attachment; filename="{key}.pdf"'
