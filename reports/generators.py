@@ -331,6 +331,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             alignment=1,
             wordWrap="LTR",
             splitLongWords=0,
+            textColor=colors.white,
         )
 
         wrap_cell = ParagraphStyle(
@@ -340,6 +341,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             leading=body_fs + 2,
             wordWrap="LTR",
             splitLongWords=1,
+            textColor=colors.black,
         )
 
         header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
@@ -370,8 +372,8 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
 
             ("LEFTPADDING", (0, 0), (-1, -1), 4),
             ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
         ]
 
         table.setStyle(TableStyle(style_cmds))
@@ -438,7 +440,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.merge_cells(f"A2:{last_col}2")
     ws["A2"] = report_title
     ws["A2"].font = Font(bold=True, name="Calibri", size=16)
-    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
 
     ws["A3"] = "Empresa:"
     ws["B3"] = _nombre_empresa()
@@ -460,6 +462,8 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
 
     thin = Side(style="thin", color="D1D5DB")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    ws.row_dimensions[start_row].height = 24
 
     for col_index, col_name in enumerate(cols_fmt, 1):
         cell = ws.cell(row=start_row, column=col_index, value=col_name)
