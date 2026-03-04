@@ -34,48 +34,121 @@ def _formatear_valor(val: Any) -> Any:
     return val
 
 
+def _to_str(v: Any) -> str:
+    if v is None:
+        return ""
+    try:
+        s = str(v).strip()
+        return s
+    except Exception:
+        return ""
+
+
+def _get_attr(obj: Any, name: str) -> Any:
+    try:
+        return getattr(obj, name, None)
+    except Exception:
+        return None
+
+
+def _is_sqla_instance(obj: Any) -> bool:
+    if obj is None:
+        return False
+    try:
+        inspect(obj.__class__)
+        return True
+    except Exception:
+        return False
+
+
+def _first_non_empty(values: List[Any]) -> str:
+    for v in values:
+        s = _to_str(v)
+        if s:
+            return s
+    return ""
+
+
+def _display_sqla(obj: Any) -> str:
+    if obj is None:
+        return ""
+
+    prefer = [
+        "numero_factura", "Numero_factura", "NUMERO_FACTURA",
+        "num_cai", "Num_cai", "NUM_CAI", "cai",
+        "factura", "Factura", "no_factura", "No_factura", "NoFactura",
+        "codigo", "Codigo",
+        "descripcion", "Descripcion", "detalle", "Detalle",
+        "nombre", "Nombre", "name", "Name", "titulo", "Titulo",
+        "direccion", "Direccion", "direccion1", "Direccion1", "direccion2", "Direccion2",
+        "telefono", "Telefono",
+    ]
+
+    out = _first_non_empty([_get_attr(obj, k) for k in prefer])
+    if out:
+        return out
+
+    try:
+        mapper = inspect(obj.__class__)
+        col_keys = [c.key for c in getattr(mapper, "columns", [])]
+    except Exception:
+        col_keys = []
+
+    if col_keys:
+        out = _first_non_empty([_get_attr(obj, k) for k in prefer if k in col_keys])
+        if out:
+            return out
+
+        candidates = []
+        for k in col_keys:
+            kl = (k or "").lower()
+            if kl in ("id",) or kl.startswith("id_") or kl.endswith("_id"):
+                continue
+            candidates.append(k)
+
+        out = _first_non_empty([_get_attr(obj, k) for k in candidates])
+        if out:
+            return out
+
+        out = _first_non_empty([_get_attr(obj, k) for k in col_keys])
+        if out:
+            return out
+
+    out = _first_non_empty(
+        [
+            _get_attr(obj, "Nombre"),
+            _get_attr(obj, "nombre"),
+            _get_attr(obj, "Descripcion"),
+            _get_attr(obj, "descripcion"),
+            _get_attr(obj, "codigo"),
+            _get_attr(obj, "Codigo"),
+        ]
+    )
+    if out:
+        return out
+
+    return ""
+
+
 def _texto_o_vacio(obj: Any) -> str:
     if obj is None:
         return ""
 
-    for attr in (
-        "Nombre", "nombre",
-        "Descripcion", "descripcion",
-        "Nombre_usuario", "username", "usuario", "email",
-        "Nombre_Impuesto", "Nombre_insumo", "Nombre_receta",
-        "Nombre_categoria", "Nombre_categoria_receta",
-        "Nombre_proveedor", "Nombre_empleado",
-        "Nombre_Puesto", "nombre_puesto",
-        "num_cai",
+    if isinstance(obj, (str, int, float, bool)):
+        return _to_str(obj)
 
-        "Numero_factura", "numero_factura", "NUMERO_FACTURA", "numeroFactura",
-        "Factura", "factura", "NoFactura", "no_factura",
+    if isinstance(obj, datetime):
+        return _formatear_valor(obj)
 
-        "Direccion", "direccion",
-        "Direccion_cliente", "direccion_cliente",
-        "direccion1", "Direccion1",
-        "direccion2", "Direccion2",
+    if _is_sqla_instance(obj):
+        s = _display_sqla(obj)
+        if s:
+            return s
 
-        "telefono", "Telefono",
-        "codigo", "Codigo",
-        "id", "Id",
-    ):
-        try:
-            v = getattr(obj, attr, None)
-            if v is None:
-                continue
-            if isinstance(v, (int, float, bool)):
-                return str(v)
-            s = str(v).strip()
-            if s:
-                return s
-        except Exception:
-            pass
-
-    try:
-        return str(obj)
-    except Exception:
+    s = _to_str(obj)
+    if s.startswith("<") and s.endswith(">"):
         return ""
+    return s
 
 
 def _valor_celda(val: Any) -> Any:
