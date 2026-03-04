@@ -72,7 +72,7 @@ def _separar_camel(s: str) -> str:
     return "".join(out)
 
 
-def _label(s: Any) -> str:
+def _normalizar_frase(s: Any) -> str:
     txt = str(s or "").strip()
     if not txt:
         return ""
@@ -80,7 +80,15 @@ def _label(s: Any) -> str:
     txt = " ".join(txt.split())
     txt = _separar_camel(txt)
     txt = " ".join(txt.split())
-    return txt.upper()
+    return txt
+
+
+def _titulo_reporte(s: Any) -> str:
+    base = _normalizar_frase(s).strip()
+    if not base:
+        return ""
+    base = base.lower()
+    return base[:1].upper() + base[1:]
 
 
 def _models_registry() -> Dict[str, Any]:
@@ -133,12 +141,12 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
     getters = []
 
     for col in mapper.columns:
-        columnas.append(_label(col.key))
+        columnas.append(col.key)
         getters.append(lambda obj, k=col.key: _formatear_valor(getattr(obj, k, None)))
 
         rel_key = fk_to_rel.get(col.key)
         if rel_key:
-            columnas.append(_label(rel_key))
+            columnas.append(rel_key)
             getters.append(lambda obj, rk=rel_key: _texto_o_vacio(getattr(obj, rk, None)))
 
     records = model_cls.query.limit(limit).all()
@@ -148,7 +156,7 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
 
 def _reportes_personalizados() -> Dict[str, Tuple[str, Any]]:
     return {
-        "ordenes_estado": ("ÓRDENES POR ESTADO", _reporte_ordenes_estado),
+        "ordenes_estado": ("Órdenes por estado", _reporte_ordenes_estado),
     }
 
 
@@ -160,13 +168,13 @@ def _estado_orden_humano(val: Any) -> str:
     except Exception:
         return str(val)
     if n == 0:
-        return "PENDIENTE"
+        return "Pendiente"
     if n == 1:
-        return "EN CAMINO"
+        return "En camino"
     if n == 2:
-        return "ENTREGADA"
+        return "Entregada"
     if n == 3:
-        return "CANCELADA"
+        return "Cancelada"
     return str(n)
 
 
@@ -175,11 +183,11 @@ def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
     Orden = models.get("OrdenEntrega") or models.get("Orden_Entrega") or models.get("OrdenEntregaModel")
 
     if not Orden:
-        return ["ESTADO", "CANTIDAD"], []
+        return ["estado", "cantidad"], []
 
     q = db.session.query(Orden.estado, db.func.count(1)).group_by(Orden.estado).all()
 
-    cols = ["ESTADO", "CANTIDAD"]
+    cols = ["estado", "cantidad"]
     rows: List[List[Any]] = []
     for estado, cantidad in q:
         rows.append([_estado_orden_humano(estado), int(cantidad) if cantidad is not None else 0])
@@ -199,7 +207,7 @@ def exportar(reporte: str):
     if key in reportes_custom:
         titulo, fn = reportes_custom[key]
         cols, rows = fn()
-        titulo_final = f"REPORTE: {titulo}"
+        titulo_final = f"Reporte: {_titulo_reporte(titulo)}"
     else:
         models = _models_registry()
         if not models:
@@ -220,7 +228,7 @@ def exportar(reporte: str):
         if not model_cls:
             abort(404, f"Modelo no encontrado: {modelo}")
 
-        titulo_final = f"REPORTE: {_label(model_cls.__name__)}"
+        titulo_final = f"Reporte: {_titulo_reporte(model_cls.__name__)}"
         cols, rows = _columnas_y_filas(model_cls)
 
     usuario = _usuario_impresion()

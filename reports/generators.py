@@ -84,7 +84,7 @@ def _separar_camel(s: str) -> str:
     return "".join(out)
 
 
-def _normalizar_etiqueta(s: Any) -> str:
+def _normalizar_frase(s: Any) -> str:
     txt = _texto(s).strip()
     if not txt:
         return ""
@@ -92,7 +92,48 @@ def _normalizar_etiqueta(s: Any) -> str:
     txt = " ".join(txt.split())
     txt = _separar_camel(txt)
     txt = " ".join(txt.split())
-    return txt.upper()
+    return txt
+
+
+def _quitar_id_en_nombre_columna(label: str) -> str:
+    t = (label or "").strip()
+    u = t.upper()
+
+    if u.startswith("ID "):
+        t = t[3:].strip()
+        u = t.upper()
+
+    if u.endswith(" ID"):
+        t = t[:-3].strip()
+        u = t.upper()
+
+    return t
+
+
+def _title_case_es(frase: str) -> str:
+    parts = [p for p in (frase or "").split(" ") if p]
+    out = []
+    for p in parts:
+        if len(p) == 1:
+            out.append(p.upper())
+        else:
+            out.append(p[:1].upper() + p[1:].lower())
+    return " ".join(out)
+
+
+def _label_columna(s: Any) -> str:
+    base = _normalizar_frase(s)
+    base = _quitar_id_en_nombre_columna(base)
+    return _title_case_es(base)
+
+
+def _titulo_reporte(s: Any) -> str:
+    base = _normalizar_frase(s)
+    base = base.strip()
+    if not base:
+        return ""
+    base = base.lower()
+    return base[:1].upper() + base[1:]
 
 
 def _necesita_landscape(cols: int) -> bool:
@@ -164,14 +205,14 @@ def _particionar_columnas_con_anclas(
 
 def _font_sizes_for_cols(ncols: int) -> Tuple[float, float]:
     if ncols >= 20:
-        return 7.0, 6.5
+        return 7.0, 6.6
     if ncols >= 16:
-        return 7.5, 7.0
+        return 7.4, 7.0
     if ncols >= 12:
-        return 8.0, 7.5
+        return 7.8, 7.3
     if ncols >= 9:
-        return 8.5, 8.0
-    return 9.0, 8.5
+        return 8.4, 7.8
+    return 9.0, 8.2
 
 
 def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> List[float]:
@@ -188,11 +229,11 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
                 m = max(m, len(_texto(r[i])))
         maxlens.append(m)
 
-    weights = [max(5, min(50, x)) for x in maxlens]
+    weights = [max(6, min(60, x)) for x in maxlens]
     total = sum(weights) if weights else 1
 
-    min_w = 0.62 * inch if n >= 12 else 0.72 * inch
-    max_w = 2.2 * inch if n >= 12 else 2.8 * inch
+    min_w = 0.78 * inch if n >= 10 else 0.9 * inch
+    max_w = 2.4 * inch if n >= 10 else 3.0 * inch
 
     widths = []
     for w in weights:
@@ -208,15 +249,16 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
     return widths
 
 
-def _header_block(report_title: str, printed_by: str) -> Table:
+def _header_block(report_title: str, printed_by: str, avail_width: float) -> Table:
     styles = getSampleStyleSheet()
 
     title_style = ParagraphStyle(
-        "TitleCustom",
-        parent=styles["Heading1"],
+        "TitleBar",
+        parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=16,
-        spaceAfter=6,
+        fontSize=14,
+        textColor=colors.white,
+        leading=16,
     )
     meta_style = ParagraphStyle(
         "MetaCustom",
@@ -227,9 +269,26 @@ def _header_block(report_title: str, printed_by: str) -> Table:
         leading=11,
     )
 
-    title = _normalizar_etiqueta(report_title)
-    text_block = [
-        Paragraph(_escape_para(title), title_style),
+    titulo = _titulo_reporte(report_title)
+    titulo = _escape_para(titulo)
+
+    title_bar = Table(
+        [[Paragraph(titulo, title_style)]],
+        colWidths=[avail_width],
+    )
+    title_bar.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#111827")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ]
+        )
+    )
+
+    meta_block = [
         Paragraph(_escape_para(f"Empresa: {_nombre_empresa()}"), meta_style),
         Paragraph(_escape_para(f"Impreso por: {printed_by}"), meta_style),
         Paragraph(_escape_para(f"Fecha/Hora: {_ahora_str()}"), meta_style),
@@ -239,31 +298,42 @@ def _header_block(report_title: str, printed_by: str) -> Table:
     if logo_path:
         try:
             img = RLImage(logo_path)
-            target_w = 1.6 * inch
+            target_w = 1.4 * inch
             iw, ih = img.imageWidth, img.imageHeight
             if iw and ih:
                 scale = target_w / float(iw)
                 img.drawWidth = target_w
                 img.drawHeight = float(ih) * scale
-            t = Table([[img, text_block]], colWidths=[1.8 * inch, None])
+            meta_table = Table([[img, meta_block]], colWidths=[1.6 * inch, avail_width - (1.6 * inch)])
         except Exception:
-            t = Table([[text_block]], colWidths=[None])
+            meta_table = Table([[meta_block]], colWidths=[avail_width])
     else:
-        t = Table([[text_block]], colWidths=[None])
+        meta_table = Table([[meta_block]], colWidths=[avail_width])
 
-    t.setStyle(
+    meta_table.setStyle(
         TableStyle(
             [
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ]
         )
     )
-    return t
+
+    wrapper = Table([[title_bar], [meta_table]], colWidths=[avail_width])
+    wrapper.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return wrapper
 
 
 def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
@@ -273,7 +343,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
 
     left_margin = 0.6 * inch
     right_margin = 0.6 * inch
-    top_margin = 0.7 * inch
+    top_margin = 0.65 * inch
     bottom_margin = 0.8 * inch
 
     doc = SimpleDocTemplate(
@@ -283,20 +353,22 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         rightMargin=right_margin,
         topMargin=top_margin,
         bottomMargin=bottom_margin,
-        title=_normalizar_etiqueta(report_title),
+        title=_titulo_reporte(report_title),
         author=_nombre_empresa(),
     )
 
     avail_width = page_size[0] - left_margin - right_margin
 
-    story = []
-    story.append(_header_block(report_title, printed_by))
-    story.append(Spacer(1, 0.15 * inch))
+    cols_fmt = [_label_columna(c) for c in columns]
 
-    if _should_split(len(columns)):
-        secciones = _particionar_columnas_con_anclas(columns, rows)
+    story = []
+    story.append(_header_block(report_title, printed_by, avail_width))
+    story.append(Spacer(1, 0.18 * inch))
+
+    if _should_split(len(cols_fmt)):
+        secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
     else:
-        secciones = [(list(columns), [list(r) for r in rows])]
+        secciones = [(list(cols_fmt), [list(r) for r in rows])]
 
     for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
         ncols = len(cols_chunk)
@@ -321,7 +393,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             splitLongWords=1,
         )
 
-        header_row = [Paragraph(_escape_para(_normalizar_etiqueta(c)), wrap_header) for c in cols_chunk]
+        header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
         data = [header_row]
 
         for r in rows_chunk:
@@ -376,7 +448,7 @@ def _auto_anchos(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
 def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
     wb = Workbook()
     ws = wb.active
-    ws.title = "REPORTE"
+    ws.title = "Reporte"
 
     ws.sheet_view.showGridLines = False
 
@@ -385,7 +457,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
         for col in range(1, 70):
             ws.cell(row=row, column=col).fill = fondo
 
-    cols_fmt = [_normalizar_etiqueta(c) for c in columns]
+    cols_fmt = [_label_columna(c) for c in columns]
 
     max_col = max(1, len(cols_fmt))
     last_col = get_column_letter(max(2, max_col))
@@ -414,15 +486,16 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.row_dimensions[6].height = 10
 
     ws.merge_cells(f"A2:{last_col}2")
-    ws["A2"] = _normalizar_etiqueta(report_title)
-    ws["A2"].font = Font(bold=True, name="Calibri", size=16)
+    ws["A2"] = _titulo_reporte(report_title)
+    ws["A2"].font = Font(bold=True, name="Calibri", size=16, color="FFFFFF")
     ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+    ws["A2"].fill = PatternFill("solid", fgColor="111827")
 
-    ws["A3"] = "EMPRESA:"
+    ws["A3"] = "Empresa:"
     ws["B3"] = _nombre_empresa()
-    ws["A4"] = "IMPRESO POR:"
+    ws["A4"] = "Impreso por:"
     ws["B4"] = printed_by
-    ws["A5"] = "FECHA/HORA:"
+    ws["A5"] = "Fecha/Hora:"
     ws["B5"] = _ahora_str()
 
     for r in range(3, 6):
@@ -460,7 +533,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
 
     try:
         ref = f"A{start_row}:{real_last_col}{max_row}"
-        tab = XLTable(displayName="TABLAREPORTE", ref=ref)
+        tab = XLTable(displayName="TablaReporte", ref=ref)
         style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
         tab.tableStyleInfo = style
         ws.add_table(tab)
