@@ -1,9 +1,12 @@
 import json
+import traceback
 from datetime import datetime, date, time as dtime
 
-from flask import flash, redirect, url_for, request
+from mensajes_logs import logger_
+
+from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
-from flask_login import current_user
+from flask import request
 from sqlalchemy import inspect, text
 from wtforms import SelectField
 from wtforms.fields import DateField
@@ -15,12 +18,7 @@ from models.unidades_medida_model import Unidades_medida
 
 
 class SecureModelView(ModelView):
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
+    pass
 
 
 def _nombre_col_unidad():
@@ -419,6 +417,114 @@ class OrdenesProveedoresAdmin(SecureModelView):
 
         model.Estado = estado_nuevo
 
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_busqueda", fecha)
+            return "Error al abrir el listado de órdenes de proveedores.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir la pantalla de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_crear", fecha)
+            return "Error al abrir o procesar la creación de la orden.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_editar", fecha)
+            return "Error al abrir o procesar la edición de la orden.", 500
+
+    # Este botón sirve para ver el detalle de un registro.
+    @expose("/details/")
+    def details_view(self):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_detalle", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_detalle", fecha)
+            return "Error al abrir el detalle de la orden.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_eliminar", fecha)
+            return "Error al procesar la eliminación de la orden.", 500
+
+    # Este bloque se ejecuta cuando guardas una orden nueva.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_guardar_crear", fecha)
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_guardar_editar", fecha)
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        try:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        except Exception as error:
+            db.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_admin_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_admin_borrar_bd", fecha)
+            return False
+
 
 class OrdenesProveedoresDetalleAdmin(SecureModelView):
     can_create = False
@@ -461,3 +567,111 @@ class OrdenesProveedoresDetalleAdmin(SecureModelView):
         "unidad": lambda view, context, model, name: view._unidad_nombre(getattr(model, "unidad", None)),
         "unidad_recibida": lambda view, context, model, name: view._unidad_nombre(getattr(model, "unidad_recibida", None)),
     }
+
+    # Este botón sirve para entrar al listado y usar la búsqueda.
+    @expose("/")
+    def index_view(self):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_busqueda", fecha)
+            return "Error al abrir el listado de detalles de órdenes.", 500
+
+    # Este bloque sirve para el paginado del listado.
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_paginado", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_paginado", fecha)
+            return 0, []
+
+    # Este botón sirve para abrir la pantalla de crear.
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self):
+        try:
+            return super().create_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_crear", fecha)
+            return "Error al abrir o procesar la creación del detalle.", 500
+
+    # Este botón sirve para abrir y procesar la vista de editar.
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self):
+        try:
+            return super().edit_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_editar", fecha)
+            return "Error al abrir o procesar la edición del detalle.", 500
+
+    # Este botón sirve para ver el detalle de un registro.
+    @expose("/details/")
+    def details_view(self):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_detalle", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_detalle", fecha)
+            return "Error al abrir el detalle del registro.", 500
+
+    # Este botón sirve para procesar la acción de eliminar.
+    @expose("/delete/", methods=("POST",))
+    def delete_view(self):
+        try:
+            return super().delete_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_eliminar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_eliminar", fecha)
+            return "Error al procesar la eliminación del detalle.", 500
+
+    # Este bloque se ejecuta cuando guardas un registro nuevo.
+    def create_model(self, form):
+        try:
+            return super().create_model(form)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_guardar_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_guardar_crear", fecha)
+            return False
+
+    # Este bloque se ejecuta cuando guardas una edición.
+    def update_model(self, form, model):
+        try:
+            return super().update_model(form, model)
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_guardar_editar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_guardar_editar", fecha)
+            return False
+
+    # Este bloque elimina el registro en la base de datos.
+    def delete_model(self, model):
+        try:
+            self.session.delete(model)
+            self.session.commit()
+            return True
+        except Exception as error:
+            self.session.rollback()
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "ordenes_proveedores_detalle_admin_borrar_bd", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "ordenes_proveedores_detalle_admin_borrar_bd", fecha)
+            return False

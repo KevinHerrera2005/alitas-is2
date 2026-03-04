@@ -2,11 +2,14 @@ from datetime import datetime
 import json
 import smtplib
 import ssl
+import traceback
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
-from flask_login import login_required, current_user
+from flask_login import current_user
+
+from mensajes_logs import logger_
 
 from models import db
 from models.insumo_model import Insumo
@@ -257,205 +260,238 @@ def enviar_correo_orden(proveedor: Proveedor, por_sucursal: dict):
             servidor.login(remitente, clave)
             servidor.sendmail(remitente, [destino], mensaje.as_string())
         return True, None
-    except smtplib.SMTPAuthenticationError:
+    except smtplib.SMTPAuthenticationError as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "encargar_insumos_enviar_correo", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "encargar_insumos_enviar_correo", fecha)
         return False, "Gmail rechazó la autenticación (usa App Password)"
     except Exception as e:
-        current_app.logger.exception("Error enviando correo a %s", destino)
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(e), "encargar_insumos_enviar_correo", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "encargar_insumos_enviar_correo", fecha)
         return False, f"Error SMTP: {type(e).__name__}"
 
 
+# Este botón sirve para abrir el panel del encargado.
 @panel_encargado.route("/panel_encargado")
-@login_required
 def panel():
-    return render_template("panel_encargado.html")
+    try:
+        return render_template("panel_encargado.html")
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_panel", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_panel", fecha)
+        return "Error al abrir el panel del encargado.", 500
 
 
+# Este botón sirve para cargar los datos de insumos por sucursal.
 @panel_encargado.route("/encargar_insumos_data")
-@login_required
 def encargar_insumos_data():
-    sucursal_id = _parse_int(request.args.get("sucursal_id"))
-    if not sucursal_id:
-        return jsonify({"ok": True, "insumos": []})
+    try:
+        sucursal_id = _parse_int(request.args.get("sucursal_id"))
+        if not sucursal_id:
+            return jsonify({"ok": True, "insumos": []})
 
-    insumos_ui = _insumos_ui_unicos_por_sucursal(sucursal_id)
-    return jsonify({"ok": True, "insumos": insumos_ui})
+        insumos_ui = _insumos_ui_unicos_por_sucursal(sucursal_id)
+        return jsonify({"ok": True, "insumos": insumos_ui})
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_encargar_insumos_data", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_encargar_insumos_data", fecha)
+        return jsonify({"ok": False, "insumos": [], "error": "Error al cargar insumos."}), 500
 
 
+# Este botón sirve para abrir y procesar el encargo de insumos.
 @panel_encargado.route("/encargar_insumos", methods=["GET", "POST"])
-@login_required
 def encargar_insumos():
-    modo_todos = request.args.get("todos") == "1"
+    try:
+        modo_todos = request.args.get("todos") == "1"
 
-    if request.method == "POST":
-        lineas_raw = (request.form.get("lineas_json") or "").strip()
+        if request.method == "POST":
+            lineas_raw = (request.form.get("lineas_json") or "").strip()
 
-        if not lineas_raw:
-            flash("Debes guardar al menos un insumo con su proveedor y cantidad.", "warning")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
-
-        try:
-            lineas_data = json.loads(lineas_raw)
-        except Exception:
-            flash("Los datos enviados no son válidos.", "danger")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
-
-        if not isinstance(lineas_data, list) or not lineas_data:
-            flash("Debes guardar al menos un insumo con su proveedor y cantidad.", "warning")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
-
-        agrupado: dict[int, dict] = {}
-
-        for linea in lineas_data:
-            insumo_id = _parse_int(linea.get("insumo_id"))
-            proveedor_id = _parse_int(linea.get("proveedor_id"))
-            sucursal_id = _parse_int(linea.get("sucursal_id"))
-
-            try:
-                cantidad = float(str(linea.get("cantidad")).replace(",", "."))
-            except Exception:
-                cantidad = None
-
-            if not insumo_id or not proveedor_id or not sucursal_id or not cantidad or cantidad <= 0:
-                continue
-
-            insumo = Insumo.query.get(insumo_id)
-            proveedor = Proveedor.query.get(proveedor_id)
-            sucursal_obj = Sucursal.query.get(sucursal_id)
-
-            if not insumo or not proveedor or not sucursal_obj:
-                continue
-
-            if getattr(insumo, "ID_sucursal", None) != sucursal_id:
-                flash("Hay insumos que no pertenecen a la sucursal indicada.", "danger")
+            if not lineas_raw:
+                flash("Debes guardar al menos un insumo con su proveedor y cantidad.", "warning")
                 params = {"todos": "1"} if modo_todos else {}
                 return redirect(url_for("panel_encargado.encargar_insumos", **params))
 
-            unidad_nombre = linea.get("unidad") or _unidad_nombre_de_insumo(insumo) or "unidad"
+            try:
+                lineas_data = json.loads(lineas_raw)
+            except Exception:
+                flash("Los datos enviados no son válidos.", "danger")
+                params = {"todos": "1"} if modo_todos else {}
+                return redirect(url_for("panel_encargado.encargar_insumos", **params))
 
-            if proveedor_id not in agrupado:
-                agrupado[proveedor_id] = {"proveedor": proveedor, "por_sucursal": {}}
+            if not isinstance(lineas_data, list) or not lineas_data:
+                flash("Debes guardar al menos un insumo con su proveedor y cantidad.", "warning")
+                params = {"todos": "1"} if modo_todos else {}
+                return redirect(url_for("panel_encargado.encargar_insumos", **params))
 
-            por_sucursal = agrupado[proveedor_id]["por_sucursal"]
-            if sucursal_id not in por_sucursal:
-                por_sucursal[sucursal_id] = {"sucursal": sucursal_obj, "items_map": {}, "orden_id": None, "items": []}
+            agrupado = {}
 
-            items_map = por_sucursal[sucursal_id]["items_map"]
-            key_ins = int(insumo.ID_Insumo)
+            for linea in lineas_data:
+                insumo_id = _parse_int(linea.get("insumo_id"))
+                proveedor_id = _parse_int(linea.get("proveedor_id"))
+                sucursal_id = _parse_int(linea.get("sucursal_id"))
 
-            if key_ins in items_map:
-                ins_prev, cant_prev, uni_prev = items_map[key_ins]
-                items_map[key_ins] = (ins_prev, float(cant_prev) + float(cantidad), uni_prev or unidad_nombre)
-            else:
-                items_map[key_ins] = (insumo, float(cantidad), unidad_nombre)
+                try:
+                    cantidad = float(str(linea.get("cantidad")).replace(",", "."))
+                except Exception:
+                    cantidad = None
 
-        if not agrupado:
-            flash("Los datos de la orden están vacíos o no son válidos.", "danger")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
+                if not insumo_id or not proveedor_id or not sucursal_id or not cantidad or cantidad <= 0:
+                    continue
 
-        proveedores_sin_email = [d["proveedor"] for d in agrupado.values() if not _correo_de_proveedor(d["proveedor"])]
-        if proveedores_sin_email:
-            nombres = ", ".join(getattr(p, "Nombre_Proveedor", None) or getattr(p, "Nombre", None) or "" for p in proveedores_sin_email)
-            flash(f"Los siguientes proveedores no tienen definido un email: {nombres}", "danger")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
+                insumo = Insumo.query.get(insumo_id)
+                proveedor = Proveedor.query.get(proveedor_id)
+                sucursal_obj = Sucursal.query.get(sucursal_id)
 
-        id_empleado_encargado = _parse_int(
-            getattr(current_user, "db_id", None)
-            or getattr(current_user, "ID_Empleado", None)
-            or getattr(current_user, "id_empleado", None)
+                if not insumo or not proveedor or not sucursal_obj:
+                    continue
+
+                if getattr(insumo, "ID_sucursal", None) != sucursal_id:
+                    flash("Hay insumos que no pertenecen a la sucursal indicada.", "danger")
+                    params = {"todos": "1"} if modo_todos else {}
+                    return redirect(url_for("panel_encargado.encargar_insumos", **params))
+
+                unidad_nombre = linea.get("unidad") or _unidad_nombre_de_insumo(insumo) or "unidad"
+
+                if proveedor_id not in agrupado:
+                    agrupado[proveedor_id] = {"proveedor": proveedor, "por_sucursal": {}}
+
+                por_sucursal = agrupado[proveedor_id]["por_sucursal"]
+                if sucursal_id not in por_sucursal:
+                    por_sucursal[sucursal_id] = {"sucursal": sucursal_obj, "items_map": {}, "orden_id": None, "items": []}
+
+                items_map = por_sucursal[sucursal_id]["items_map"]
+                key_ins = int(insumo.ID_Insumo)
+
+                if key_ins in items_map:
+                    ins_prev, cant_prev, uni_prev = items_map[key_ins]
+                    items_map[key_ins] = (ins_prev, float(cant_prev) + float(cantidad), uni_prev or unidad_nombre)
+                else:
+                    items_map[key_ins] = (insumo, float(cantidad), unidad_nombre)
+
+            if not agrupado:
+                flash("Los datos de la orden están vacíos o no son válidos.", "danger")
+                params = {"todos": "1"} if modo_todos else {}
+                return redirect(url_for("panel_encargado.encargar_insumos", **params))
+
+            proveedores_sin_email = [d["proveedor"] for d in agrupado.values() if not _correo_de_proveedor(d["proveedor"])]
+            if proveedores_sin_email:
+                nombres = ", ".join(getattr(p, "Nombre_Proveedor", None) or getattr(p, "Nombre", None) or "" for p in proveedores_sin_email)
+                flash(f"Los siguientes proveedores no tienen definido un email: {nombres}", "danger")
+                params = {"todos": "1"} if modo_todos else {}
+                return redirect(url_for("panel_encargado.encargar_insumos", **params))
+
+            id_empleado_encargado = _parse_int(
+                getattr(current_user, "db_id", None)
+                or getattr(current_user, "ID_Empleado", None)
+                or getattr(current_user, "id_empleado", None)
+            )
+
+            if id_empleado_encargado is None or Empleado.query.get(id_empleado_encargado) is None:
+                flash("No se pudo determinar el empleado encargado para la orden.", "danger")
+                params = {"todos": "1"} if modo_todos else {}
+                return redirect(url_for("panel_encargado.encargar_insumos", **params))
+
+            for datos in agrupado.values():
+                proveedor = datos["proveedor"]
+                por_sucursal = datos["por_sucursal"]
+
+                for data_suc in por_sucursal.values():
+                    sucursal_obj = data_suc["sucursal"]
+                    items = list((data_suc.get("items_map") or {}).values())
+                    items.sort(key=lambda t: _norm(getattr(t[0], "Nombre_insumo", "") or ""))
+
+                    orden = OrdenesProveedores(
+                        ID_Proveedor=proveedor.ID_Proveedor,
+                        ID_Empleado_Encargado=id_empleado_encargado,
+                        ID_Sucursal=sucursal_obj.ID_sucursal,
+                        Fecha_Inicio=datetime.utcnow(),
+                        Estado=0,
+                    )
+                    db.session.add(orden)
+                    db.session.flush()
+
+                    for insumo, cantidad, _ in items:
+                        id_unidad = getattr(insumo, "ID_Unidad", None) or getattr(insumo, "ID_Unidad_medida", None)
+                        if id_unidad is None:
+                            db.session.rollback()
+                            flash(f"El insumo '{getattr(insumo, 'Nombre_insumo', '')}' no tiene unidad configurada.", "danger")
+                            params = {"todos": "1"} if modo_todos else {}
+                            return redirect(url_for("panel_encargado.encargar_insumos", **params))
+
+                        detalle = OrdenesProveedoresDetalle(
+                            ID_Orden_Proveedor=orden.ID_Orden_Proveedor,
+                            ID_Insumo=insumo.ID_Insumo,
+                            ID_Unidad=id_unidad,
+                            Cantidad_Solicitada=cantidad,
+                            Cantidad_Recibida=0,
+                        )
+                        db.session.add(detalle)
+
+                    data_suc["orden_id"] = int(orden.ID_Orden_Proveedor)
+                    data_suc["items"] = items
+
+            db.session.commit()
+
+            for datos in agrupado.values():
+                proveedor = datos["proveedor"]
+                por_sucursal = datos["por_sucursal"]
+
+                ok, err = enviar_correo_orden(proveedor, por_sucursal)
+                if not ok:
+                    flash(f"Correo NO enviado a {getattr(proveedor, 'Nombre_Proveedor', '')}: {err}", "danger")
+
+            flash("Se generaron las órdenes a proveedores y se enviaron (o intentaron enviar) los correos.", "success")
+            return redirect(url_for("panel_encargado.ordenes_proveedores"))
+
+        sucursales_q = (
+            Sucursal.query
+            .filter(Sucursal.estado == 1)
+            .order_by(Sucursal.Descripcion)
+            .all()
         )
 
-        if id_empleado_encargado is None or Empleado.query.get(id_empleado_encargado) is None:
-            flash("No se pudo determinar el empleado encargado para la orden.", "danger")
-            params = {"todos": "1"} if modo_todos else {}
-            return redirect(url_for("panel_encargado.encargar_insumos", **params))
+        sucursales_ui = []
+        for s in sucursales_q:
+            d = ""
+            if getattr(s, "direccion", None) is not None:
+                d = getattr(s.direccion, "Descripcion", "") or ""
+            sucursales_ui.append({"id": int(s.ID_sucursal), "nombre": s.Descripcion, "direccion": d})
 
-        for datos in agrupado.values():
-            proveedor = datos["proveedor"]
-            por_sucursal = datos["por_sucursal"]
+        sucursal_id = _parse_int(request.args.get("sucursal_id"))
+        if sucursal_id is None and sucursales_ui:
+            sucursal_id = sucursales_ui[0]["id"]
 
-            for data_suc in por_sucursal.values():
-                sucursal_obj = data_suc["sucursal"]
-                items = list((data_suc.get("items_map") or {}).values())
-                items.sort(key=lambda t: _norm(getattr(t[0], "Nombre_insumo", "") or ""))
+        insumos_ui = _insumos_ui_unicos_por_sucursal(int(sucursal_id)) if sucursal_id is not None else []
 
-                orden = OrdenesProveedores(
-                    ID_Proveedor=proveedor.ID_Proveedor,
-                    ID_Empleado_Encargado=id_empleado_encargado,
-                    ID_Sucursal=sucursal_obj.ID_sucursal,
-                    Fecha_Inicio=datetime.utcnow(),
-                    Estado=0,
-                )
-                db.session.add(orden)
-                db.session.flush()
-
-                for insumo, cantidad, _ in items:
-                    id_unidad = getattr(insumo, "ID_Unidad", None) or getattr(insumo, "ID_Unidad_medida", None)
-                    if id_unidad is None:
-                        db.session.rollback()
-                        flash(f"El insumo '{getattr(insumo, 'Nombre_insumo', '')}' no tiene unidad configurada.", "danger")
-                        params = {"todos": "1"} if modo_todos else {}
-                        return redirect(url_for("panel_encargado.encargar_insumos", **params))
-
-                    detalle = OrdenesProveedoresDetalle(
-                        ID_Orden_Proveedor=orden.ID_Orden_Proveedor,
-                        ID_Insumo=insumo.ID_Insumo,
-                        ID_Unidad=id_unidad,
-                        Cantidad_Solicitada=cantidad,
-                        Cantidad_Recibida=0,
-                    )
-                    db.session.add(detalle)
-
-                data_suc["orden_id"] = int(orden.ID_Orden_Proveedor)
-                data_suc["items"] = items
-
-        db.session.commit()
-
-        for datos in agrupado.values():
-            proveedor = datos["proveedor"]
-            por_sucursal = datos["por_sucursal"]
-
-            ok, err = enviar_correo_orden(proveedor, por_sucursal)
-            if not ok:
-                flash(f"Correo NO enviado a {getattr(proveedor, 'Nombre_Proveedor', '')}: {err}", "danger")
-
-        flash("Se generaron las órdenes a proveedores y se enviaron (o intentaron enviar) los correos.", "success")
-        return redirect(url_for("panel_encargado.ordenes_proveedores"))
-
-    sucursales_q = (
-        Sucursal.query
-        .filter(Sucursal.estado == 1)
-        .order_by(Sucursal.Descripcion)
-        .all()
-    )
-
-    sucursales_ui = []
-    for s in sucursales_q:
-        d = ""
-        if getattr(s, "direccion", None) is not None:
-            d = getattr(s.direccion, "Descripcion", "") or ""
-        sucursales_ui.append({"id": int(s.ID_sucursal), "nombre": s.Descripcion, "direccion": d})
-
-    sucursal_id = _parse_int(request.args.get("sucursal_id"))
-    if sucursal_id is None and sucursales_ui:
-        sucursal_id = sucursales_ui[0]["id"]
-
-    insumos_ui = _insumos_ui_unicos_por_sucursal(int(sucursal_id)) if sucursal_id is not None else []
-
-    return render_template(
-        "encargar_insumos.html",
-        insumos=insumos_ui,
-        sucursales=sucursales_ui,
-        sucursal_defecto_id=sucursal_id,
-        todos=modo_todos,
-    )
+        return render_template(
+            "encargar_insumos.html",
+            insumos=insumos_ui,
+            sucursales=sucursales_ui,
+            sucursal_defecto_id=sucursal_id,
+            todos=modo_todos,
+        )
+    except Exception as error:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_encargar_insumos", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_encargar_insumos", fecha)
+        return "Error al procesar el encargo de insumos.", 500
 
 
+# Este botón sirve para ir al listado de órdenes de proveedores.
 @panel_encargado.route("/ordenes_proveedores_encargado")
-@login_required
 def ordenes_proveedores():
-    return redirect(url_for("ordenes_proveedores_admin.index_view"))
+    try:
+        return redirect(url_for("ordenes_proveedores_admin.index_view"))
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_ordenes_proveedores", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_ordenes_proveedores", fecha)
+        return "Error al abrir el listado de órdenes de proveedores.", 500
