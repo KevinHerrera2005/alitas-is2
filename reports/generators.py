@@ -117,24 +117,24 @@ def _label_columna(s: Any) -> str:
 
 def _necesita_landscape(cols: int) -> bool:
     try:
-        max_cols_portrait = int(current_app.config.get("REPORTS_MAX_COLS_PORTRAIT", 7))
+        max_cols_portrait = int(current_app.config.get("REPORTS_MAX_COLS_PORTRAIT", 6))
     except Exception:
-        max_cols_portrait = 7
+        max_cols_portrait = 6
     return cols > max_cols_portrait
 
 
 def _split_threshold() -> int:
     try:
-        return int(current_app.config.get("REPORTS_SPLIT_THRESHOLD", 18))
+        return int(current_app.config.get("REPORTS_SPLIT_THRESHOLD", 10))
     except Exception:
-        return 18
+        return 10
 
 
 def _max_cols_per_table() -> int:
     try:
-        return int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 18))
+        return int(current_app.config.get("REPORTS_MAX_COLS_PER_TABLE", 9))
     except Exception:
-        return 18
+        return 9
 
 
 def _anchor_cols_count() -> int:
@@ -183,14 +183,10 @@ def _particionar_columnas_con_anclas(
 
 
 def _font_sizes_for_cols(ncols: int) -> Tuple[float, float]:
-    if ncols >= 20:
-        return 7.0, 6.6
-    if ncols >= 16:
+    if ncols >= 10:
         return 7.4, 7.0
-    if ncols >= 12:
-        return 7.8, 7.3
-    if ncols >= 9:
-        return 8.4, 7.8
+    if ncols >= 8:
+        return 8.0, 7.4
     return 9.0, 8.2
 
 
@@ -208,11 +204,11 @@ def _calc_col_widths(avail_width: float, columns: Sequence[str], rows: Sequence[
                 m = max(m, len(_texto(r[i])))
         maxlens.append(m)
 
-    weights = [max(6, min(60, x)) for x in maxlens]
+    weights = [max(8, min(70, x)) for x in maxlens]
     total = sum(weights) if weights else 1
 
-    min_w = 0.85 * inch if n >= 10 else 0.95 * inch
-    max_w = 2.6 * inch if n >= 10 else 3.2 * inch
+    min_w = 1.15 * inch if n >= 8 else 1.25 * inch
+    max_w = 3.0 * inch
 
     widths = []
     for w in weights:
@@ -278,7 +274,7 @@ def _header_block(report_title: str, printed_by: str) -> Table:
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
             ]
         )
     )
@@ -292,8 +288,8 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
 
     page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
 
-    left_margin = 0.6 * inch
-    right_margin = 0.6 * inch
+    left_margin = 0.55 * inch
+    right_margin = 0.55 * inch
     top_margin = 0.7 * inch
     bottom_margin = 0.8 * inch
 
@@ -312,7 +308,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
 
     story = []
     story.append(_header_block(report_title, printed_by))
-    story.append(Spacer(1, 0.15 * inch))
+    story.append(Spacer(1, 0.18 * inch))
 
     if _should_split(len(cols_fmt)):
         secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
@@ -327,7 +323,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             name="WrapHeader",
             fontName="Helvetica-Bold",
             fontSize=head_fs,
-            leading=head_fs + 1,
+            leading=head_fs + 2,
             alignment=1,
             wordWrap="LTR",
             splitLongWords=0,
@@ -338,7 +334,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             name="WrapCell",
             fontName="Helvetica",
             fontSize=body_fs,
-            leading=body_fs + 2,
+            leading=body_fs + 3,
             wordWrap="LTR",
             splitLongWords=1,
             textColor=colors.black,
@@ -367,34 +363,37 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             ("ALIGN", (0, 1), (-1, -1), "LEFT"),
             ("VALIGN", (0, 1), (-1, -1), "TOP"),
 
-            ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#9CA3AF")),
+            ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#9CA3AF")),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#F3F4F6")]),
 
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("LEFTPADDING", (0, 0), (-1, -1), 7),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ]
 
         table.setStyle(TableStyle(style_cmds))
         story.append(table)
 
         if idx < len(secciones) - 1:
+            story.append(Spacer(1, 0.18 * inch))
             story.append(PageBreak())
 
     doc.build(story, canvasmaker=NumberedCanvas)
     return buf.getvalue()
 
 
-def _auto_anchos(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
+def _auto_anchos_excel(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
     widths = [len(_texto(c)) for c in columns]
     for r in rows[:800]:
         for i, v in enumerate(r):
             s = _texto(v)
             if i < len(widths):
                 widths[i] = max(widths[i], len(s))
+
     for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = min(max(w + 2, 11), 48)
+        val = int(min(max(w + 4, 14), 60))
+        ws.column_dimensions[get_column_letter(i)].width = val
 
 
 def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
@@ -405,8 +404,8 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.sheet_view.showGridLines = False
 
     fondo = PatternFill("solid", fgColor="FFFFFF")
-    for row in range(1, 140):
-        for col in range(1, 70):
+    for row in range(1, 160):
+        for col in range(1, 80):
             ws.cell(row=row, column=col).fill = fondo
 
     cols_fmt = [_label_columna(c) for c in columns]
@@ -431,7 +430,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     else:
         ws.row_dimensions[1].height = 65
 
-    ws.row_dimensions[2].height = 28
+    ws.row_dimensions[2].height = 30
     ws.row_dimensions[3].height = 20
     ws.row_dimensions[4].height = 20
     ws.row_dimensions[5].height = 20
@@ -463,23 +462,24 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     thin = Side(style="thin", color="D1D5DB")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    ws.row_dimensions[start_row].height = 24
+    ws.row_dimensions[start_row].height = 34
 
     for col_index, col_name in enumerate(cols_fmt, 1):
         cell = ws.cell(row=start_row, column=col_index, value=col_name)
         cell.fill = header_fill
         cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=False, shrink_to_fit=True)
         cell.border = border
 
     for row_index, row_data in enumerate(rows, start_row + 1):
+        ws.row_dimensions[row_index].height = 18
         for col_index, value in enumerate(row_data, 1):
             cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
             cell.font = body_font
             cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
             cell.border = border
 
-    _auto_anchos(ws, cols_fmt, rows)
+    _auto_anchos_excel(ws, cols_fmt, rows)
 
     max_row = start_row + len(rows)
     real_last_col = get_column_letter(max_col)
