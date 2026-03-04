@@ -9,7 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from urllib.parse import quote_plus
-
+from models.admin_historial_facturas import HistorialFacturasAdmin
 from flask import Flask, redirect, url_for, session
 from flask_login import LoginManager, UserMixin
 from flask_admin import Admin, AdminIndexView
@@ -385,14 +385,14 @@ def bootstrap_app(flask_app):
     from models.admin_ordenes_proveedores_view import OrdenesProveedoresAdmin, OrdenesProveedoresDetalleAdmin
     from models.historial_ordenes_repartidor_admin import HistorialOrdenesRepartidorAdmin
     from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
-
+    from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
     admin = Admin(
         flask_app,
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
         template_mode="bootstrap4"
     )
-
+    admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas_admin"))
     admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))
     admin.add_view(CategoriaAdmin(CategoriaInsumo, db.session, category="Inventario", name="Categorías"))
     admin.add_view(UnidadesMedidaAdmin(Unidades_medida, db.session, category="Inventario", name="Unidades de Medida", endpoint="unidades_medida_admin"))
