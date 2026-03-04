@@ -439,7 +439,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
     ws.merge_cells(f"A2:{last_col}2")
     ws["A2"] = report_title
     ws["A2"].font = Font(bold=True, name="Calibri", size=16)
-    ws["A2"].alignment = Alignment(horizontal="center", vertical="center")
+    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
 
     ws["A3"] = "Empresa:"
     ws["B3"] = _nombre_empresa()

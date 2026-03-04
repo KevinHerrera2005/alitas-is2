@@ -37,26 +37,54 @@ def _formatear_valor(val: Any) -> Any:
 def _texto_o_vacio(obj: Any) -> str:
     if obj is None:
         return ""
+
     for attr in (
         "Nombre", "nombre",
-        "Nombre_Puesto", "nombre_puesto",
         "Descripcion", "descripcion",
         "Nombre_usuario", "username", "usuario", "email",
         "Nombre_Impuesto", "Nombre_insumo", "Nombre_receta",
         "Nombre_categoria", "Nombre_categoria_receta",
         "Nombre_proveedor", "Nombre_empleado",
+        "Nombre_Puesto", "nombre_puesto",
         "num_cai",
+
+        "Numero_factura", "numero_factura", "NUMERO_FACTURA", "numeroFactura",
+        "Factura", "factura", "NoFactura", "no_factura",
+
+        "Direccion", "direccion",
+        "Direccion_cliente", "direccion_cliente",
+        "direccion1", "Direccion1",
+        "direccion2", "Direccion2",
+
+        "telefono", "Telefono",
+        "codigo", "Codigo",
+        "id", "Id",
     ):
         try:
             v = getattr(obj, attr, None)
-            if v:
+            if v is None:
+                continue
+            if isinstance(v, (int, float, bool)):
                 return str(v)
+            s = str(v).strip()
+            if s:
+                return s
         except Exception:
             pass
+
     try:
         return str(obj)
     except Exception:
         return ""
+
+
+def _valor_celda(val: Any) -> Any:
+    val = _formatear_valor(val)
+    if val is None:
+        return ""
+    if isinstance(val, (str, int, float, bool)):
+        return val
+    return _texto_o_vacio(val)
 
 
 def _separar_camel(s: str) -> str:
@@ -99,8 +127,7 @@ def _title_case_es(frase: str) -> str:
 
 
 def _titulo_humano(s: Any) -> str:
-    base = _normalizar_frase(s)
-    base = base.strip()
+    base = _normalizar_frase(s).strip()
     return _title_case_es(base)
 
 
@@ -155,7 +182,7 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
 
     for col in mapper.columns:
         columnas.append(col.key)
-        getters.append(lambda obj, k=col.key: _formatear_valor(getattr(obj, k, None)))
+        getters.append(lambda obj, k=col.key: _valor_celda(getattr(obj, k, None)))
 
         rel_key = fk_to_rel.get(col.key)
         if rel_key:
