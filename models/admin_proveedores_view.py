@@ -1,14 +1,19 @@
+import re
+import traceback
+from datetime import datetime
+from mensajes_logs import logger_
 from collections import defaultdict
 
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.actions import action
+from flask_admin.base import expose
 from flask_login import current_user
 from flask import redirect, url_for, flash, request
 from wtforms import SelectField, SelectMultipleField
 from wtforms.validators import ValidationError
 from sqlalchemy import func, text
 from sqlalchemy.exc import IntegrityError
-import re
+
 from models.proveedores_model import Proveedor, ProveedorInsumo
 from models.insumo_model import Insumo
 
@@ -16,30 +21,6 @@ from models.insumo_model import Insumo
 class ProveedorAdmin(ModelView):
     create_template = "admin/model/proveedor_create.html"
     edit_template = "admin/model/proveedor_edit.html"
-
-    def is_accessible(self):
-        if not current_user.is_authenticated:
-            return False
-
-        tipo = getattr(current_user, "tipo", None)
-        if tipo == "gerente":
-            return True
-
-        if tipo == "empleado":
-            puesto = getattr(current_user, "id_puesto", None)
-            if puesto is None:
-                puesto = getattr(current_user, "ID_Puesto", None)
-            try:
-                puesto = int(puesto)
-            except Exception:
-                puesto = None
-            return puesto == 16
-
-        return False
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
 
     def is_visible(self):
         return self.is_accessible()
@@ -87,6 +68,33 @@ class ProveedorAdmin(ModelView):
         )
     }
 
+    def get_list(
+        self,
+        page,
+        sort_column,
+        sort_desc,
+        search,
+        filters,
+        execute=True,
+        page_size=None,
+    ):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "proveedor_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "proveedor_pantalla", fecha
+            )
+
     @staticmethod
     def _norm(txt):
         return " ".join((txt or "").strip().lower().split())
@@ -110,9 +118,8 @@ class ProveedorAdmin(ModelView):
         if sucursal_id is None:
             return [], {}, {}, defaultdict(list)
 
-        q = (
-            self.session.query(Insumo.ID_Insumo, Insumo.Nombre_insumo)
-            .filter(Insumo.Nombre_insumo.isnot(None))
+        q = self.session.query(Insumo.ID_Insumo, Insumo.Nombre_insumo).filter(
+            Insumo.Nombre_insumo.isnot(None)
         )
 
         if hasattr(Insumo, "ID_sucursal"):
@@ -145,7 +152,9 @@ class ProveedorAdmin(ModelView):
 
         return choices, rep_id_por_norm, norm_por_id, ids_por_norm
 
-    def _ids_representantes_desde_relaciones(self, relaciones_ids, rep_id_por_norm, norm_por_id):
+    def _ids_representantes_desde_relaciones(
+        self, relaciones_ids, rep_id_por_norm, norm_por_id
+    ):
         reps = set()
         for iid in relaciones_ids:
             norm = norm_por_id.get(int(iid))
@@ -157,51 +166,73 @@ class ProveedorAdmin(ModelView):
         return sorted(reps)
 
     def create_form(self, obj=None):
-        form = super().create_form(obj)
+        try:
+            form = super().create_form(obj)
 
-        if hasattr(form, "activo"):
-            form._fields.pop("activo")
+            if hasattr(form, "activo"):
+                form._fields.pop("activo")
 
-        sucursal_id = self._current_sucursal_id()
+            sucursal_id = self._current_sucursal_id()
 
-        if hasattr(form, "insumos_ids"):
-            choices, _, _, _ = self._insumo_catalogo(sucursal_id)
-            form.insumos_ids.choices = choices
+            if hasattr(form, "insumos_ids"):
+                choices, _, _, _ = self._insumo_catalogo(sucursal_id)
+                form.insumos_ids.choices = choices
 
-        return form
+            return form
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "proveedor_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "proveedor_pantalla", fecha
+            )
+            return "esto es un error", 501
 
     def edit_form(self, obj=None):
-        form = super().edit_form(obj)
+        try:
+            form = super().edit_form(obj)
 
-        if hasattr(form, "activo"):
-            form.activo.choices = [("1", "Activo"), ("0", "Inactivo")]
-            if request.method == "GET" and obj is not None:
-                form.activo.data = "1" if obj.activo == 1 else "0"
+            if hasattr(form, "activo"):
+                form.activo.choices = [("1", "Activo"), ("0", "Inactivo")]
+                if request.method == "GET" and obj is not None:
+                    form.activo.data = "1" if obj.activo == 1 else "0"
 
-        sucursal_id = self._current_sucursal_id()
+            sucursal_id = self._current_sucursal_id()
 
-        if hasattr(form, "insumos_ids"):
-            choices, rep_id_por_norm, norm_por_id, _ = self._insumo_catalogo(sucursal_id)
-            form.insumos_ids.choices = choices
-
-            if obj is not None and request.method == "GET" and sucursal_id is not None:
-                q = (
-                    self.session.query(ProveedorInsumo.ID_Insumo)
-                    .join(Insumo, ProveedorInsumo.ID_Insumo == Insumo.ID_Insumo)
-                    .filter(ProveedorInsumo.ID_Proveedor == obj.ID_Proveedor)
-                    .filter(ProveedorInsumo.Activo == 1)
+            if hasattr(form, "insumos_ids"):
+                choices, rep_id_por_norm, norm_por_id, _ = self._insumo_catalogo(
+                    sucursal_id
                 )
-                if hasattr(Insumo, "ID_sucursal"):
-                    q = q.filter(Insumo.ID_sucursal == sucursal_id)
+                form.insumos_ids.choices = choices
 
-                activos_ids = [int(r[0]) for r in q.all()]
-                form.insumos_ids.data = self._ids_representantes_desde_relaciones(
-                    activos_ids,
-                    rep_id_por_norm,
-                    norm_por_id,
-                )
+                if (
+                    obj is not None
+                    and request.method == "GET"
+                    and sucursal_id is not None
+                ):
+                    q = (
+                        self.session.query(ProveedorInsumo.ID_Insumo)
+                        .join(Insumo, ProveedorInsumo.ID_Insumo == Insumo.ID_Insumo)
+                        .filter(ProveedorInsumo.ID_Proveedor == obj.ID_Proveedor)
+                        .filter(ProveedorInsumo.Activo == 1)
+                    )
+                    if hasattr(Insumo, "ID_sucursal"):
+                        q = q.filter(Insumo.ID_sucursal == sucursal_id)
 
-        return form
+                    activos_ids = [int(r[0]) for r in q.all()]
+                    form.insumos_ids.data = self._ids_representantes_desde_relaciones(
+                        activos_ids,
+                        rep_id_por_norm,
+                        norm_por_id,
+                    )
+
+            return form
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "proveedor_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "proveedor_pantalla", fecha
+            )
+            return "esto es un error", 501
 
     def _buscar_existente(self, nombre_norm, email_norm, excluir_id=None):
         q = self.session.query(Proveedor)
@@ -209,7 +240,9 @@ class ProveedorAdmin(ModelView):
         if excluir_id is not None:
             q = q.filter(Proveedor.ID_Proveedor != excluir_id)
 
-        p_nombre = q.filter(func.lower(func.trim(Proveedor.Nombre_Proveedor)) == nombre_norm).first()
+        p_nombre = q.filter(
+            func.lower(func.trim(Proveedor.Nombre_Proveedor)) == nombre_norm
+        ).first()
         if p_nombre:
             return p_nombre, "nombre"
 
@@ -238,7 +271,9 @@ class ProveedorAdmin(ModelView):
 
         sucursal_id = self._current_sucursal_id()
         if sucursal_id is None:
-            raise ValidationError("No se pudo determinar tu sucursal para filtrar insumos.")
+            raise ValidationError(
+                "No se pudo determinar tu sucursal para filtrar insumos."
+            )
 
         seleccionados = form.insumos_ids.data or []
         if not seleccionados:
@@ -255,7 +290,9 @@ class ProveedorAdmin(ModelView):
                 continue
 
         if any(i not in permitidos for i in seleccionados_ok):
-            raise ValidationError("Seleccionaste insumos que no pertenecen a tu sucursal.")
+            raise ValidationError(
+                "Seleccionaste insumos que no pertenecen a tu sucursal."
+            )
 
         model.Nombre_Proveedor = nombre
         model.Telefono = int(telefono_str)
@@ -274,10 +311,12 @@ class ProveedorAdmin(ModelView):
 
         self.session.flush()
 
-        _, rep_id_por_norm, norm_por_id, ids_por_norm = self._insumo_catalogo(sucursal_id)
+        _, rep_id_por_norm, norm_por_id, ids_por_norm = self._insumo_catalogo(
+            sucursal_id
+        )
 
         seleccion_rep_ids = []
-        for x in (form.insumos_ids.data or []):
+        for x in form.insumos_ids.data or []:
             try:
                 seleccion_rep_ids.append(int(x))
             except Exception:
@@ -310,7 +349,9 @@ class ProveedorAdmin(ModelView):
 
         existentes = {}
         for insumo_id, lista in por_insumo.items():
-            lista_orden = sorted(lista, key=lambda x: getattr(x, "ID_Proveedor_Insumo", 0) or 0)
+            lista_orden = sorted(
+                lista, key=lambda x: getattr(x, "ID_Proveedor_Insumo", 0) or 0
+            )
             existentes[insumo_id] = lista_orden[0]
             for extra in lista_orden[1:]:
                 extra.Activo = 0
@@ -335,34 +376,49 @@ class ProveedorAdmin(ModelView):
         self.session.flush()
 
     def create_model(self, form):
-        model = self.model()
-        self._validar_campos(form, model, True)
+        try:
+            model = self.model()
+            self._validar_campos(form, model, True)
 
-        nombre_norm = self._norm(model.Nombre_Proveedor)
-        email_norm = self._norm(model.email)
+            nombre_norm = self._norm(model.Nombre_Proveedor)
+            email_norm = self._norm(model.email)
 
-        with self.session.no_autoflush:
-            existente, motivo = self._buscar_existente(nombre_norm, email_norm, excluir_id=None)
+            with self.session.no_autoflush:
+                existente, motivo = self._buscar_existente(
+                    nombre_norm, email_norm, excluir_id=None
+                )
 
-            if existente is not None and int(getattr(existente, "activo", 0) or 0) == 1:
-                if motivo == "nombre":
-                    raise ValidationError("Ya existe un proveedor con ese nombre.")
-                raise ValidationError("Ya existe un proveedor con ese email.")
+                if (
+                    existente is not None
+                    and int(getattr(existente, "activo", 0) or 0) == 1
+                ):
+                    if motivo == "nombre":
+                        raise ValidationError("Ya existe un proveedor con ese nombre.")
+                    raise ValidationError("Ya existe un proveedor con ese email.")
 
-            if existente is not None and int(getattr(existente, "activo", 0) or 0) == 0:
-                existente.Nombre_Proveedor = model.Nombre_Proveedor
-                existente.Telefono = model.Telefono
-                existente.email = model.email
-                existente.activo = 1
+                if (
+                    existente is not None
+                    and int(getattr(existente, "activo", 0) or 0) == 0
+                ):
+                    existente.Nombre_Proveedor = model.Nombre_Proveedor
+                    existente.Telefono = model.Telefono
+                    existente.email = model.email
+                    existente.activo = 1
 
-                self._sincronizar_insumos(form, existente)
-                self.session.commit()
-                return existente
+                    self._sincronizar_insumos(form, existente)
+                    self.session.commit()
+                    return existente
 
-        self.session.add(model)
-        self._sincronizar_insumos(form, model)
-        self.session.commit()
-        return model
+            self.session.add(model)
+            self._sincronizar_insumos(form, model)
+            self.session.commit()
+            return model
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "proveedor_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "proveedor_pantalla", fecha
+            )
 
     def on_model_change(self, form, model, is_created):
         if not is_created:
@@ -377,7 +433,10 @@ class ProveedorAdmin(ModelView):
     def delete_model(self, model):
         try:
             if self._tiene_historial_ordenes(model.ID_Proveedor):
-                flash("Este proveedor no se puede borrar porque ya tiene un historial de órdenes.", "danger")
+                flash(
+                    "Este proveedor no se puede borrar porque ya tiene un historial de órdenes.",
+                    "danger",
+                )
                 return False
 
             model.activo = 0
@@ -390,7 +449,10 @@ class ProveedorAdmin(ModelView):
             return True
         except IntegrityError:
             self.session.rollback()
-            flash("Este proveedor no se puede borrar porque ya tiene un historial de órdenes.", "danger")
+            flash(
+                "Este proveedor no se puede borrar porque ya tiene un historial de órdenes.",
+                "danger",
+            )
             return False
         except Exception as e:
             self.session.rollback()
@@ -404,33 +466,51 @@ class ProveedorAdmin(ModelView):
                 ok = False
         return ok
 
-    @action("activar", "Activar seleccionados", "¿Activar los proveedores seleccionados?")
+    @action(
+        "activar", "Activar seleccionados", "¿Activar los proveedores seleccionados?"
+    )
     def action_activar(self, ids):
         try:
-            self.session.query(Proveedor).filter(Proveedor.ID_Proveedor.in_(ids)).update(
-                {"activo": 1}, synchronize_session=False
-            )
+            self.session.query(Proveedor).filter(
+                Proveedor.ID_Proveedor.in_(ids)
+            ).update({"activo": 1}, synchronize_session=False)
             self.session.commit()
             flash("Proveedores activados.", "success")
         except Exception:
             self.session.rollback()
             flash("No se pudo activar.", "danger")
 
-    @action("inactivar", "Inactivar seleccionados", "¿Inactivar los proveedores seleccionados?")
+    @action(
+        "inactivar",
+        "Inactivar seleccionados",
+        "¿Inactivar los proveedores seleccionados?",
+    )
     def action_inactivar(self, ids):
         try:
-            self.session.query(Proveedor).filter(Proveedor.ID_Proveedor.in_(ids)).update(
-                {"activo": 0}, synchronize_session=False
-            )
+            self.session.query(Proveedor).filter(
+                Proveedor.ID_Proveedor.in_(ids)
+            ).update({"activo": 0}, synchronize_session=False)
             self.session.commit()
             flash("Proveedores inactivados.", "success")
         except Exception:
             self.session.rollback()
             flash("No se pudo inactivar.", "danger")
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
 
+    @expose("/")
+    def index_view(self, *args, **kwargs):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "proveedor_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "proveedor_pantalla", fecha
+            )
+            return "esto es un error", 501
 
 
 def _normalizar_texto(raw):
@@ -498,7 +578,7 @@ def validar_insumos_ids_seleccionados(raw_ids, ids_permitidos):
         permitidos = set()
 
     seleccionados = []
-    for x in (raw_ids or []):
+    for x in raw_ids or []:
         try:
             seleccionados.append(int(x))
         except Exception:

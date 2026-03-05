@@ -1,20 +1,16 @@
 import re
-
 import traceback
 from datetime import datetime
 from mensajes_logs import logger_
 
-
-
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.actions import action
-from flask_login import current_user
-from flask import redirect, url_for, flash, request
+from flask_admin.base import expose
+from flask import flash, request
 from wtforms import SelectField, StringField
 from wtforms.validators import DataRequired, Regexp
 from sqlalchemy import func
 
-from models import db
 from models.empleado_model import Empleado, Puesto
 from models.tipo_documento_model import TipoDocumento
 from models.empleado_documento_model import EmpleadoDocumento
@@ -60,8 +56,12 @@ class EmpleadoAdmin(ModelView):
         "sucursal_col": lambda view, context, model, name: (
             model.sucursal.Descripcion if getattr(model, "sucursal", None) else ""
         ),
-        "tipo_documento_col": lambda view, context, model, name: view._format_tipo_documento(model),
-        "numero_documento_col": lambda view, context, model, name: view._format_numero_documento(model),
+        "tipo_documento_col": lambda view, context, model, name: view._format_tipo_documento(
+            model
+        ),
+        "numero_documento_col": lambda view, context, model, name: view._format_numero_documento(
+            model
+        ),
     }
 
     form_columns = (
@@ -106,8 +106,15 @@ class EmpleadoAdmin(ModelView):
         "Telefono": {"data-validacion": "telefono", "id": "emp_telefono"},
         "Email": {"data-validacion": "email", "id": "emp_email"},
         "estado": {"id": "emp_estado"},
-        "descripcion_documento": {"data-validacion": "descripcion", "id": "emp_doc_descripcion"},
-        "numero_identificador": {"id": "emp_doc_numero", "inputmode": "numeric", "pattern": "[0-9]*"},
+        "descripcion_documento": {
+            "data-validacion": "descripcion",
+            "id": "emp_doc_descripcion",
+        },
+        "numero_identificador": {
+            "id": "emp_doc_numero",
+            "inputmode": "numeric",
+            "pattern": "[0-9]*",
+        },
         "tipo_documento_empleado": {"id": "emp_doc_tipo"},
         "ID_sucursal": {"id": "emp_sucursal"},
     }
@@ -143,8 +150,16 @@ class EmpleadoAdmin(ModelView):
         ),
     }
 
-
-    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+    def get_list(
+        self,
+        page,
+        sort_column,
+        sort_desc,
+        search,
+        filters,
+        execute=True,
+        page_size=None,
+    ):
         try:
             return super().get_list(
                 page,
@@ -158,14 +173,21 @@ class EmpleadoAdmin(ModelView):
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "empleado_pantalla", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "empleado_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "empleado_pantalla", fecha
+            )
+            return "esto es un error", 501
 
     def _build_puesto_choices(self):
-        puestos_activos = Puesto.query.filter_by(estado=1).order_by(Puesto.Nombre_Puesto).all()
+        puestos_activos = (
+            Puesto.query.filter_by(estado=1).order_by(Puesto.Nombre_Puesto).all()
+        )
         return [(str(p.ID_Puesto), p.Nombre_Puesto) for p in puestos_activos]
 
     def _build_sucursal_choices(self):
-        sucursales_activas = Sucursal.query.filter_by(estado=1).order_by(Sucursal.Descripcion).all()
+        sucursales_activas = (
+            Sucursal.query.filter_by(estado=1).order_by(Sucursal.Descripcion).all()
+        )
         return [(str(s.ID_sucursal), s.Descripcion) for s in sucursales_activas]
 
     def _get_tipo_doc_for_empleado(self, empleado):
@@ -178,7 +200,9 @@ class EmpleadoAdmin(ModelView):
 
         tipo_doc_obj = (
             self.session.query(TipoDocumento)
-            .join(EmpleadoDocumento, EmpleadoDocumento.tipo_doc == TipoDocumento.tipo_doc)
+            .join(
+                EmpleadoDocumento, EmpleadoDocumento.tipo_doc == TipoDocumento.tipo_doc
+            )
             .filter(EmpleadoDocumento.ID_Empleado == empleado.ID_Empleado)
             .first()
         )
@@ -215,7 +239,11 @@ class EmpleadoAdmin(ModelView):
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "empleado_guardar", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "empleado_guardar", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "empleado_guardar", fecha
+            )
+            return "esto es un error", 501
+
     def edit_form(self, obj=None):
         try:
             form = super().edit_form(obj)
@@ -227,7 +255,11 @@ class EmpleadoAdmin(ModelView):
 
             if hasattr(form, "ID_sucursal"):
                 form.ID_sucursal.choices = self._build_sucursal_choices()
-                if request.method == "GET" and obj and getattr(obj, "ID_sucursal", None) is not None:
+                if (
+                    request.method == "GET"
+                    and obj
+                    and getattr(obj, "ID_sucursal", None) is not None
+                ):
                     form.ID_sucursal.data = str(obj.ID_sucursal)
 
             if hasattr(form, "estado"):
@@ -243,12 +275,18 @@ class EmpleadoAdmin(ModelView):
                     if hasattr(form, "descripcion_documento"):
                         form.descripcion_documento.data = tipo_doc_obj.descripcion or ""
                     if hasattr(form, "numero_identificador"):
-                        form.numero_identificador.data = tipo_doc_obj.numero_documento or ""
+                        form.numero_identificador.data = (
+                            tipo_doc_obj.numero_documento or ""
+                        )
+
+            return form
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_boton_crear", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_boton_crear", fecha)
-            return form
+            logger_.Logger.add_to_log("error", str(error), "empleado_editar", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "empleado_editar", fecha
+            )
+            return "esto es un error", 501
 
     def on_model_change(self, form, model, is_created):
         nombre = (form.Nombre.data or "").strip()
@@ -273,7 +311,9 @@ class EmpleadoAdmin(ModelView):
             raise ValueError("El correo electrónico no es válido.")
 
         with self.session.no_autoflush:
-            q_user = self.session.query(Empleado).filter(func.lower(Empleado.Username) == func.lower(username))
+            q_user = self.session.query(Empleado).filter(
+                func.lower(Empleado.Username) == func.lower(username)
+            )
             if not is_created and getattr(model, "ID_Empleado", None) is not None:
                 q_user = q_user.filter(Empleado.ID_Empleado != model.ID_Empleado)
             if q_user.first():
@@ -285,7 +325,9 @@ class EmpleadoAdmin(ModelView):
             if q_tel.first():
                 raise ValueError("Ya existe un empleado con ese teléfono.")
 
-            q_mail = self.session.query(Empleado).filter(func.lower(Empleado.Email) == func.lower(correo))
+            q_mail = self.session.query(Empleado).filter(
+                func.lower(Empleado.Email) == func.lower(correo)
+            )
             if not is_created and getattr(model, "ID_Empleado", None) is not None:
                 q_mail = q_mail.filter(Empleado.ID_Empleado != model.ID_Empleado)
             if q_mail.first():
@@ -332,10 +374,14 @@ class EmpleadoAdmin(ModelView):
         num_val = (num_doc_data.data or "").strip() if num_doc_data else ""
 
         if not tipo_val or not desc_val or not num_val:
-            raise ValueError("Debes completar la información del documento de identidad.")
+            raise ValueError(
+                "Debes completar la información del documento de identidad."
+            )
 
         if is_created:
-            nuevo_tipo_doc = TipoDocumento(descripcion=desc_val, tipo=int(tipo_val), numero_documento=num_val)
+            nuevo_tipo_doc = TipoDocumento(
+                descripcion=desc_val, tipo=int(tipo_val), numero_documento=num_val
+            )
             self.session.add(nuevo_tipo_doc)
             self.session.flush()
 
@@ -345,11 +391,15 @@ class EmpleadoAdmin(ModelView):
             tipo_doc_obj = self._get_tipo_doc_for_empleado(model)
 
             if tipo_doc_obj is None:
-                nuevo_tipo_doc = TipoDocumento(descripcion=desc_val, tipo=int(tipo_val), numero_documento=num_val)
+                nuevo_tipo_doc = TipoDocumento(
+                    descripcion=desc_val, tipo=int(tipo_val), numero_documento=num_val
+                )
                 self.session.add(nuevo_tipo_doc)
                 self.session.flush()
 
-                enlace = EmpleadoDocumento(tipo_doc=nuevo_tipo_doc.tipo_doc, ID_Empleado=model.ID_Empleado)
+                enlace = EmpleadoDocumento(
+                    tipo_doc=nuevo_tipo_doc.tipo_doc, ID_Empleado=model.ID_Empleado
+                )
                 self.session.add(enlace)
             else:
                 tipo_doc_obj.descripcion = desc_val
@@ -387,7 +437,11 @@ class EmpleadoAdmin(ModelView):
             self.session.rollback()
             flash("No se pudo activar.", "danger")
 
-    @action("inactivar", "Inactivar seleccionados", "¿Inactivar los empleados seleccionados?")
+    @action(
+        "inactivar",
+        "Inactivar seleccionados",
+        "¿Inactivar los empleados seleccionados?",
+    )
     def action_inactivar(self, ids):
         try:
             self.session.query(Empleado).filter(Empleado.ID_Empleado.in_(ids)).update(
@@ -398,6 +452,19 @@ class EmpleadoAdmin(ModelView):
         except Exception:
             self.session.rollback()
             flash("No se pudo inactivar.", "danger")
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
+
+    @expose("/")
+    def index_view(self, *args, **kwargs):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "empleado_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "empleado_pantalla", fecha
+            )
+            return "esto es un error", 501

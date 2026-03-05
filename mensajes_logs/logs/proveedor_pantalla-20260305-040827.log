@@ -1,0 +1,89 @@
+2026-03-05 04:08:27 | ERROR | Kevin | (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT count(?) AS count_1 
+FROM [Proveedores]]
+[parameters: ('*',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-05 04:08:27 | ERROR | Kevin | Traceback (most recent call last):
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+pyodbc.OperationalError: ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Emili\Downloads\alitas-is2\models\admin_proveedores_view.py", line 82, in get_list
+    return super().get_list(
+           ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\flask_admin\contrib\sqla\view.py", line 1086, in get_list
+    count = count_query.scalar() if count_query else None
+            ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2835, in scalar
+    ret = self.one()
+          ^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2808, in one
+    return self._iter().one()  # type: ignore
+           ^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2857, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT count(?) AS count_1 
+FROM [Proveedores]]
+[parameters: ('*',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+2026-03-05 04:08:27 | ERROR | Kevin | BaseModelView.index_view() got an unexpected keyword argument 'cls'
+2026-03-05 04:08:27 | ERROR | Kevin | Traceback (most recent call last):
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 369, in _run_view
+    return fn(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\flask_admin\model\base.py", line 1980, in index_view
+    count, data = self.get_list(view_args.page, sort_column, view_args.sort_desc,
+    ^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Emili\Downloads\alitas-is2\models\admin_proveedores_view.py", line 506, in index_view
+    return super().index_view()
+           ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 69, in inner
+    return self._run_view(f, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Emili\Downloads\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 371, in _run_view
+    return fn(cls=self, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^
+TypeError: BaseModelView.index_view() got an unexpected keyword argument 'cls'
+

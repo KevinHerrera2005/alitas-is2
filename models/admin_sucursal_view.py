@@ -1,10 +1,15 @@
+import re
+import traceback
+from datetime import datetime
+from mensajes_logs import logger_
+
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.base import expose
 from flask_login import current_user
-from flask import redirect, url_for, flash, request
+from flask import flash, request
 from wtforms import StringField, SelectField
 from sqlalchemy import text
 
-from models import db
 from models.direccion_model import Direccion
 
 
@@ -49,6 +54,34 @@ class SucursalAdmin(ModelView):
         "estado": SelectField,
     }
 
+    def get_list(
+        self,
+        page,
+        sort_column,
+        sort_desc,
+        search,
+        filters,
+        execute=True,
+        page_size=None,
+    ):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "sucursal_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "sucursal_pantalla", fecha
+            )
+            return "esto es un error", 501
+
     def _direccion_label(self, id_dir):
         if not id_dir:
             return ""
@@ -62,32 +95,66 @@ class SucursalAdmin(ModelView):
     }
 
     def create_form(self, obj=None):
-        form = super().create_form(obj)
-        if "estado" in form._fields:
-            form._fields.pop("estado")
-        return form
+        try:
+            form = super().create_form(obj)
+            if "estado" in form._fields:
+                form._fields.pop("estado")
+            return form
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "sucursal_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "sucursal_pantalla", fecha
+            )
+            return "esto es un error", 501
+
+    def edit_form(self, obj=None):
+        try:
+            form = super().edit_form(obj)
+
+            if hasattr(form, "estado"):
+                form.estado.choices = [("1", "Activa"), ("0", "Inactiva")]
+                if request.method == "GET" and obj is not None:
+                    form.estado.data = "1" if obj.estado == 1 else "0"
+
+            if obj and obj.ID_Direccion:
+                dir_obj = Direccion.query.get(obj.ID_Direccion)
+                if dir_obj:
+                    form.DireccionTexto.data = dir_obj.Descripcion
+
+            return form
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "sucursal_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "sucursal_pantalla", fecha
+            )
+            return "esto es un error", 501
+
+    def handle_view_exception(self, exc):
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(exc), "sucursal_pantalla", fecha)
+        logger_.Logger.add_to_log(
+            "error", traceback.format_exc(), "sucursal_pantalla", fecha
+        )
+        flash("esto es un error", "danger")
+        return True
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
 
-    def edit_form(self, obj=None):
-        form = super().edit_form(obj)
-
-        if hasattr(form, "estado"):
-            form.estado.choices = [("1", "Activa"), ("0", "Inactiva")]
-            if request.method == "GET" and obj is not None:
-                form.estado.data = "1" if obj.estado == 1 else "0"
-
-        if obj and obj.ID_Direccion:
-            dir_obj = Direccion.query.get(obj.ID_Direccion)
-            if dir_obj:
-                form.DireccionTexto.data = dir_obj.Descripcion
-
-        return form
-
-    def handle_view_exception(self, exc):
-        flash(str(exc), "danger")
-        return False
+    @expose("/")
+    def index_view(self, *args, **kwargs):
+        try:
+            return super().index_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "sucursal_pantalla", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "sucursal_pantalla", fecha
+            )
+            return "esto es un error", 501
 
     def on_model_change(self, form, model, is_created):
         descripcion = (form.Descripcion.data or "").strip()
@@ -136,10 +203,6 @@ class SucursalAdmin(ModelView):
                     {"desc": dir_texto, "id": model.ID_Direccion},
                 )
 
-    def is_accessible(self):
-        if not current_user.is_authenticated:
-            return False
-
         tipo = getattr(current_user, "tipo", None)
         if tipo == "gerente":
             return True
@@ -158,7 +221,3 @@ class SucursalAdmin(ModelView):
 
     def is_visible(self):
         return self.is_accessible()
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
