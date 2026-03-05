@@ -1,6 +1,6 @@
-2026-03-05 02:20:57 | ERROR | Jefe Kevin | (pyodbc.OperationalError) ('08001', '[08001] [Microsoft][ODBC Driver 17 for SQL Server]Proveedor de TCP: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión.\r\n (10061) (SQLDriverConnect); [08001] [Microsoft][ODBC Driver 17 for SQL Server]Ha finalizado el tiempo de espera de inicio de sesión (0); [08001] [Microsoft][ODBC Driver 17 for SQL Server]Error relacionado con la red o específico de instancia al establecer conexión con el servidor SQL Server. El servidor no se encuentra o no está accesible. Compruebe si el nombre de la instancia es correcto y si SQL Server está configurado para permitir conexiones remotas. Para obtener más información, vea los Libros en pantalla de SQL Server. (10061)')
+2026-03-05 03:00:04 | ERROR | Jefe Kevin | (pyodbc.OperationalError) ('08001', '[08001] [Microsoft][ODBC Driver 17 for SQL Server]Proveedor de TCP: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión.\r\n (10061) (SQLDriverConnect); [08001] [Microsoft][ODBC Driver 17 for SQL Server]Ha finalizado el tiempo de espera de inicio de sesión (0); [08001] [Microsoft][ODBC Driver 17 for SQL Server]Error relacionado con la red o específico de instancia al establecer conexión con el servidor SQL Server. El servidor no se encuentra o no está accesible. Compruebe si el nombre de la instancia es correcto y si SQL Server está configurado para permitir conexiones remotas. Para obtener más información, vea los Libros en pantalla de SQL Server. (10061)')
 (Background on this error at: https://sqlalche.me/e/20/e3q8)
-2026-03-05 02:20:57 | ERROR | Jefe Kevin | Traceback (most recent call last):
+2026-03-05 03:00:04 | ERROR | Jefe Kevin | Traceback (most recent call last):
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
     self._dbapi_connection = engine.raw_connection()
                              ~~~~~~~~~~~~~~~~~~~~~^^
@@ -12,19 +12,14 @@
            ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1264, in _checkout
     fairy = _ConnectionRecord.checkout(pool)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 711, in checkout
-    rec = pool._do_get()
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 716, in checkout
     with util.safe_reraise():
          ~~~~~~~~~~~~~~~~~^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
     raise exc_value.with_traceback(exc_tb)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 175, in _do_get
-    return self._create_connection()
-           ~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 388, in _create_connection
-    return _ConnectionRecord(self)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 673, in __init__
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 714, in checkout
+    dbapi_connection = rec.get_connection()
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
     self.__connect()
     ~~~~~~~~~~~~~~^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect
@@ -46,8 +41,11 @@ pyodbc.OperationalError: ('08001', '[08001] [Microsoft][ODBC Driver 17 for SQL S
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\proyecto\models\gestion_recetas.py", line 33, in crud_recetas
-    recetas = Receta.query.filter(Receta.ID_sucursal == sid).all()
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\proyecto\reports\routes.py", line 385, in exportar
+    cols, rows = _columnas_y_filas(model_cls)
+                 ~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\proyecto\reports\routes.py", line 298, in _columnas_y_filas
+    records = model_cls.query.limit(limit).all()
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 2704, in all
     return self._iter().all()  # type: ignore
            ~~~~~~~~~~^^
@@ -105,19 +103,14 @@ Traceback (most recent call last):
            ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1264, in _checkout
     fairy = _ConnectionRecord.checkout(pool)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 711, in checkout
-    rec = pool._do_get()
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 716, in checkout
     with util.safe_reraise():
          ~~~~~~~~~~~~~~~~~^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
     raise exc_value.with_traceback(exc_tb)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 175, in _do_get
-    return self._create_connection()
-           ~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 388, in _create_connection
-    return _ConnectionRecord(self)
-  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 673, in __init__
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 714, in checkout
+    dbapi_connection = rec.get_connection()
+  File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 836, in get_connection
     self.__connect()
     ~~~~~~~~~~~~~~^^
   File "C:\Users\kevin\Desktop\Clases\periodo 3 2025\ing softwarre\Proyectop\venv\Lib\site-packages\sqlalchemy\pool\base.py", line 899, in __connect

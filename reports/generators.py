@@ -341,22 +341,15 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
     try:
         buf = BytesIO()
 
-<<<<<<< HEAD
-    cols_fmt = [_label_columna(c) for c in columns]
-    page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
-=======
         cols_fmt = [_label_columna(c) for c in columns]
-
         page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
->>>>>>> 9d08b6b (Mis cambios locales)
 
         left_margin = 0.55 * inch
         right_margin = 0.55 * inch
         top_margin = 0.7 * inch
         bottom_margin = 0.8 * inch
 
-<<<<<<< HEAD
-    doc = SimpleDocTemplate(
+        doc = SimpleDocTemplate(
         buf,
         pagesize=page_size,
         leftMargin=left_margin,
@@ -365,57 +358,9 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         bottomMargin=bottom_margin,
         title=report_title,
         author=_nombre_empresa(),
-    )
-
-    avail_width = page_size[0] - left_margin - right_margin
-
-    story = []
-    story.append(_header_block(report_title, printed_by))
-    story.append(Spacer(1, 0.18 * inch))
-
-    if _should_split(len(cols_fmt)):
-        secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
-    else:
-        secciones = [(list(cols_fmt), [list(r) for r in rows])]
-
-    for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
-        ncols = len(cols_chunk)
-        head_fs, body_fs = _font_sizes_for_cols(ncols)
-
-        wrap_header = ParagraphStyle(
-            name=f"WrapHeader_{idx}",
-            fontName="Helvetica-Bold",
-            fontSize=head_fs,
-            leading=head_fs + 2,
-            alignment=1,
-            wordWrap="LTR",
-            splitLongWords=0,
-            textColor=colors.white,
-        )
-
-        wrap_cell = ParagraphStyle(
-            name=f"WrapCell_{idx}",
-            fontName="Helvetica",
-            fontSize=body_fs,
-            leading=body_fs + 3,
-            wordWrap="LTR",
-            splitLongWords=1,
-            textColor=colors.black,
-        )
-=======
-        doc = SimpleDocTemplate(
-            buf,
-            pagesize=page_size,
-            leftMargin=left_margin,
-            rightMargin=right_margin,
-            topMargin=top_margin,
-            bottomMargin=bottom_margin,
-            title=report_title,
-            author=_nombre_empresa(),
         )
 
         avail_width = page_size[0] - left_margin - right_margin
->>>>>>> 9d08b6b (Mis cambios locales)
 
         story = []
         story.append(_header_block(report_title, printed_by))
@@ -431,7 +376,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             head_fs, body_fs = _font_sizes_for_cols(ncols)
 
             wrap_header = ParagraphStyle(
-                name="WrapHeader",
+                name=f"WrapHeader_{idx}",
                 fontName="Helvetica-Bold",
                 fontSize=head_fs,
                 leading=head_fs + 2,
@@ -442,7 +387,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             )
 
             wrap_cell = ParagraphStyle(
-                name="WrapCell",
+                name=f"WrapCell_{idx}",
                 fontName="Helvetica",
                 fontSize=body_fs,
                 leading=body_fs + 3,
@@ -451,8 +396,42 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
                 textColor=colors.black,
             )
 
-            header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
-            data = [header_row]
+            story = []
+            story.append(_header_block(report_title, printed_by))
+            story.append(Spacer(1, 0.18 * inch))
+
+            if _should_split(len(cols_fmt)):
+                secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
+            else:
+                secciones = [(list(cols_fmt), [list(r) for r in rows])]
+
+            for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+                ncols = len(cols_chunk)
+                head_fs, body_fs = _font_sizes_for_cols(ncols)
+
+                wrap_header = ParagraphStyle(
+                    name="WrapHeader",
+                    fontName="Helvetica-Bold",
+                    fontSize=head_fs,
+                    leading=head_fs + 2,
+                    alignment=1,
+                    wordWrap="LTR",
+                    splitLongWords=0,
+                    textColor=colors.white,
+                )
+
+                wrap_cell = ParagraphStyle(
+                    name="WrapCell",
+                    fontName="Helvetica",
+                    fontSize=body_fs,
+                    leading=body_fs + 3,
+                    wordWrap="LTR",
+                    splitLongWords=1,
+                    textColor=colors.black,
+                )
+
+                header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
+                data = [header_row]
 
             for r in rows_chunk:
                 fila = []
@@ -580,27 +559,11 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
 
         ws.row_dimensions[start_row].height = 34
 
-<<<<<<< HEAD
-    for col_index, col_name in enumerate(cols_fmt, 1):
-        cell = ws.cell(row=start_row, column=col_index, value=col_name)
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        cell.border = border
-
-    for row_index, row_data in enumerate(rows, start_row + 1):
-        ws.row_dimensions[row_index].height = 18
-        for col_index, value in enumerate(row_data, 1):
-            cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
-            cell.font = body_font
-            cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
-=======
         for col_index, col_name in enumerate(cols_fmt, 1):
             cell = ws.cell(row=start_row, column=col_index, value=col_name)
             cell.fill = header_fill
             cell.font = header_font
-            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=False, shrink_to_fit=True)
->>>>>>> 9d08b6b (Mis cambios locales)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = border
 
         for row_index, row_data in enumerate(rows, start_row + 1):
@@ -611,25 +574,33 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
                 cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
                 cell.border = border
 
-        _auto_anchos_excel(ws, cols_fmt, rows)
+            for row_index, row_data in enumerate(rows, start_row + 1):
+                ws.row_dimensions[row_index].height = 18
+                for col_index, value in enumerate(row_data, 1):
+                    cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
+                    cell.font = body_font
+                    cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+                    cell.border = border
 
-        max_row = start_row + len(rows)
-        real_last_col = get_column_letter(max_col)
+            _auto_anchos_excel(ws, cols_fmt, rows)
 
-        try:
-            ref = f"A{start_row}:{real_last_col}{max_row}"
-            tab = XLTable(displayName="TablaReporte", ref=ref)
-            style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
-            tab.tableStyleInfo = style
-            ws.add_table(tab)
-        except Exception:
-            pass
+            max_row = start_row + len(rows)
+            real_last_col = get_column_letter(max_col)
 
-        ws.freeze_panes = ws[f"A{start_row + 1}"]
+            try:
+                ref = f"A{start_row}:{real_last_col}{max_row}"
+                tab = XLTable(displayName="TablaReporte", ref=ref)
+                style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
+                tab.tableStyleInfo = style
+                ws.add_table(tab)
+            except Exception:
+                pass
 
-        out = BytesIO()
-        wb.save(out)
-        return out.getvalue()
+            ws.freeze_panes = ws[f"A{start_row + 1}"]
+
+            out = BytesIO()
+            wb.save(out)
+            return out.getvalue()
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "generar_pdf", fecha)
