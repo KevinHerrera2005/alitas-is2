@@ -16,6 +16,7 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import validators as fa_validators
 from flask_babel import Babel
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import text
 from mensajes_logs import logger_
 from datetime import datetime
 import traceback
@@ -150,8 +151,33 @@ def handle_operational_error(e):
     fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     logger_.Logger.add_to_log("error", str(e), "conexion_bd", fecha)
     logger_.Logger.add_to_log("error", traceback.format_exc(), "conexion_bd", fecha)
+    session["_db_down"] = True
     flash("No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.", "error")
     return redirect(request.referrer or "/admin/")
+
+
+@app.before_request
+def _clear_db_flash_when_restored():
+    if not session.get("_db_down"):
+        return
+
+    try:
+        db.session.execute(text("SELECT 1"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return
+
+    flashes = session.get("_flashes", [])
+    if flashes:
+        filtrados = []
+        for cat, msg in flashes:
+            if isinstance(msg, str) and msg.strip().startswith("No hay conexión con SQL Server"):
+                continue
+            filtrados.append((cat, msg))
+        session["_flashes"] = filtrados
+
+    session.pop("_db_down", None)
 
 
 login_manager = LoginManager()

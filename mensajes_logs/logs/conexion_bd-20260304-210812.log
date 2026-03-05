@@ -1,0 +1,145 @@
+2026-03-04 21:08:12 | ERROR | Kevin | (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT [Facturas].[ID_Parametro] AS [Facturas_ID_Parametro], [Facturas].[Numero_Factura] AS [Facturas_Numero_Factura], [Facturas].[Fecha_Emision] AS [Facturas_Fecha_Emision], [Facturas].[ID_Empleado] AS [Facturas_ID_Empleado], [Facturas].[ID_Cai] AS [Facturas_ID_Cai], [Facturas].[ID_Usuario_ClienteF] AS [Facturas_ID_Usuario_ClienteF], [Facturas].[ID_pago] AS [Facturas_ID_pago], [Facturas].[Subtotal] AS [Facturas_Subtotal], [Facturas].[Descuento] AS [Facturas_Descuento], [Facturas].[Impuesto] AS [Facturas_Impuesto], [Facturas].[Total_a_pagar] AS [Facturas_Total_a_pagar], [Usuarios_cliente_1].[ID_Usuario_ClienteF] AS [Usuarios_cliente_1_ID_Usuario_ClienteF], [Usuarios_cliente_1].[Username] AS [Usuarios_cliente_1_Username], [Usuarios_cliente_1].password AS [Usuarios_cliente_1_password], [Usuarios_cliente_1].nombre AS [Usuarios_cliente_1_nombre], [Usuarios_cliente_1].apellido AS [Usuarios_cliente_1_apellido], [Usuarios_cliente_1].telefono AS [Usuarios_cliente_1_telefono], [Usuarios_cliente_1].correo AS [Usuarios_cliente_1_correo], [Usuarios_cliente_1].[ID_sucursal] AS [Usuarios_cliente_1_ID_sucursal], [Usuarios_cliente_1].estado AS [Usuarios_cliente_1_estado], [Metodos_money_1].[ID_Metodo] AS [Metodos_money_1_ID_Metodo], [Metodos_money_1].[Nombre] AS [Metodos_money_1_Nombre], [Metodos_money_1].[Tipo] AS [Metodos_money_1_Tipo], [Metodos_money_1].[Descripcion] AS [Metodos_money_1_Descripcion], pago_detalle_1.[ID_pago] AS [pago_detalle_1_ID_pago], pago_detalle_1.[ID_Metodo] AS [pago_detalle_1_ID_Metodo], pago_detalle_1.[Efectivo] AS [pago_detalle_1_Efectivo], pago_detalle_1.[Numero_tarjeta] AS [pago_detalle_1_Numero_tarjeta] 
+FROM [Facturas] LEFT OUTER JOIN [Usuarios_cliente] AS [Usuarios_cliente_1] ON [Usuarios_cliente_1].[ID_Usuario_ClienteF] = [Facturas].[ID_Usuario_ClienteF] LEFT OUTER JOIN pago_detalle AS pago_detalle_1 ON pago_detalle_1.[ID_pago] = [Facturas].[ID_pago] LEFT OUTER JOIN [Metodos_money] AS [Metodos_money_1] ON [Metodos_money_1].[ID_Metodo] = pago_detalle_1.[ID_Metodo] 
+WHERE [Facturas].[ID_Parametro] = ?]
+[parameters: ('2094',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-04 21:08:12 | ERROR | Kevin | Traceback (most recent call last):
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.OperationalError: ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 69, in inner
+    return self._run_view(f, *args, **kwargs)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 369, in _run_view
+    return fn(self, *args, **kwargs)
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\model\base.py", line 2195, in details_view
+    model = self.get_one(id)
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\contrib\sqla\view.py", line 1119, in get_one
+    return self.session.query(self.model).get(tools.iterdecode(id))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in get
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\util\deprecations.py", line 386, in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1126, in get
+    return self._get_impl(ident, loading.load_on_pk_identity)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1135, in _get_impl
+    return self.session._get_impl(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        mapper,
+        ^^^^^^^
+    ...<6 lines>...
+        execution_options=self._execution_options,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 3859, in _get_impl
+    return db_load_fn(
+        self,
+    ...<5 lines>...
+        bind_arguments=bind_arguments,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\loading.py", line 695, in load_on_pk_identity
+    session.execute(
+    ~~~~~~~~~~~~~~~^
+        q,
+        ^^
+    ...<2 lines>...
+        bind_arguments=bind_arguments,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT [Facturas].[ID_Parametro] AS [Facturas_ID_Parametro], [Facturas].[Numero_Factura] AS [Facturas_Numero_Factura], [Facturas].[Fecha_Emision] AS [Facturas_Fecha_Emision], [Facturas].[ID_Empleado] AS [Facturas_ID_Empleado], [Facturas].[ID_Cai] AS [Facturas_ID_Cai], [Facturas].[ID_Usuario_ClienteF] AS [Facturas_ID_Usuario_ClienteF], [Facturas].[ID_pago] AS [Facturas_ID_pago], [Facturas].[Subtotal] AS [Facturas_Subtotal], [Facturas].[Descuento] AS [Facturas_Descuento], [Facturas].[Impuesto] AS [Facturas_Impuesto], [Facturas].[Total_a_pagar] AS [Facturas_Total_a_pagar], [Usuarios_cliente_1].[ID_Usuario_ClienteF] AS [Usuarios_cliente_1_ID_Usuario_ClienteF], [Usuarios_cliente_1].[Username] AS [Usuarios_cliente_1_Username], [Usuarios_cliente_1].password AS [Usuarios_cliente_1_password], [Usuarios_cliente_1].nombre AS [Usuarios_cliente_1_nombre], [Usuarios_cliente_1].apellido AS [Usuarios_cliente_1_apellido], [Usuarios_cliente_1].telefono AS [Usuarios_cliente_1_telefono], [Usuarios_cliente_1].correo AS [Usuarios_cliente_1_correo], [Usuarios_cliente_1].[ID_sucursal] AS [Usuarios_cliente_1_ID_sucursal], [Usuarios_cliente_1].estado AS [Usuarios_cliente_1_estado], [Metodos_money_1].[ID_Metodo] AS [Metodos_money_1_ID_Metodo], [Metodos_money_1].[Nombre] AS [Metodos_money_1_Nombre], [Metodos_money_1].[Tipo] AS [Metodos_money_1_Tipo], [Metodos_money_1].[Descripcion] AS [Metodos_money_1_Descripcion], pago_detalle_1.[ID_pago] AS [pago_detalle_1_ID_pago], pago_detalle_1.[ID_Metodo] AS [pago_detalle_1_ID_Metodo], pago_detalle_1.[Efectivo] AS [pago_detalle_1_Efectivo], pago_detalle_1.[Numero_tarjeta] AS [pago_detalle_1_Numero_tarjeta] 
+FROM [Facturas] LEFT OUTER JOIN [Usuarios_cliente] AS [Usuarios_cliente_1] ON [Usuarios_cliente_1].[ID_Usuario_ClienteF] = [Facturas].[ID_Usuario_ClienteF] LEFT OUTER JOIN pago_detalle AS pago_detalle_1 ON pago_detalle_1.[ID_pago] = [Facturas].[ID_pago] LEFT OUTER JOIN [Metodos_money] AS [Metodos_money_1] ON [Metodos_money_1].[ID_Metodo] = pago_detalle_1.[ID_Metodo] 
+WHERE [Facturas].[ID_Parametro] = ?]
+[parameters: ('2094',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
