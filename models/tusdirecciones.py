@@ -3,6 +3,13 @@ from flask_login import login_required, current_user
 import re
 from wtforms.validators import ValidationError
 
+from datetime import datetime
+import traceback
+from flask_admin import expose
+from mensajes_logs import logger_
+
+
+
 from models import db
 from models.direccion_model import Direccion
 from models.direccion_cliente_model import DireccionDelCliente
@@ -19,27 +26,32 @@ def _obtener_id_cliente():
 
 def tus_direcciones_routes(app):
     @app.route("/tus-direcciones", endpoint="tus_direcciones")
-    @login_required
     def tus_direcciones():
-        id_cliente = _obtener_id_cliente()
-        if not id_cliente:
-            return redirect(url_for("login"))
+        try:
+            id_cliente = _obtener_id_cliente()
+            if not id_cliente:
+                return redirect(url_for("login"))
 
-        filas = (
-            db.session.query(
-                DireccionDelCliente.ID_US_CO.label("numero"),
-                Direccion.Descripcion.label("descripcion"),
+            filas = (
+                db.session.query(
+                    DireccionDelCliente.ID_US_CO.label("numero"),
+                    Direccion.Descripcion.label("descripcion"),
+                )
+                .join(
+                    Direccion,
+                    Direccion.ID_Direccion == DireccionDelCliente.ID_Direccion,
+                )
+                .filter(DireccionDelCliente.ID_Usuario_ClienteF == id_cliente)
+                .order_by(DireccionDelCliente.ID_US_CO)
+                .all()
             )
-            .join(
-                Direccion,
-                Direccion.ID_Direccion == DireccionDelCliente.ID_Direccion,
-            )
-            .filter(DireccionDelCliente.ID_Usuario_ClienteF == id_cliente)
-            .order_by(DireccionDelCliente.ID_US_CO)
-            .all()
-        )
+            return render_template("tusdirecciones.html", direcciones=filas)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "tus_direcciones", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "tus_direcciones", fecha)
+            return "esto es un error", 501
 
-        return render_template("tusdirecciones.html", direcciones=filas)
 def _tiene_tres_iguales_seguidos(texto):
     if texto is None:
         return False

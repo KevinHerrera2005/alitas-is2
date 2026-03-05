@@ -5,6 +5,14 @@ from models.receta_model import Receta
 from models.usuario_cliente_model import UsuarioCliente
 from sqlalchemy import text
 
+
+from datetime import datetime
+import traceback
+from flask_admin import expose
+from mensajes_logs import logger_
+
+
+
 pagina_principal_bp = Blueprint("pagina_principal_bp", __name__)
 
 
@@ -47,70 +55,75 @@ def _cliente_sucursal_id():
 
 
 @pagina_principal_bp.route("/menu")
-@login_required
 def menu():
-    sid = _cliente_sucursal_id()
-    if sid is None:
-        flash("No se pudo determinar tu sucursal.", "danger")
-        return redirect(url_for("login"))
+    try:
+        sid = _cliente_sucursal_id()
+        if sid is None:
+            flash("No se pudo determinar tu sucursal.", "danger")
+            return redirect(url_for("login"))
 
-    categorias_query = db.session.execute(text("""
-        SELECT id_categoria_receta, Nombre_categoria_receta
-        FROM categoria_recetas
-        ORDER BY Nombre_categoria_receta
-    """)).fetchall()
+        categorias_query = db.session.execute(text("""
+            SELECT id_categoria_receta, Nombre_categoria_receta
+            FROM categoria_recetas
+            ORDER BY Nombre_categoria_receta
+        """)).fetchall()
 
-    categorias = {c.Nombre_categoria_receta: [] for c in categorias_query}
+        categorias = {c.Nombre_categoria_receta: [] for c in categorias_query}
 
-    recetas = Receta.query.filter(
-        Receta.Estado == 1,
-        Receta.ID_sucursal == sid
-    ).all()
+        recetas = Receta.query.filter(
+            Receta.Estado == 1,
+            Receta.ID_sucursal == sid
+        ).all()
 
-    for receta in recetas:
-        total_costo = db.session.execute(text("""
-            SELECT 
-                SUM((i.precio_lempiras / NULLIF(i.peso_individual, 0)) * ir.cantidad_usada) AS total
-            FROM IN_RE ir
-            JOIN Insumos i ON i.ID_Insumo = ir.ID_Insumo
-            WHERE ir.ID_Receta = :id_receta
-              AND ir.Activo = 1
-              AND ir.ID_sucursal = :sid
-        """), {"id_receta": receta.ID_Receta, "sid": sid}).scalar() or 0
+        for receta in recetas:
+            total_costo = db.session.execute(text("""
+                SELECT 
+                    SUM((i.precio_lempiras / NULLIF(i.peso_individual, 0)) * ir.cantidad_usada) AS total
+                FROM IN_RE ir
+                JOIN Insumos i ON i.ID_Insumo = ir.ID_Insumo
+                WHERE ir.ID_Receta = :id_receta
+                AND ir.Activo = 1
+                AND ir.ID_sucursal = :sid
+            """), {"id_receta": receta.ID_Receta, "sid": sid}).scalar() or 0
 
-        categoria_nombre = db.session.execute(text("""
-            SELECT Nombre_categoria_receta 
-            FROM categoria_recetas 
-            WHERE id_categoria_receta = :id
-        """), {"id": receta.categoria}).scalar() or "Sin categoría"
+            categoria_nombre = db.session.execute(text("""
+                SELECT Nombre_categoria_receta 
+                FROM categoria_recetas 
+                WHERE id_categoria_receta = :id
+            """), {"id": receta.categoria}).scalar() or "Sin categoría"
 
-        if categoria_nombre not in categorias:
-            categorias[categoria_nombre] = []
+            if categoria_nombre not in categorias:
+                categorias[categoria_nombre] = []
 
-        id_in_re = db.session.execute(text("""
-            SELECT TOP 1 ID_IN_RE
-            FROM IN_RE
-            WHERE ID_Receta = :id_receta
-              AND Activo = 1
-              AND ID_sucursal = :sid
-            ORDER BY ID_IN_RE
-        """), {"id_receta": receta.ID_Receta, "sid": sid}).scalar()
+            id_in_re = db.session.execute(text("""
+                SELECT TOP 1 ID_IN_RE
+                FROM IN_RE
+                WHERE ID_Receta = :id_receta
+                AND Activo = 1
+                AND ID_sucursal = :sid
+                ORDER BY ID_IN_RE
+            """), {"id_receta": receta.ID_Receta, "sid": sid}).scalar()
 
-        if id_in_re is None:
-            continue
+            if id_in_re is None:
+                continue
 
-        categorias[categoria_nombre].append({
-            "ID_IN_RE": id_in_re,
-            "nombre": receta.Nombre_receta,
-            "descripcion": receta.descripcion or "Platillo especial del día",
-            "precio": f"LPS. {float(total_costo):.2f}",
-        })
+            categorias[categoria_nombre].append({
+                "ID_IN_RE": id_in_re,
+                "nombre": receta.Nombre_receta,
+                "descripcion": receta.descripcion or "Platillo especial del día",
+                "precio": f"LPS. {float(total_costo):.2f}",
+            })
 
-    return render_template("menu.html", categorias=categorias)
+        return render_template("menu.html", categorias=categorias)
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "pagina_principal", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "pagina_principal", fecha)
+        return "esto es un error", 501
 
 
 @pagina_principal_bp.route("/ver_receta/<int:id_receta>")
-@login_required
+
 def ver_receta(id_receta):
     sid = _cliente_sucursal_id()
     if sid is None:

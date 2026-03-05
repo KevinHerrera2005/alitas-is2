@@ -4,56 +4,73 @@ from models.usuario_cliente_model import UsuarioCliente
 from werkzeug.security import generate_password_hash
 from flask_login import login_required, current_user
 
+from datetime import datetime
+import traceback
+from flask_admin import expose
+from mensajes_logs import logger_
+
+
+
 usuario_cliente_bp = Blueprint("usuario_cliente", __name__)
 
 
 @usuario_cliente_bp.route("/perfil")
-@login_required
+
 def perfil():
-    cliente_id = getattr(current_user, "ID_Usuario_ClienteF", None)
-    if not cliente_id:
-        flash("No se encontró el usuario cliente asociado a tu sesión.", "danger")
-        return redirect(url_for("login"))
+    try:
+        cliente_id = getattr(current_user, "ID_Usuario_ClienteF", None)
+        if not cliente_id:
+            flash("No se encontró el usuario cliente asociado a tu sesión.", "danger")
+            return redirect(url_for("login"))
 
-    usuario = UsuarioCliente.query.get(cliente_id)
-    if not usuario:
-        flash("No se encontró el usuario cliente en la base de datos.", "danger")
-        return redirect(url_for("login"))
+        usuario = UsuarioCliente.query.get(cliente_id)
+        if not usuario:
+            flash("No se encontró el usuario cliente en la base de datos.", "danger")
+            return redirect(url_for("login"))
 
-    return render_template("perfil.html", usuario=usuario)
-
+        return render_template("perfil.html", usuario=usuario)
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "perfil", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "perfil", fecha)
+        return "esto es un error", 501
 
 @usuario_cliente_bp.route("/perfil/editar", methods=["GET", "POST"])
-@login_required
 def editar_perfil():
-    cliente_id = getattr(current_user, "ID_Usuario_ClienteF", None)
-    if not cliente_id:
-        flash("No se encontró el usuario cliente asociado a tu sesión.", "danger")
-        return redirect(url_for("login"))
+    try:
+        cliente_id = getattr(current_user, "ID_Usuario_ClienteF", None)
+        if not cliente_id:
+            flash("No se encontró el usuario cliente asociado a tu sesión.", "danger")
+            return redirect(url_for("login"))
 
-    usuario = UsuarioCliente.query.get(cliente_id)
-    if not usuario:
-        flash("No se encontró el usuario cliente en la base de datos.", "danger")
-        return redirect(url_for("login"))
+        usuario = UsuarioCliente.query.get(cliente_id)
+        if not usuario:
+            flash("No se encontró el usuario cliente en la base de datos.", "danger")
+            return redirect(url_for("login"))
 
-    if request.method == "POST":
-        nombre = request.form.get("nombre", "").strip()
-        apellido = request.form.get("apellido", "").strip()
-        telefono = request.form.get("telefono", "").strip()
+        if request.method == "POST":
+            nombre = request.form.get("nombre", "").strip()
+            apellido = request.form.get("apellido", "").strip()
+            telefono = request.form.get("telefono", "").strip()
 
-        if not nombre or not apellido or not telefono:
-            flash("Todos los campos son obligatorios", "danger")
-            return redirect(url_for("usuario_cliente.editar_perfil"))
+            if not nombre or not apellido or not telefono:
+                flash("Todos los campos son obligatorios", "danger")
+                return redirect(url_for("usuario_cliente.editar_perfil"))
 
-        usuario.nombre = nombre
-        usuario.apellido = apellido
-        usuario.telefono = telefono
+            usuario.nombre = nombre
+            usuario.apellido = apellido
+            usuario.telefono = telefono
 
-        db.session.commit()
-        flash("Perfil actualizado correctamente", "success")
-        return redirect(url_for("usuario_cliente.perfil"))
+            db.session.commit()
+            flash("Perfil actualizado correctamente", "success")
+            return redirect(url_for("usuario_cliente.perfil"))
 
-    return render_template("perfil_editar.html", usuario=usuario)
+        return render_template("perfil_editar.html", usuario=usuario)
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "editar_perfil", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "editar_perfil", fecha)
+        return "esto es un error", 501
 import re
 from wtforms.validators import ValidationError
 

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import traceback
-
+from flask_admin import expose
 from flask import flash, redirect, request, url_for
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.exc import OperationalError
@@ -69,14 +69,24 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
             )
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "imuesto_historial", fecha)
+            logger_.Logger.add_to_log("error", str(error), "impuesto_historial", fecha)
             logger_.Logger.add_to_log(
-                "error", traceback.format_exc(), "facturas", fecha
+                "error", traceback.format_exc(), "impuesto_historial", fecha
             )
             return "esto es un error", 501
 
     create_template = "admin/model/impuesto_create.html"
     edit_template = "admin/model/impuesto_edit.html"
+
+    @expose("/details/")
+    def details_view(self,*args,**kwargs):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "historial_tasa_detalle", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_tasa_detalle", fecha)
+            return "esto es un error", 501
 
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")

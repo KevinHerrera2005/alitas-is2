@@ -268,8 +268,8 @@ class ImpuestoAdmin(ModelView):
             )
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "impuesto_paginado", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_paginado", fecha)
+            logger_.Logger.add_to_log("error", str(error), "impuesto", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto", fecha)
             return 0, []
 
     # Este botón sirve para abrir la pantalla de crear.

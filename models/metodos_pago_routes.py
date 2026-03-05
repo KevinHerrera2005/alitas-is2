@@ -2,6 +2,10 @@ import re
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from wtforms.validators import ValidationError
+from datetime import datetime
+import traceback
+from flask_admin import expose
+from mensajes_logs import logger_
 
 from models import db
 from models.metodos_money_model import MetodosMoney
@@ -16,63 +20,72 @@ def _obtener_id_cliente():
 
 def metodos_pago_routes(app):
     @app.route("/tus_metodos_pago", methods=["GET"])
-    @login_required
+    
     def tus_metodos_pago():
-        id_cliente = _obtener_id_cliente()
-        if not id_cliente:
-            flash("No se pudo identificar el cliente.", "danger")
-            return redirect(url_for("index"))
+        try:
+            id_cliente = _obtener_id_cliente()
+            if not id_cliente:
+                flash("No se pudo identificar el cliente.", "danger")
+                return redirect(url_for("index"))
 
-        tarjetas = (
-            PagosCliente.query.join(MetodosMoney, PagosCliente.ID_Metodo == MetodosMoney.ID_Metodo)
-            .filter(
-                PagosCliente.ID_Usuario_ClienteF == id_cliente,
-                MetodosMoney.Tipo == 2,
+            tarjetas = (
+                PagosCliente.query.join(MetodosMoney, PagosCliente.ID_Metodo == MetodosMoney.ID_Metodo)
+                .filter(
+                    PagosCliente.ID_Usuario_ClienteF == id_cliente,
+                    MetodosMoney.Tipo == 2,
+                )
+                .all()
             )
-            .all()
-        )
 
-        return render_template("tus_metodos_pago.html", tarjetas=tarjetas)
-
+            return render_template("tus_metodos_pago.html", tarjetas=tarjetas)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "tus_direcciones", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "tus_direcciones", fecha)
+            return "esto es un error", 501
     @app.route("/metodos_pago/nuevo", methods=["GET", "POST"])
-    @login_required
     def nuevo_metodo_pago():
-        id_cliente = _obtener_id_cliente()
-        if not id_cliente:
-            flash("No se pudo identificar el cliente.", "danger")
-            return redirect(url_for("index"))
+        try:
+            id_cliente = _obtener_id_cliente()
+            if not id_cliente:
+                flash("No se pudo identificar el cliente.", "danger")
+                return redirect(url_for("index"))
 
-        if request.method == "POST":
-            try:
-                nombre = validar_nombre_tarjeta(request.form.get("a_nombre_de"))
-                numero_tarjeta = validar_numero_tarjeta(request.form.get("numero_tarjeta"))
-            except ValidationError as e:
-                flash(str(e), "danger")
-                return redirect(url_for("nuevo_metodo_pago"))
+            if request.method == "POST":
+                try:
+                    nombre = validar_nombre_tarjeta(request.form.get("a_nombre_de"))
+                    numero_tarjeta = validar_numero_tarjeta(request.form.get("numero_tarjeta"))
+                except ValidationError as e:
+                    flash(str(e), "danger")
+                    return redirect(url_for("nuevo_metodo_pago"))
 
-            ultimos4 = numero_tarjeta[-4:]
+                ultimos4 = numero_tarjeta[-4:]
 
-            metodo_tarjeta = MetodosMoney.query.filter_by(Tipo=2).first()
-            if not metodo_tarjeta:
-                flash("No está configurado el método de pago 'Tarjeta'.", "danger")
+                metodo_tarjeta = MetodosMoney.query.filter_by(Tipo=2).first()
+                if not metodo_tarjeta:
+                    flash("No está configurado el método de pago 'Tarjeta'.", "danger")
+                    return redirect(url_for("tus_metodos_pago"))
+
+                pago = PagosCliente(
+                    ID_Usuario_ClienteF=id_cliente,
+                    ID_Metodo=metodo_tarjeta.ID_Metodo,
+                    Cantidad=None,
+                    Numero_tarjeta=ultimos4,
+                    a_nombre_de=nombre[:50],
+                )
+
+                db.session.add(pago)
+                db.session.commit()
+
+                flash("Tarjeta guardada correctamente", "success")
                 return redirect(url_for("tus_metodos_pago"))
 
-            pago = PagosCliente(
-                ID_Usuario_ClienteF=id_cliente,
-                ID_Metodo=metodo_tarjeta.ID_Metodo,
-                Cantidad=None,
-                Numero_tarjeta=ultimos4,
-                a_nombre_de=nombre[:50],
-            )
-
-            db.session.add(pago)
-            db.session.commit()
-
-            flash("Tarjeta guardada correctamente", "success")
-            return redirect(url_for("tus_metodos_pago"))
-
-        return render_template("metodo_pago_nuevo.html")
-
+            return render_template("metodo_pago_nuevo.html")
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "tus_direcciones", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "tus_direcciones", fecha)
+            return "esto es un error", 501
 
 def _tiene_tres_iguales_seguidos(texto):
     if texto is None:
