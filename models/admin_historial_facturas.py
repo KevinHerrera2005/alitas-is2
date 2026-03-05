@@ -1,6 +1,6 @@
 from datetime import datetime
 import traceback
-
+from flask_admin import expose
 from flask import flash, redirect, request, url_for
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.exc import OperationalError
@@ -40,9 +40,7 @@ class HistorialFacturasAdmin(ModelView):
 
     column_default_sort = ("Fecha_Emision", True)
 
-    column_searchable_list = (
-        "Numero_Factura",
-    )
+    column_searchable_list = ("Numero_Factura",)
 
     column_filters = (
         "Fecha_Emision",
@@ -80,6 +78,7 @@ class HistorialFacturasAdmin(ModelView):
             getattr(getattr(model, "cliente", None), "Username", "-")
         ),
     }
+
     def get_list(
         self,
         page,
@@ -108,6 +107,18 @@ class HistorialFacturasAdmin(ModelView):
             )
             return "esto es un error", 501
 
+    @expose("/details/")
+    def details_view(self, *args, **kwargs):
+        try:
+            return super().details_view()
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "facturas_detalle", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "facturas_detalle", fecha
+            )
+            return "esto es un error", 501
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")
         return super().render(template, **kwargs)
@@ -115,8 +126,15 @@ class HistorialFacturasAdmin(ModelView):
     def handle_view_exception(self, exc):
         if isinstance(exc, OperationalError):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(exc), "historial_facturas_visualizar", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_facturas_visualizar", fecha)
-            flash("No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.", "error")
+            logger_.Logger.add_to_log(
+                "error", str(exc), "historial_facturas_visualizar", fecha
+            )
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "historial_facturas_visualizar", fecha
+            )
+            flash(
+                "No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.",
+                "error",
+            )
             return redirect(request.referrer or url_for(".index_view"))
         return super().handle_view_exception(exc)
