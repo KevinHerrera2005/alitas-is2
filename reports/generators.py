@@ -109,6 +109,26 @@ def _quitar_prefijo_id(label: str) -> str:
     return t
 
 
+def _quitar_sufijo_f(label: str) -> str:
+    t = (label or "").strip()
+    u = t.upper()
+
+    if u.endswith(" F"):
+        return t[:-2].strip()
+    if u.endswith("_F"):
+        return t[:-2].strip()
+    if u.endswith("-F"):
+        return t[:-2].strip()
+    if u.endswith("(F)"):
+        return t[:-3].strip()
+
+    return t
+
+
+def _normalizar_label(label: str) -> str:
+    return _quitar_sufijo_f(_quitar_prefijo_id(label))
+
+
 def _acento_label_upper(s: str) -> str:
     t = (s or "").strip()
     if not t:
@@ -161,7 +181,8 @@ def _label_columna(s: Any) -> str:
 
     if n in ("us co", "usco", "us co.", "us_co", "direccion entrega", "direccion_entrega"):
         base = "Dirección Entrega"
-
+    if n in ("usuario cliente f", "usuario_cliente_f", "usuario-cliente-f"):
+        base = "Usuario Cliente"
     base = base.upper()
     return _acento_label_upper(base)
 
