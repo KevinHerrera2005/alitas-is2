@@ -89,7 +89,17 @@ class InsumoAdmin(ModelView):
             "minimum_input_length": 0,
         },
     }
-
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self, *args, **kwargs):
+        try:
+            if request.method == "GET":
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("info", "Abrio formulario de crear insumo", "insumo_abrir_crear", fecha)
+            return super().create_view(*args, **kwargs)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "insumo_abrir_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_abrir_crear", fecha)
     def _sucursal_id_actual(self):
         try:
             sid = getattr(current_user, "id_sucursal", None) or getattr(current_user, "ID_sucursal", None)

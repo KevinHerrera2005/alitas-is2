@@ -88,6 +88,7 @@ class CAIAdmin(ModelView):
         "num_cai": {"id": "num_cai", "maxlength": str(CAI_TOTAL_LEN), "autocomplete": "off"},
     }
 
+
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")
         return super().render(template, **kwargs)

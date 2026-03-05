@@ -71,7 +71,17 @@ class CategoriaAdmin(ModelView):
         "tipo": {"id": "categoria_tipo"},
         "estado": {"id": "categoria_estado"},
     }
-
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self, *args, **kwargs):
+        try:
+            if request.method == "GET":
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("info", "Abrio formulario de crear insumo", "insumo_abrir_crear", fecha)
+            return super().create_view(*args, **kwargs)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_botón_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_botón_crear", fecha)
     def _silenciar_log_listado(self):
         return request.args.get("_origen_log") in ("create", "edit", "delete")
 

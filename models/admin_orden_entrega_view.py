@@ -76,7 +76,16 @@ class OrdenEntregaAdmin(ModelView):
     form_widget_args = {
         "Motivo_Cancelacion": {"rows": 3},
     }
-
+    def create_view(self, *args, **kwargs):
+        try:
+            if request.method == "GET":
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("info", "Abrio formulario de crear insumo", "insumo_abrir_crear", fecha)
+            return super().create_view(*args, **kwargs)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "orden_botón_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_botón_crear", fecha)
     # Este bloque solo pinta el panel en negro.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#000000")

@@ -8,10 +8,27 @@
       {{ admin_view.admin.name }}
     </div>
     <style>
+      th.column-header a,
+th.column-header a:hover,
+th.column-header a:focus {
+  pointer-events: none !important;
+  cursor: default !important;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+th.column-header a .fa,
+th.column-header a .glyphicon {
+  display: none !important;
+}
   .nav-tabs a[href*="/export/"],
   .nav-tabs a[href$="/export/"] {
     display: none !important;
   }
+.dropdown-toggle,
+.dropdown-menu {
+  display: none !important;
+}
 </style>
 
     {{ layout.messages() }}

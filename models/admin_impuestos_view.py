@@ -80,6 +80,7 @@ class ImpuestoAdmin(ModelView):
             coerce=int,
         )
     }
+    
 
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")

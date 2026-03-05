@@ -5,7 +5,7 @@ import traceback
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy import func
-
+from flask import flash, request, redirect
 from models.categoria_recetas_model import Categoria_recetas
 
 
@@ -41,6 +41,17 @@ class CategoriaRecetaAdmin(ModelView):
             "id": "catreceta_descripcion",
         },
     }
+    @expose("/new/", methods=("GET", "POST"))
+    def create_view(self, *args, **kwargs):
+        try:
+            if request.method == "GET":
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("info", "Abrio formulario de crear insumo", "insumo_abrir_crear", fecha)
+            return super().create_view(*args, **kwargs)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "insumo_abrir_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_abrir_crear", fecha)
 
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")

@@ -2,7 +2,7 @@ from mensajes_logs import logger_
 from datetime import datetime
 import traceback
 
-
+from flask import flash, request, redirect
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from wtforms import SelectField
@@ -56,6 +56,16 @@ class UnidadesMedidaAdmin(ModelView):
             ]
         }
     }
+    def create_view(self, *args, **kwargs):
+        try:
+            if request.method == "GET":
+                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+                logger_.Logger.add_to_log("info", "Abrio formulario de crear insumo", "insumo_abrir_crear", fecha)
+            return super().create_view(*args, **kwargs)
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida_botón_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_botón_crear", fecha)
 
     # Este bloque solo pinta el panel en rojo.
     def render(self, template, **kwargs):
