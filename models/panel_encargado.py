@@ -8,6 +8,9 @@ from email.mime.multipart import MIMEMultipart
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import current_user
+from sqlalchemy import text
+from sqlalchemy.exc import OperationalError, DBAPIError
+from jinja2 import TemplateNotFound
 
 from mensajes_logs import logger_
 
@@ -19,6 +22,15 @@ from models.empleado_model import Empleado
 from models.sucursal_model import Sucursal
 
 panel_encargado = Blueprint("panel_encargado", __name__)
+
+
+@panel_encargado.before_request
+def _panel_encargado_log_request():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+    try:
+        logger_.Logger.add_to_log("info", f"{request.method} {request.path}", "panel_encargado_request", fecha)
+    except Exception:
+        pass
 
 
 def _parse_int(v):
@@ -272,21 +284,22 @@ def enviar_correo_orden(proveedor: Proveedor, por_sucursal: dict):
         return False, f"Error SMTP: {type(e).__name__}"
 
 
-# Este botón sirve para abrir el panel del encargado.
 @panel_encargado.route("/panel_encargado")
 def panel():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
+        logger_.Logger.add_to_log("info", "open_panel", "panel_encargado_panel", fecha)
         return render_template("panel_encargado.html")
     except Exception as error:
-        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "panel_encargado_panel", fecha)
         logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_panel", fecha)
-        return "Error al abrir el panel del encargado.", 500
+        flash("Error al abrir el panel. Revisa los logs.", "danger")
+        return render_template("panel_encargado.html"), 200
 
 
-# Este botón sirve para cargar los datos de insumos por sucursal.
 @panel_encargado.route("/encargar_insumos_data")
 def encargar_insumos_data():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
         sucursal_id = _parse_int(request.args.get("sucursal_id"))
         if not sucursal_id:
@@ -295,15 +308,14 @@ def encargar_insumos_data():
         insumos_ui = _insumos_ui_unicos_por_sucursal(sucursal_id)
         return jsonify({"ok": True, "insumos": insumos_ui})
     except Exception as error:
-        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "panel_encargado_encargar_insumos_data", fecha)
         logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_encargar_insumos_data", fecha)
-        return jsonify({"ok": False, "insumos": [], "error": "Error al cargar insumos."}), 500
+        return jsonify({"ok": False, "insumos": [], "error": "Error al cargar insumos."}), 200
 
 
-# Este botón sirve para abrir y procesar el encargo de insumos.
 @panel_encargado.route("/encargar_insumos", methods=["GET", "POST"])
 def encargar_insumos():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
         modo_todos = request.args.get("todos") == "1"
 
@@ -444,8 +456,8 @@ def encargar_insumos():
                 if not ok:
                     flash(f"Correo NO enviado a {getattr(proveedor, 'Nombre_Proveedor', '')}: {err}", "danger")
 
-            flash("Se generaron las órdenes a proveedores y se enviaron (o intentaron enviar) los correos.", "success")
-            return redirect(url_for("panel_encargado.ordenes_proveedores"))
+            flash("Se generaron las órdenes a proveedores.", "success")
+            return redirect(url_for("panel_encargado.ordenes_proveedores_encargado"))
 
         sucursales_q = (
             Sucursal.query
@@ -474,24 +486,105 @@ def encargar_insumos():
             sucursal_defecto_id=sucursal_id,
             todos=modo_todos,
         )
+
     except Exception as error:
         try:
             db.session.rollback()
         except Exception:
             pass
-        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "panel_encargado_encargar_insumos", fecha)
         logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_encargar_insumos", fecha)
-        return "Error al procesar el encargo de insumos.", 500
+        flash("Error al procesar el encargo. Revisa los logs.", "danger")
+        return render_template("panel_encargado.html"), 200
 
 
-# Este botón sirve para ir al listado de órdenes de proveedores.
 @panel_encargado.route("/ordenes_proveedores_encargado")
-def ordenes_proveedores():
+def ordenes_proveedores_encargado():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
-        return redirect(url_for("ordenes_proveedores_admin.index_view"))
+        logger_.Logger.add_to_log("info", "click_ordenes_proveedores_encargado", "panel_encargado_ordenes_proveedores_encargado", fecha)
+
+        db.session.execute(text("SELECT 1"))
+
+        ordenes = (
+            db.session.query(OrdenesProveedores)
+            .order_by(OrdenesProveedores.ID_Orden_Proveedor.desc())
+            .limit(300)
+            .all()
+        )
+
+        return render_template("ordenes_proveedores_encargado.html", ordenes=ordenes)
+
+    except TemplateNotFound as error:
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_ordenes_template_missing", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_ordenes_template_missing", fecha)
+        flash("No se pudo abrir órdenes: falta la plantilla 'ordenes_proveedores_encargado.html'.", "danger")
+        return render_template("panel_encargado.html"), 200
+
+    except (OperationalError, DBAPIError) as error:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_ordenes_db", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_ordenes_db", fecha)
+        flash("Base de datos apagada o sin conexión. Revisa los logs.", "danger")
+        return render_template("panel_encargado.html"), 200
+
     except Exception as error:
-        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-        logger_.Logger.add_to_log("error", str(error), "panel_encargado_ordenes_proveedores", fecha)
-        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_ordenes_proveedores", fecha)
-        return "Error al abrir el listado de órdenes de proveedores.", 500
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_ordenes", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_ordenes", fecha)
+        flash(f"No se pudo abrir órdenes. Error: {type(error).__name__}", "danger")
+        return render_template("panel_encargado.html"), 200
+
+
+@panel_encargado.route("/historial_ordenes_proveedores_encargado")
+def historial_ordenes_proveedores_encargado():
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+    try:
+        logger_.Logger.add_to_log("info", "click_historial_ordenes_proveedores_encargado", "panel_encargado_historial_ordenes_proveedores_encargado", fecha)
+
+        db.session.execute(text("SELECT 1"))
+
+        q = db.session.query(OrdenesProveedores)
+
+        if hasattr(OrdenesProveedores, "Estado"):
+            q = q.filter(OrdenesProveedores.Estado.in_([2, 3]))
+
+        ordenes = (
+            q.order_by(OrdenesProveedores.ID_Orden_Proveedor.desc())
+            .limit(300)
+            .all()
+        )
+
+        return render_template("historial_ordenes_proveedores_encargado.html", ordenes=ordenes)
+
+    except TemplateNotFound as error:
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_historial_template_missing", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_historial_template_missing", fecha)
+        flash("No se pudo abrir el historial: falta la plantilla 'historial_ordenes_proveedores_encargado.html'.", "danger")
+        return render_template("panel_encargado.html"), 200
+
+    except (OperationalError, DBAPIError) as error:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_historial_db", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_historial_db", fecha)
+        flash("Base de datos apagada o sin conexión. Revisa los logs.", "danger")
+        return render_template("panel_encargado.html"), 200
+
+    except Exception as error:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        logger_.Logger.add_to_log("error", str(error), "panel_encargado_historial", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "panel_encargado_historial", fecha)
+        flash(f"No se pudo abrir el historial. Error: {type(error).__name__}", "danger")
+        return render_template("panel_encargado.html"), 200
