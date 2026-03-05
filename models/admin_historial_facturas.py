@@ -80,6 +80,33 @@ class HistorialFacturasAdmin(ModelView):
             getattr(getattr(model, "cliente", None), "Username", "-")
         ),
     }
+    def get_list(
+        self,
+        page,
+        sort_column,
+        sort_desc,
+        search,
+        filters,
+        execute=True,
+        page_size=None,
+    ):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "facturas", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "facturas", fecha
+            )
+            return "esto es un error", 501
 
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")

@@ -47,6 +47,33 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
             else "—"
         ),
     }
+    def get_list(
+        self,
+        page,
+        sort_column,
+        sort_desc,
+        search,
+        filters,
+        execute=True,
+        page_size=None,
+    ):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "imuesto_historial", fecha)
+            logger_.Logger.add_to_log(
+                "error", traceback.format_exc(), "facturas", fecha
+            )
+            return "esto es un error", 501
 
     create_template = "admin/model/impuesto_create.html"
     edit_template = "admin/model/impuesto_edit.html"
