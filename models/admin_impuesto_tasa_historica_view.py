@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 import traceback
 
-from mensajes_logs import logger_
-
-from flask_admin import expose
+from flask import flash, redirect, request, url_for
 from flask_admin.contrib.sqla import ModelView
+from sqlalchemy.exc import OperationalError
+
+from mensajes_logs import logger_
 
 
 class ImpuestoTasaHistoricaAdmin(ModelView):
@@ -54,13 +55,11 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
         kwargs.setdefault("panel_color", "#0d47a1")
         return super().render(template, **kwargs)
 
-    # Este botón sirve para visualizar el listado general.
-    @expose("/")
-    def index_view(self):
-        try:
-            return super().index_view()
-        except Exception as error:
+    def handle_view_exception(self, exc):
+        if isinstance(exc, OperationalError):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "impuesto_tasa_historica_visualizar", fecha)
+            logger_.Logger.add_to_log("error", str(exc), "impuesto_tasa_historica_visualizar", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "impuesto_tasa_historica_visualizar", fecha)
-            return "Error al visualizar el historial de tasas de impuestos.", 500
+            flash("No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.", "error")
+            return redirect(request.referrer or url_for(".index_view"))
+        return super().handle_view_exception(exc)

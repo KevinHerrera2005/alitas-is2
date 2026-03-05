@@ -10,11 +10,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from urllib.parse import quote_plus
 from models.admin_historial_facturas import HistorialFacturasAdmin
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, flash, request
 from flask_login import LoginManager, UserMixin
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import validators as fa_validators
 from flask_babel import Babel
+from sqlalchemy.exc import OperationalError
+from mensajes_logs import logger_
+from datetime import datetime
+import traceback
 from models import db
 
 fa_validators.Unique.field_flags = {"unique": True}
@@ -112,6 +116,7 @@ def ejecutar_init_sql_si_aplica(odbc_conn_str, init_sql_path, db_name):
 
     print("[INIT] init.sql ejecutado.")
 
+
 DB_NAME = obtener_db_name()
 connection_string = obtener_connection_string()
 
@@ -138,6 +143,16 @@ db.init_app(app)
 
 from models import load_models
 load_models()
+
+
+@app.errorhandler(OperationalError)
+def handle_operational_error(e):
+    fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+    logger_.Logger.add_to_log("error", str(e), "conexion_bd", fecha)
+    logger_.Logger.add_to_log("error", traceback.format_exc(), "conexion_bd", fecha)
+    flash("No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.", "error")
+    return redirect(request.referrer or "/admin/")
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -257,9 +272,11 @@ def load_user_from_request(req):
 
     return None
 
+
 import time
 
 _CONFIRM_CODES = {}
+
 
 def registrar_codigo_confirmacion(destino, codigo, ttl_seconds=600):
     destino = (destino or "").strip().lower()
@@ -268,6 +285,7 @@ def registrar_codigo_confirmacion(destino, codigo, ttl_seconds=600):
         return False
     _CONFIRM_CODES[destino] = {"codigo": codigo, "expira": time.time() + int(ttl_seconds)}
     return True
+
 
 def validar_codigo_confirmacion(destino, codigo):
     destino = (destino or "").strip().lower()
@@ -289,12 +307,15 @@ def validar_codigo_confirmacion(destino, codigo):
     _CONFIRM_CODES.pop(destino, None)
     return True
 
+
 def enviar_y_registrar_codigo_confirmacion(destino, codigo, ttl_seconds=600):
     ok, err = enviar_codigo_confirmacion(destino, codigo)
     if not ok:
         return False, err
     registrar_codigo_confirmacion(destino, codigo, ttl_seconds=ttl_seconds)
     return True, None
+
+
 def enviar_codigo_confirmacion(destino, codigo):
     remitente = (app.config.get("GMAIL_USER") or "").strip()
     clave = (app.config.get("GMAIL_PASSWORD") or "").strip()
@@ -386,12 +407,14 @@ def bootstrap_app(flask_app):
     from models.historial_ordenes_repartidor_admin import HistorialOrdenesRepartidorAdmin
     from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
     from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
+
     admin = Admin(
         flask_app,
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
         template_mode="bootstrap4"
     )
+
     admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas_admin"))
     admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))
     admin.add_view(CategoriaAdmin(CategoriaInsumo, db.session, category="Inventario", name="Categorías"))
@@ -450,7 +473,6 @@ def bootstrap_app(flask_app):
     flask_app.register_blueprint(password_reset_bp)
 
     from reports.routes import reports_bp
-
     flask_app.register_blueprint(reports_bp)
 
     from models.factura_routes import factura_routes

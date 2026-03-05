@@ -1,9 +1,11 @@
 from datetime import datetime
 import traceback
-from mensajes_logs import logger_
 
-from flask_admin import expose
+from flask import flash, redirect, request, url_for
 from flask_admin.contrib.sqla import ModelView
+from sqlalchemy.exc import OperationalError
+
+from mensajes_logs import logger_
 
 
 class HistorialFacturasAdmin(ModelView):
@@ -74,21 +76,20 @@ class HistorialFacturasAdmin(ModelView):
             if getattr(model, "Total_a_pagar", None) is not None
             else "0.00"
         ),
-        "ID_Usuario_ClienteF": lambda view, context, model, name:(
-            getattr(getattr(model,"cliente",None), "Username","-")
-        )
+        "ID_Usuario_ClienteF": lambda view, context, model, name: (
+            getattr(getattr(model, "cliente", None), "Username", "-")
+        ),
     }
 
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#0d47a1")
         return super().render(template, **kwargs)
 
-    @expose("/")
-    def index_view(self):
-        try:
-            return super().index_view()
-        except Exception as error:
+    def handle_view_exception(self, exc):
+        if isinstance(exc, OperationalError):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "historial_facturas_visualizar", fecha)
+            logger_.Logger.add_to_log("error", str(exc), "historial_facturas_visualizar", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_facturas_visualizar", fecha)
-            return "Error al visualizar el historial de facturas.", 500
+            flash("No hay conexión con SQL Server. Enciende la base de datos e intenta de nuevo.", "error")
+            return redirect(request.referrer or url_for(".index_view"))
+        return super().handle_view_exception(exc)
