@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
-
+import traceback
+from datetime import datetime
+from mensajes_logs import logger_
 from flask import Blueprint, abort, make_response, request
 from flask_login import current_user, login_required
 from sqlalchemy import inspect
@@ -345,52 +347,62 @@ def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
 
 
 @reports_bp.get("/<string:reporte>", endpoint="exportar")
-@login_required
 def exportar(reporte: str):
     formato = (request.args.get("formato") or "pdf").lower().strip()
-    modelo = (request.args.get("modelo") or "").strip()
+    nombre_log = "generar_excel" if formato in ("excel", "xlsx") else "generar_pdf"
 
-    reportes_custom = _reportes_personalizados()
-    key = (reporte or "").lower().strip()
+    try:
+        modelo = (request.args.get("modelo") or "").strip()
 
-    if key in reportes_custom:
-        titulo, fn = reportes_custom[key]
-        cols, rows = fn()
-        titulo_final = f"REPORTE: {_titulo_humano(titulo)}"
-    else:
-        models = _models_registry()
-        if not models:
-            abort(500, "No se pudieron cargar los modelos desde el registry de SQLAlchemy.")
+        reportes_custom = _reportes_personalizados()
+        key = (reporte or "").lower().strip()
 
-        if not modelo:
-            modelo = key
+        if key in reportes_custom:
+            titulo, fn = reportes_custom[key]
+            cols, rows = fn()
+            titulo_final = f"REPORTE: {_titulo_humano(titulo)}"
+        else:
+            models = _models_registry()
+            if not models:
+                abort(500, "No se pudieron cargar los modelos desde el registry de SQLAlchemy.")
 
-        model_cls = None
-        for _, v in models.items():
-            try:
-                if _modelo_key(v) == modelo.lower():
-                    model_cls = v
-                    break
-            except Exception:
-                continue
+            if not modelo:
+                modelo = key
 
-        if not model_cls:
-            abort(404, f"Modelo no encontrado: {modelo}")
+            model_cls = None
+            for _, v in models.items():
+                try:
+                    if _modelo_key(v) == modelo.lower():
+                        model_cls = v
+                        break
+                except Exception:
+                    continue
 
-        titulo_final = f"REPORTE: {_titulo_humano(model_cls.__name__)}"
-        cols, rows = _columnas_y_filas(model_cls)
+            if not model_cls:
+                abort(404, f"Modelo no encontrado: {modelo}")
 
-    usuario = _usuario_impresion()
+            titulo_final = f"REPORTE: {_titulo_humano(model_cls.__name__)}"
+            cols, rows = _columnas_y_filas(model_cls)
 
-    if formato in ("excel", "xlsx"):
-        content = generar_excel(titulo_final, cols, rows, usuario)
+        usuario = _usuario_impresion()
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        if formato in ("excel", "xlsx"):
+            content = generar_excel(titulo_final, cols, rows, usuario)
+            logger_.Logger.add_to_log("info", f"Se generó el reporte '{key}' en formato excel", nombre_log, fecha)
+            resp = make_response(content)
+            resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            resp.headers["Content-Disposition"] = f'attachment; filename="{key}.xlsx"'
+            return resp
+
+        content = generar_pdf(titulo_final, cols, rows, usuario)
+        logger_.Logger.add_to_log("info", f"Se generó el reporte '{key}' en formato pdf", nombre_log, fecha)
         resp = make_response(content)
-        resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        resp.headers["Content-Disposition"] = f'attachment; filename="{key}.xlsx"'
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = f'attachment; filename="{key}.pdf"'
         return resp
-
-    content = generar_pdf(titulo_final, cols, rows, usuario)
-    resp = make_response(content)
-    resp.headers["Content-Type"] = "application/pdf"
-    resp.headers["Content-Disposition"] = f'attachment; filename="{key}.pdf"'
-    return resp
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), nombre_log, fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), nombre_log, fecha)
+        raise

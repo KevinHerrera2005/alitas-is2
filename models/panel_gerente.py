@@ -9,14 +9,6 @@ from flask_login import current_user
 panel_gerente = Blueprint("panel_gerente", __name__, url_prefix="/gerente")
 
 
-def _tiene_permiso_gerente():
-    if getattr(current_user, "tipo", None) == "gerente":
-        return True
-    if getattr(current_user, "tipo", None) == "empleado" and getattr(current_user, "id_puesto", None) == 16:
-        return True
-    return False
-
-
 # Este botón sirve para entrar a la raíz del panel gerente.
 @panel_gerente.route("/")
 def root():
@@ -35,9 +27,6 @@ def root():
 @panel_gerente.route("/panel")
 def panel():
     try:
-        if not _tiene_permiso_gerente():
-            flash("No tienes permiso para acceder a este panel.", "danger")
-            return redirect(url_for("pagina_principal_bp.menu"))
         return render_template("panel_gerente.html")
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")

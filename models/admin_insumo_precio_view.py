@@ -1,6 +1,6 @@
 from datetime import timedelta, datetime
 import traceback
-
+from flask import render_template
 from mensajes_logs import logger_
 
 from flask_admin import expose
@@ -59,24 +59,25 @@ class InsumoPrecioHistoricoAdmin(ModelView):
 
     # Este botón sirve para entrar al listado y usar la búsqueda.
     @expose("/")
-    def index_view(self):
+    def index_view(self,*args, **kwargs):
         try:
             return super().index_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_busqueda", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_busqueda", fecha)
+            logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico", fecha)
+            return "esto es un error", 501
 
     # Este botón sirve para ver el detalle de un registro.
     @expose("/details/")
-    def details_view(self):
+    def details_view(self,*args,**kwargs):
         try:
             return super().details_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_detalle", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_detalle", fecha)
-
+            return "esto es un error", 501
     # Este botón sirve para exportar el historial.
     @expose("/export/<export_type>/")
     def export(self, export_type):
@@ -86,4 +87,4 @@ class InsumoPrecioHistoricoAdmin(ModelView):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "insumo_precio_historico_exportar", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "insumo_precio_historico_exportar", fecha)
-        
+            return "esto es un error", 501

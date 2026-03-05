@@ -313,7 +313,6 @@ def crear_receta_routes(app):
             logger_.Logger.add_to_log("error", traceback.format_exc(), "crear_receta", fecha)
             db.session.rollback()
             flash("Error al crear la receta.", "danger")
-            return redirect(url_for("crear_receta"))
 
 
 def editar_receta_routes(app):

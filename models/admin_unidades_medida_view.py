@@ -69,8 +69,8 @@ class UnidadesMedidaAdmin(ModelView):
             return super().index_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "unidades_medida_busqueda", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida_busqueda", fecha)
+            logger_.Logger.add_to_log("error", str(error), "unidades_medida", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "unidades_medida", fecha)
 
     @expose("/new/", methods=("GET", "POST"))
     def create_view(self):

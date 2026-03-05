@@ -5,7 +5,6 @@ from wtforms import SelectField
 from sqlalchemy import func
 import traceback
 from datetime import datetime
-
 from mensajes_logs import logger_
 from models.categoria_insumo_model import CategoriaInsumo
 
@@ -20,6 +19,7 @@ def fmt_tipo(view, context, model, name):
 
 
 def fmt_estado(view, context, model, name):
+    
     m = dict(ESTADO_CHOICES)
     return m.get(getattr(model, "estado", None), "")
 
@@ -137,16 +137,6 @@ class CategoriaAdmin(ModelView):
         flash("No se pudo eliminar la categoría.", "danger")
         return redirect(self.get_url(".index_view", _origen_log="delete"))
 
-    def get_list(self, page, sort_column, sort_desc, search, filters, page_size=None):
-        try:
-            return super().get_list(page, sort_column, sort_desc, search, filters, page_size=page_size)
-        except Exception as error:
-            if not self._silenciar_log_listado():
-                fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-                logger_.Logger.add_to_log("error", str(error), "categoria_insumo_delete", fecha)
-                logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_delete", fecha)
-        flash("No se pudo cargar el listado de categorías.", "danger")
-        return 0, []
 
     def create_form(self, obj=None):
         form = super().create_form(obj)

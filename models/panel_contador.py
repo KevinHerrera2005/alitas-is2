@@ -10,11 +10,6 @@ panel_contador = Blueprint("panel_contador", __name__)
 @login_required
 def panel():
     try:
-
-        if getattr(current_user, "tipo", None) != "empleado" or getattr(current_user, "id_puesto", None) != 10:
-            flash("No tienes permiso para acceder a este panel.", "danger")
-            return redirect(url_for("pagina_principal_bp.menu"))
-
         return render_template("panel_contador.html")
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")

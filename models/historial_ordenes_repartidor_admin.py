@@ -402,8 +402,8 @@ class HistorialOrdenesRepartidorAdmin(ModelView):
             return super().index_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "historial_ordenes_repartidor_busqueda", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_ordenes_repartidor_busqueda", fecha)
+            logger_.Logger.add_to_log("error", str(error), "historial_ordenes_repartidor", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_ordenes_repartidor", fecha)
             return "Error al abrir el historial de órdenes del repartidor.", 500
 
     # Este bloque sirve para el paginado del listado.
@@ -420,8 +420,8 @@ class HistorialOrdenesRepartidorAdmin(ModelView):
             )
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "historial_ordenes_repartidor_paginado", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_ordenes_repartidor_paginado", fecha)
+            logger_.Logger.add_to_log("error", str(error), "historial_ordenes_repartidor_busqueda", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "historial_ordenes_repartidor_busqueda", fecha)
             return 0, []
 
     # Este botón sirve para abrir la pantalla de crear.

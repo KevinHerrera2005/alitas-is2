@@ -30,9 +30,4 @@ class CarritoAdmin(ModelView):
         "total": "Total línea",
     }
 
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
 
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))

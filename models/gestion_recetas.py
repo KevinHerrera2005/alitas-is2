@@ -24,16 +24,11 @@ def gestion_receta_routes(app):
 
     # este boton es para abrir el listado de recetas desde el panel del jefe de cocina
     @app.route("/crud_recetas")
-    def crud_recetas():
+    def crud_recetas(*args,**kwargs):
         try:
-            if not _es_jefe_cocina():
-                flash("No tienes permiso para acceder a este panel.", "danger")
-                return redirect(url_for("login"))
 
             sid = _sucursal_id_actual()
-            if sid is None:
-                flash("No se pudo determinar tu sucursal.", "danger")
-                return redirect(url_for("login"))
+
 
             recetas = Receta.query.filter(Receta.ID_sucursal == sid).all()
 
@@ -88,31 +83,20 @@ def gestion_receta_routes(app):
                 fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
                 logger_.Logger.add_to_log("error", str(error), "listado_recetas(boton del panel)", fecha)
                 logger_.Logger.add_to_log("error", traceback.format_exc(), "listado_recetas(boton del panel)", fecha)
-
+                return "esto es un error", 501
     # este boton es para cambiar el estado de la receta entre activo e inactivo
     @app.route("/toggle_receta_estado", methods=["POST"])
-    def toggle_receta_estado():
+    def toggle_receta_estado(*args,**kwargs):
         try:
-            if not _es_jefe_cocina():
-                return jsonify({"success": False, "message": "No autorizado"}), 403
 
             sid = _sucursal_id_actual()
-            if sid is None:
-                return jsonify({"success": False, "message": "Sucursal inválida"}), 403
 
             data = request.get_json(silent=True) or {}
             id_receta = data.get("id_receta")
 
-            if id_receta is None:
-                return jsonify({"success": False, "message": "ID de receta inválido"}), 400
 
             receta = Receta.query.get(id_receta)
 
-            if not receta:
-                return jsonify({"success": False, "message": "Receta no encontrada"}), 404
-
-            if int(getattr(receta, "ID_sucursal", -1)) != sid:
-                return jsonify({"success": False, "message": "No autorizado"}), 403
 
             nuevo_estado = 0 if receta.Estado == 1 else 1
             receta.Estado = nuevo_estado
@@ -125,26 +109,20 @@ def gestion_receta_routes(app):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "gestion_recetas_boton_activar_desactivar_receta", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "gestion_recetas_boton_activar_desactivar_receta", fecha)
-        flash("No se pudo abrir la pantalla de crear categoría.", "danger")
+            return "esto es un error", 501
 
     # este boton es para borrar una receta
     @app.route("/eliminar_receta/<int:id_receta>", methods=["DELETE"])
-    def eliminar_receta(id_receta):
+    def eliminar_receta(id_receta,*args,**kwargs):
         try:
-            if not _es_jefe_cocina():
-                return jsonify({"success": False, "message": "No autorizado"}), 403
 
             sid = _sucursal_id_actual()
-            if sid is None:
-                return jsonify({"success": False, "message": "Sucursal inválida"}), 403
 
             receta = Receta.query.get(id_receta)
 
             if not receta:
                 return jsonify({"success": False, "message": "La receta no existe."}), 404
 
-            if int(getattr(receta, "ID_sucursal", -1)) != sid:
-                return jsonify({"success": False, "message": "No autorizado"}), 403
 
             db.session.execute(
                 text("DELETE FROM IN_RE WHERE ID_Receta = :id AND ID_sucursal = :sid"),
@@ -176,16 +154,14 @@ def gestion_receta_routes(app):
 
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "#gestion_recetas_borrar_una_receta", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "#gestion_recetas_borrar_una_receta", fecha)
-        flash("No se pudo abrir la pantalla de crear categoría.", "danger")
+            logger_.Logger.add_to_log("error", str(error), "gestion_recetas_borrar_una_receta", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "gestion_recetas_borrar_una_receta", fecha)
+            return "esto es un error", 501
         
     # este boton es para borrar una categoria de recetas
     @app.route("/eliminar_categoria/<path:nombre_categoria>", methods=["DELETE"])
-    def eliminar_categoria(nombre_categoria):
+    def eliminar_categoria(nombre_categoria,*args,**kwargs):
         try:
-            if not _es_jefe_cocina():
-                return jsonify({"success": False, "message": "No autorizado"}), 403
 
             nombre = (nombre_categoria or "").strip()
             if not nombre:
@@ -231,21 +207,15 @@ def gestion_receta_routes(app):
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "gestion_recetas_borrar_una_categoria", fecha)
             logger_.Logger.add_to_log("error", traceback.format_exc(), "gestion_recetas_borrar_una_categoria", fecha)
-        flash("No se pudo abrir la pantalla de crear categoría.", "danger")
-
+            return "esto es un error", 501
+        
 
     # este boton es para ver los ingredientes y detalles de una receta
     @app.route("/jefe/ver_receta/<int:id_receta>")
-    def jefe_ver_receta(id_receta):
+    def jefe_ver_receta(id_receta,*args,**kwargs):
         try:
-            if not _es_jefe_cocina():
-                flash("No tienes permiso para acceder a este panel.", "danger")
-                return redirect(url_for("login"))
 
             sid = _sucursal_id_actual()
-            if sid is None:
-                flash("No se pudo determinar tu sucursal.", "danger")
-                return redirect(url_for("login"))
 
             receta = db.session.execute(text("""
                 SELECT r.Nombre_receta, r.Descripcion AS descripcion, j.Nombre AS jefe
@@ -272,7 +242,6 @@ def gestion_receta_routes(app):
             """), {"id": id_receta, "sid": sid}).fetchall()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "gestion_recetas_veringredientes", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "gestion_recetas_veringredientes", fecha)
-            flash("No se pudo abrir la pantalla de crear categoría.", "danger")  
-        return render_template("ver_receta.html", receta=receta, ingredientes=ingredientes)
+            logger_.Logger.add_to_log("error", str(error), "gestion_recetas_ver_ingredientes", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "gestion_recetas_ver_ingredientes", fecha)
+            return "esto es un error", 501

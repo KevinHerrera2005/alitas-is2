@@ -42,7 +42,6 @@ class CategoriaRecetaAdmin(ModelView):
         },
     }
 
-    # Este bloque solo pinta el panel en rojo.
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)
@@ -54,8 +53,8 @@ class CategoriaRecetaAdmin(ModelView):
             return super().index_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "categoria_receta_busqueda", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta_busqueda", fecha)
+            logger_.Logger.add_to_log("error", str(error), "categoria_receta", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_receta", fecha)
 
     # Este botón sirve para abrir la pantalla de crear.
     @expose("/new/", methods=("GET", "POST"))

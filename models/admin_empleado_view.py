@@ -1,5 +1,11 @@
 import re
 
+import traceback
+from datetime import datetime
+from mensajes_logs import logger_
+
+
+
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.actions import action
 from flask_login import current_user
@@ -137,32 +143,22 @@ class EmpleadoAdmin(ModelView):
         ),
     }
 
-    def is_accessible(self):
-        if not current_user.is_authenticated:
-            return False
 
-        tipo = getattr(current_user, "tipo", None)
-        if tipo == "gerente":
-            return True
-
-        if tipo == "empleado":
-            puesto = getattr(current_user, "id_puesto", None)
-            if puesto is None:
-                puesto = getattr(current_user, "ID_Puesto", None)
-            try:
-                puesto = int(puesto)
-            except Exception:
-                puesto = None
-            return puesto == 16
-
-        return False
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a esta sección.", "danger")
-        return redirect(url_for("login"))
-
-    def is_visible(self):
-        return self.is_accessible()
+    def get_list(self, page, sort_column, sort_desc, search, filters, execute=True, page_size=None):
+        try:
+            return super().get_list(
+                page,
+                sort_column,
+                sort_desc,
+                search,
+                filters,
+                execute=execute,
+                page_size=page_size,
+            )
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "empleado_pantalla", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "empleado_pantalla", fecha)
 
     def _build_puesto_choices(self):
         puestos_activos = Puesto.query.filter_by(estado=1).order_by(Puesto.Nombre_Puesto).all()
@@ -203,48 +199,56 @@ class EmpleadoAdmin(ModelView):
         return tipo_doc_obj.numero_documento or ""
 
     def create_form(self, obj=None):
-        form = super().create_form(obj)
+        try:
+            form = super().create_form(obj)
 
-        if hasattr(form, "ID_Puesto"):
-            form.ID_Puesto.choices = self._build_puesto_choices()
+            if hasattr(form, "ID_Puesto"):
+                form.ID_Puesto.choices = self._build_puesto_choices()
 
-        if hasattr(form, "ID_sucursal"):
-            form.ID_sucursal.choices = self._build_sucursal_choices()
+            if hasattr(form, "ID_sucursal"):
+                form.ID_sucursal.choices = self._build_sucursal_choices()
 
-        if "estado" in form._fields:
-            form._fields.pop("estado")
+            if "estado" in form._fields:
+                form._fields.pop("estado")
 
-        return form
-
+            return form
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "empleado_guardar", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "empleado_guardar", fecha)
     def edit_form(self, obj=None):
-        form = super().edit_form(obj)
+        try:
+            form = super().edit_form(obj)
 
-        if hasattr(form, "ID_Puesto"):
-            form.ID_Puesto.choices = self._build_puesto_choices()
-            if request.method == "GET" and obj and obj.ID_Puesto is not None:
-                form.ID_Puesto.data = str(obj.ID_Puesto)
+            if hasattr(form, "ID_Puesto"):
+                form.ID_Puesto.choices = self._build_puesto_choices()
+                if request.method == "GET" and obj and obj.ID_Puesto is not None:
+                    form.ID_Puesto.data = str(obj.ID_Puesto)
 
-        if hasattr(form, "ID_sucursal"):
-            form.ID_sucursal.choices = self._build_sucursal_choices()
-            if request.method == "GET" and obj and getattr(obj, "ID_sucursal", None) is not None:
-                form.ID_sucursal.data = str(obj.ID_sucursal)
+            if hasattr(form, "ID_sucursal"):
+                form.ID_sucursal.choices = self._build_sucursal_choices()
+                if request.method == "GET" and obj and getattr(obj, "ID_sucursal", None) is not None:
+                    form.ID_sucursal.data = str(obj.ID_sucursal)
 
-        if hasattr(form, "estado"):
-            form.estado.choices = [("1", "Activo"), ("0", "Inactivo")]
-            if request.method == "GET" and obj is not None:
-                form.estado.data = "1" if obj.estado == 1 else "0"
+            if hasattr(form, "estado"):
+                form.estado.choices = [("1", "Activo"), ("0", "Inactivo")]
+                if request.method == "GET" and obj is not None:
+                    form.estado.data = "1" if obj.estado == 1 else "0"
 
-        if obj is not None:
-            tipo_doc_obj = self._get_tipo_doc_for_empleado(obj)
-            if tipo_doc_obj:
-                if hasattr(form, "tipo_documento_empleado"):
-                    form.tipo_documento_empleado.data = str(tipo_doc_obj.tipo)
-                if hasattr(form, "descripcion_documento"):
-                    form.descripcion_documento.data = tipo_doc_obj.descripcion or ""
-                if hasattr(form, "numero_identificador"):
-                    form.numero_identificador.data = tipo_doc_obj.numero_documento or ""
-
-        return form
+            if obj is not None:
+                tipo_doc_obj = self._get_tipo_doc_for_empleado(obj)
+                if tipo_doc_obj:
+                    if hasattr(form, "tipo_documento_empleado"):
+                        form.tipo_documento_empleado.data = str(tipo_doc_obj.tipo)
+                    if hasattr(form, "descripcion_documento"):
+                        form.descripcion_documento.data = tipo_doc_obj.descripcion or ""
+                    if hasattr(form, "numero_identificador"):
+                        form.numero_identificador.data = tipo_doc_obj.numero_documento or ""
+        except Exception as error:
+            fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+            logger_.Logger.add_to_log("error", str(error), "categoria_insumo_boton_crear", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "categoria_insumo_boton_crear", fecha)
+            return form
 
     def on_model_change(self, form, model, is_created):
         nombre = (form.Nombre.data or "").strip()

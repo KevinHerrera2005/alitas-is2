@@ -1,7 +1,9 @@
 from datetime import datetime
 from io import BytesIO
 from typing import Any, List, Optional, Sequence, Tuple
-
+import traceback
+from datetime import datetime
+from mensajes_logs import logger_
 from flask import current_app
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, landscape
@@ -336,16 +338,24 @@ def _header_block(report_title: str, printed_by: str) -> Table:
 
 
 def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    buf = BytesIO()
+    try:
+        buf = BytesIO()
 
+<<<<<<< HEAD
     cols_fmt = [_label_columna(c) for c in columns]
     page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
+=======
+        cols_fmt = [_label_columna(c) for c in columns]
 
-    left_margin = 0.55 * inch
-    right_margin = 0.55 * inch
-    top_margin = 0.7 * inch
-    bottom_margin = 0.8 * inch
+        page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
+>>>>>>> 9d08b6b (Mis cambios locales)
 
+        left_margin = 0.55 * inch
+        right_margin = 0.55 * inch
+        top_margin = 0.7 * inch
+        bottom_margin = 0.8 * inch
+
+<<<<<<< HEAD
     doc = SimpleDocTemplate(
         buf,
         pagesize=page_size,
@@ -392,49 +402,100 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
             splitLongWords=1,
             textColor=colors.black,
         )
+=======
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=page_size,
+            leftMargin=left_margin,
+            rightMargin=right_margin,
+            topMargin=top_margin,
+            bottomMargin=bottom_margin,
+            title=report_title,
+            author=_nombre_empresa(),
+        )
 
-        header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
-        data = [header_row]
+        avail_width = page_size[0] - left_margin - right_margin
+>>>>>>> 9d08b6b (Mis cambios locales)
 
-        for r in rows_chunk:
-            fila = []
-            for v in r:
-                s = _escape_para(_texto(v)).replace("\n", "<br/>")
-                fila.append(Paragraph(s, wrap_cell))
-            data.append(fila)
+        story = []
+        story.append(_header_block(report_title, printed_by))
+        story.append(Spacer(1, 0.18 * inch))
 
-        col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
-        table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
+        if _should_split(len(cols_fmt)):
+            secciones = _particionar_columnas_con_anclas(cols_fmt, rows)
+        else:
+            secciones = [(list(cols_fmt), [list(r) for r in rows])]
 
-        style_cmds = [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        for idx, (cols_chunk, rows_chunk) in enumerate(secciones):
+            ncols = len(cols_chunk)
+            head_fs, body_fs = _font_sizes_for_cols(ncols)
 
-            ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-            ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
+            wrap_header = ParagraphStyle(
+                name="WrapHeader",
+                fontName="Helvetica-Bold",
+                fontSize=head_fs,
+                leading=head_fs + 2,
+                alignment=1,
+                wordWrap="LTR",
+                splitLongWords=0,
+                textColor=colors.white,
+            )
 
-            ("ALIGN", (0, 1), (-1, -1), "LEFT"),
-            ("VALIGN", (0, 1), (-1, -1), "TOP"),
+            wrap_cell = ParagraphStyle(
+                name="WrapCell",
+                fontName="Helvetica",
+                fontSize=body_fs,
+                leading=body_fs + 3,
+                wordWrap="LTR",
+                splitLongWords=1,
+                textColor=colors.black,
+            )
 
-            ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#9CA3AF")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#F3F4F6")]),
+            header_row = [Paragraph(_escape_para(_texto(c)), wrap_header) for c in cols_chunk]
+            data = [header_row]
 
-            ("LEFTPADDING", (0, 0), (-1, -1), 7),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 7),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ]
+            for r in rows_chunk:
+                fila = []
+                for v in r:
+                    s = _escape_para(_texto(v)).replace("\n", "<br/>")
+                    fila.append(Paragraph(s, wrap_cell))
+                data.append(fila)
 
-        table.setStyle(TableStyle(style_cmds))
-        story.append(table)
+            col_widths = _calc_col_widths(avail_width, cols_chunk, rows_chunk)
+            table = Table(data, repeatRows=1, colWidths=col_widths, hAlign="LEFT")
 
-        if idx < len(secciones) - 1:
-            story.append(Spacer(1, 0.18 * inch))
-            story.append(PageBreak())
+            style_cmds = [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#111827")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
 
-    doc.build(story, canvasmaker=NumberedCanvas)
-    return buf.getvalue()
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("VALIGN", (0, 0), (-1, 0), "MIDDLE"),
 
+                ("ALIGN", (0, 1), (-1, -1), "LEFT"),
+                ("VALIGN", (0, 1), (-1, -1), "TOP"),
+
+                ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#9CA3AF")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.HexColor("#F3F4F6")]),
+
+                ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+
+            table.setStyle(TableStyle(style_cmds))
+            story.append(table)
+
+            if idx < len(secciones) - 1:
+                story.append(Spacer(1, 0.18 * inch))
+                story.append(PageBreak())
+
+        doc.build(story, canvasmaker=NumberedCanvas)
+        return buf.getvalue()
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "generar_pdf", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "generar_pdf", fecha)
 
 def _auto_anchos_excel(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
     widths = [len(_texto(c)) for c in columns]
@@ -451,73 +512,75 @@ def _auto_anchos_excel(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]
 
 
 def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Reporte"
+    try:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Reporte"
 
-    ws.sheet_view.showGridLines = False
+        ws.sheet_view.showGridLines = False
 
-    fondo = PatternFill("solid", fgColor="FFFFFF")
-    for row in range(1, 160):
-        for col in range(1, 80):
-            ws.cell(row=row, column=col).fill = fondo
+        fondo = PatternFill("solid", fgColor="FFFFFF")
+        for row in range(1, 160):
+            for col in range(1, 80):
+                ws.cell(row=row, column=col).fill = fondo
 
-    cols_fmt = [_label_columna(c) for c in columns]
+        cols_fmt = [_label_columna(c) for c in columns]
 
-    max_col = max(1, len(cols_fmt))
-    last_col = get_column_letter(max(2, max_col))
+        max_col = max(1, len(cols_fmt))
+        last_col = get_column_letter(max(2, max_col))
 
-    ws.column_dimensions["A"].width = 42
-    ws.column_dimensions["B"].width = 42
+        ws.column_dimensions["A"].width = 42
+        ws.column_dimensions["B"].width = 42
 
-    logo_path = _ruta_logo()
-    if logo_path:
-        try:
-            img = XLImage(logo_path)
-            size = 90
-            img.width = size
-            img.height = size
-            ws.add_image(img, "A1")
-            ws.row_dimensions[1].height = size * 0.75
-        except Exception:
+        logo_path = _ruta_logo()
+        if logo_path:
+            try:
+                img = XLImage(logo_path)
+                size = 90
+                img.width = size
+                img.height = size
+                ws.add_image(img, "A1")
+                ws.row_dimensions[1].height = size * 0.75
+            except Exception:
+                ws.row_dimensions[1].height = 65
+        else:
             ws.row_dimensions[1].height = 65
-    else:
-        ws.row_dimensions[1].height = 65
 
-    ws.row_dimensions[2].height = 30
-    ws.row_dimensions[3].height = 20
-    ws.row_dimensions[4].height = 20
-    ws.row_dimensions[5].height = 20
-    ws.row_dimensions[6].height = 10
+        ws.row_dimensions[2].height = 30
+        ws.row_dimensions[3].height = 20
+        ws.row_dimensions[4].height = 20
+        ws.row_dimensions[5].height = 20
+        ws.row_dimensions[6].height = 10
 
-    ws.merge_cells(f"A2:{last_col}2")
-    ws["A2"] = report_title
-    ws["A2"].font = Font(bold=True, name="Calibri", size=16)
-    ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
+        ws.merge_cells(f"A2:{last_col}2")
+        ws["A2"] = report_title
+        ws["A2"].font = Font(bold=True, name="Calibri", size=16)
+        ws["A2"].alignment = Alignment(horizontal="left", vertical="center")
 
-    ws["A3"] = "Empresa:"
-    ws["B3"] = _nombre_empresa()
-    ws["A4"] = "Impreso por:"
-    ws["B4"] = printed_by
-    ws["A5"] = "Fecha/Hora:"
-    ws["B5"] = _ahora_str()
+        ws["A3"] = "Empresa:"
+        ws["B3"] = _nombre_empresa()
+        ws["A4"] = "Impreso por:"
+        ws["B4"] = printed_by
+        ws["A5"] = "Fecha/Hora:"
+        ws["B5"] = _ahora_str()
 
-    for r in range(3, 6):
-        ws[f"A{r}"].font = Font(bold=True, name="Calibri", size=11)
-        ws[f"A{r}"].alignment = Alignment(horizontal="left", vertical="center")
-        ws[f"B{r}"].alignment = Alignment(horizontal="left", vertical="center")
+        for r in range(3, 6):
+            ws[f"A{r}"].font = Font(bold=True, name="Calibri", size=11)
+            ws[f"A{r}"].alignment = Alignment(horizontal="left", vertical="center")
+            ws[f"B{r}"].alignment = Alignment(horizontal="left", vertical="center")
 
-    start_row = 8
+        start_row = 8
 
-    header_fill = PatternFill("solid", fgColor="111827")
-    header_font = Font(bold=True, color="FFFFFF", name="Calibri", size=11)
-    body_font = Font(name="Calibri", size=10)
+        header_fill = PatternFill("solid", fgColor="111827")
+        header_font = Font(bold=True, color="FFFFFF", name="Calibri", size=11)
+        body_font = Font(name="Calibri", size=10)
 
-    thin = Side(style="thin", color="D1D5DB")
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+        thin = Side(style="thin", color="D1D5DB")
+        border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    ws.row_dimensions[start_row].height = 34
+        ws.row_dimensions[start_row].height = 34
 
+<<<<<<< HEAD
     for col_index, col_name in enumerate(cols_fmt, 1):
         cell = ws.cell(row=start_row, column=col_index, value=col_name)
         cell.fill = header_fill
@@ -531,32 +594,60 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
             cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
             cell.font = body_font
             cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+=======
+        for col_index, col_name in enumerate(cols_fmt, 1):
+            cell = ws.cell(row=start_row, column=col_index, value=col_name)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=False, shrink_to_fit=True)
+>>>>>>> 9d08b6b (Mis cambios locales)
             cell.border = border
 
-    _auto_anchos_excel(ws, cols_fmt, rows)
+        for row_index, row_data in enumerate(rows, start_row + 1):
+            ws.row_dimensions[row_index].height = 18
+            for col_index, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_index, column=col_index, value=_texto(value))
+                cell.font = body_font
+                cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+                cell.border = border
 
-    max_row = start_row + len(rows)
-    real_last_col = get_column_letter(max_col)
+        _auto_anchos_excel(ws, cols_fmt, rows)
 
-    try:
-        ref = f"A{start_row}:{real_last_col}{max_row}"
-        tab = XLTable(displayName="TablaReporte", ref=ref)
-        style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
-        tab.tableStyleInfo = style
-        ws.add_table(tab)
-    except Exception:
-        pass
+        max_row = start_row + len(rows)
+        real_last_col = get_column_letter(max_col)
 
-    ws.freeze_panes = ws[f"A{start_row + 1}"]
+        try:
+            ref = f"A{start_row}:{real_last_col}{max_row}"
+            tab = XLTable(displayName="TablaReporte", ref=ref)
+            style = TableStyleInfo(name="TableStyleMedium9", showRowStripes=True, showColumnStripes=False)
+            tab.tableStyleInfo = style
+            ws.add_table(tab)
+        except Exception:
+            pass
 
-    out = BytesIO()
-    wb.save(out)
-    return out.getvalue()
+        ws.freeze_panes = ws[f"A{start_row + 1}"]
+
+        out = BytesIO()
+        wb.save(out)
+        return out.getvalue()
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "generar_pdf", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "generar_pdf", fecha)
 
 
 def render_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    return generar_pdf(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
-
+    try:
+        return generar_pdf(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "generar_pdf", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "generar_pdf", fecha)
 
 def render_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], printed_by: str) -> bytes:
-    return generar_excel(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
+    try:
+        return generar_excel(report_title=report_title, columns=columns, rows=rows, printed_by=printed_by)
+    except Exception as error:
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", str(error), "generar_excel", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "generar_excel", fecha)

@@ -303,8 +303,8 @@ class OrdenEntregaAdmin(ModelView):
             return super().index_view()
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "orden_entrega_busqueda", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_busqueda", fecha)
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega", fecha)
             return "Error al abrir el listado de órdenes de entrega.", 500
 
     # Este bloque sirve para el paginado del listado.
@@ -321,8 +321,8 @@ class OrdenEntregaAdmin(ModelView):
             )
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-            logger_.Logger.add_to_log("error", str(error), "orden_entrega_paginado", fecha)
-            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega_paginado", fecha)
+            logger_.Logger.add_to_log("error", str(error), "orden_entrega", fecha)
+            logger_.Logger.add_to_log("error", traceback.format_exc(), "orden_entrega", fecha)
             return 0, []
 
     # Este botón sirve para abrir la pantalla de crear.
