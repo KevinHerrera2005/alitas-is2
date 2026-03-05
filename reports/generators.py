@@ -162,6 +162,9 @@ def _label_columna(s: Any) -> str:
     if n in ("us co", "usco", "us co.", "us_co", "direccion entrega", "direccion_entrega"):
         base = "Dirección Entrega"
 
+    if n in ("usuario cliente f", "usuario_cliente_f", "usuario-cliente-f"):
+        base = "Usuario Cliente"
+
     base = base.upper()
     return _acento_label_upper(base)
 
