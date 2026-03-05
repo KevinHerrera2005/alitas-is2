@@ -109,10 +109,61 @@ def _quitar_prefijo_id(label: str) -> str:
     return t
 
 
+def _acento_label_upper(s: str) -> str:
+    t = (s or "").strip()
+    if not t:
+        return ""
+
+    palabras = t.split(" ")
+    mapa = {
+        "DIRECCION": "DIRECCIÓN",
+        "TELEFONO": "TELÉFONO",
+        "NUMERO": "NÚMERO",
+        "PARAMETRO": "PARÁMETRO",
+        "DESCRIPCION": "DESCRIPCIÓN",
+        "CANCELACION": "CANCELACIÓN",
+        "CREACION": "CREACIÓN",
+        "CONFIGURACION": "CONFIGURACIÓN",
+        "SUCURSAL": "SUCURSAL",
+        "USUARIO": "USUARIO",
+        "CLIENTE": "CLIENTE",
+        "ENTREGA": "ENTREGA",
+        "ORDEN": "ORDEN",
+        "FACTURA": "FACTURA",
+        "REPARTIDOR": "REPARTIDOR",
+        "NOMBRE": "NOMBRE",
+        "APELLIDO": "APELLIDO",
+        "CODIGO": "CÓDIGO",
+        "CATEGORIA": "CATEGORÍA",
+        "CANTIDAD": "CANTIDAD",
+        "PRECIO": "PRECIO",
+        "IMPUESTO": "IMPUESTO",
+        "DETALLE": "DETALLE",
+        "FECHA": "FECHA",
+        "HORA": "HORA",
+        "DIA": "DÍA",
+        "MES": "MES",
+        "ANIO": "AÑO",
+        "ANO": "AÑO",
+    }
+
+    out = []
+    for p in palabras:
+        u = p.upper()
+        out.append(mapa.get(u, u))
+    return " ".join(out)
+
+
 def _label_columna(s: Any) -> str:
     base = _normalizar_etiqueta_base(s)
     base = _quitar_prefijo_id(base)
-    return base.upper()
+    n = " ".join(base.lower().replace("_", " ").split())
+
+    if n in ("us co", "usco", "us co.", "us_co", "direccion entrega", "direccion_entrega"):
+        base = "Dirección Entrega"
+
+    base = base.upper()
+    return _acento_label_upper(base)
 
 
 def _necesita_landscape(cols: int) -> bool:
@@ -233,6 +284,7 @@ def _header_block(report_title: str, printed_by: str) -> Table:
         fontName="Helvetica-Bold",
         fontSize=16,
         spaceAfter=6,
+        textColor=colors.black,
     )
     meta_style = ParagraphStyle(
         "MetaCustom",
@@ -285,7 +337,6 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
     buf = BytesIO()
 
     cols_fmt = [_label_columna(c) for c in columns]
-
     page_size = landscape(letter) if _necesita_landscape(len(cols_fmt)) else letter
 
     left_margin = 0.55 * inch
@@ -320,7 +371,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         head_fs, body_fs = _font_sizes_for_cols(ncols)
 
         wrap_header = ParagraphStyle(
-            name="WrapHeader",
+            name=f"WrapHeader_{idx}",
             fontName="Helvetica-Bold",
             fontSize=head_fs,
             leading=head_fs + 2,
@@ -331,7 +382,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
         )
 
         wrap_cell = ParagraphStyle(
-            name="WrapCell",
+            name=f"WrapCell_{idx}",
             fontName="Helvetica",
             fontSize=body_fs,
             leading=body_fs + 3,
@@ -385,6 +436,7 @@ def generar_pdf(report_title: str, columns: Sequence[str], rows: Sequence[Sequen
 
 def _auto_anchos_excel(ws, columns: Sequence[str], rows: Sequence[Sequence[Any]]):
     widths = [len(_texto(c)) for c in columns]
+
     for r in rows[:800]:
         for i, v in enumerate(r):
             s = _texto(v)
@@ -468,7 +520,7 @@ def generar_excel(report_title: str, columns: Sequence[str], rows: Sequence[Sequ
         cell = ws.cell(row=start_row, column=col_index, value=col_name)
         cell.fill = header_fill
         cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=False, shrink_to_fit=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = border
 
     for row_index, row_data in enumerate(rows, start_row + 1):

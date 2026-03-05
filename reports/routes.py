@@ -230,33 +230,30 @@ def _key_norm(col: str) -> str:
     return s
 
 
-def _filtrar_columnas_global(columnas: List[str], filas: List[List[Any]]) -> Tuple[List[str], List[List[Any]]]:
+def _aplicar_alias_columnas(columnas: List[str]) -> List[str]:
+    out = []
+    for c in columnas:
+        n = _key_norm(c)
+        if n in ("us co", "usco", "us_co"):
+            out.append("direccion_entrega")
+        else:
+            out.append(c)
+    return out
+
+
+def _filtrar_id_direccion_si_hay_direccion(columnas: List[str], filas: List[List[Any]]) -> Tuple[List[str], List[List[Any]]]:
     if not columnas:
         return columnas, filas
 
+    has_direccion = any(_key_norm(c) == "direccion" for c in columnas)
+    if not has_direccion:
+        return columnas, filas
+
     remove_idx = set()
-
-    norm_to_idx = {}
-    for i, c in enumerate(columnas):
-        norm_to_idx.setdefault(_key_norm(c), i)
-
     for i, c in enumerate(columnas):
         n = _key_norm(c)
-
-        if n in ("us co", "usco", "us co.", "us co id", "us_co", "us"):
+        if n in ("id direccion", "direccion id", "id direccion cliente", "direccion cliente id"):
             remove_idx.add(i)
-
-    has_direccion = False
-    for c in columnas:
-        if _key_norm(c) == "direccion":
-            has_direccion = True
-            break
-
-    if has_direccion:
-        for i, c in enumerate(columnas):
-            n = _key_norm(c)
-            if n in ("id direccion", "direccion id", "id direccion cliente", "direccion cliente id"):
-                remove_idx.add(i)
 
     if not remove_idx:
         return columnas, filas
@@ -299,7 +296,8 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
     records = model_cls.query.limit(limit).all()
     filas = [[g(r) for g in getters] for r in records]
 
-    columnas, filas = _filtrar_columnas_global(columnas, filas)
+    columnas = _aplicar_alias_columnas(columnas)
+    columnas, filas = _filtrar_id_direccion_si_hay_direccion(columnas, filas)
     return columnas, filas
 
 
@@ -341,7 +339,8 @@ def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
     for estado, cantidad in q:
         rows.append([_estado_orden_humano(estado), int(cantidad) if cantidad is not None else 0])
 
-    cols, rows = _filtrar_columnas_global(cols, rows)
+    cols = _aplicar_alias_columnas(cols)
+    cols, rows = _filtrar_id_direccion_si_hay_direccion(cols, rows)
     return cols, rows
 
 
