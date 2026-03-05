@@ -168,7 +168,6 @@ def _label_columna(s: Any) -> str:
     base = base.upper()
     return _acento_label_upper(base)
 
-
 def _necesita_landscape(cols: int) -> bool:
     try:
         max_cols_portrait = int(current_app.config.get("REPORTS_MAX_COLS_PORTRAIT", 6))
