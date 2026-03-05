@@ -38,8 +38,7 @@ def _to_str(v: Any) -> str:
     if v is None:
         return ""
     try:
-        s = str(v).strip()
-        return s
+        return str(v).strip()
     except Exception:
         return ""
 
@@ -102,7 +101,7 @@ def _display_sqla(obj: Any) -> str:
         candidates = []
         for k in col_keys:
             kl = (k or "").lower()
-            if kl in ("id",) or kl.startswith("id_") or kl.endswith("_id"):
+            if kl == "id" or kl.startswith("id_") or kl.endswith("_id"):
                 continue
             candidates.append(k)
 
@@ -113,19 +112,6 @@ def _display_sqla(obj: Any) -> str:
         out = _first_non_empty([_get_attr(obj, k) for k in col_keys])
         if out:
             return out
-
-    out = _first_non_empty(
-        [
-            _get_attr(obj, "Nombre"),
-            _get_attr(obj, "nombre"),
-            _get_attr(obj, "Descripcion"),
-            _get_attr(obj, "descripcion"),
-            _get_attr(obj, "codigo"),
-            _get_attr(obj, "Codigo"),
-        ]
-    )
-    if out:
-        return out
 
     return ""
 
@@ -237,6 +223,54 @@ def _models_registry() -> Dict[str, Any]:
     return out
 
 
+def _key_norm(col: str) -> str:
+    s = (col or "").strip().lower()
+    s = s.replace("_", " ").replace("-", " ")
+    s = " ".join(s.split())
+    return s
+
+
+def _filtrar_columnas_global(columnas: List[str], filas: List[List[Any]]) -> Tuple[List[str], List[List[Any]]]:
+    if not columnas:
+        return columnas, filas
+
+    remove_idx = set()
+
+    norm_to_idx = {}
+    for i, c in enumerate(columnas):
+        norm_to_idx.setdefault(_key_norm(c), i)
+
+    for i, c in enumerate(columnas):
+        n = _key_norm(c)
+
+        if n in ("us co", "usco", "us co.", "us co id", "us_co", "us"):
+            remove_idx.add(i)
+
+    has_direccion = False
+    for c in columnas:
+        if _key_norm(c) == "direccion":
+            has_direccion = True
+            break
+
+    if has_direccion:
+        for i, c in enumerate(columnas):
+            n = _key_norm(c)
+            if n in ("id direccion", "direccion id", "id direccion cliente", "direccion cliente id"):
+                remove_idx.add(i)
+
+    if not remove_idx:
+        return columnas, filas
+
+    keep = [i for i in range(len(columnas)) if i not in remove_idx]
+    new_cols = [columnas[i] for i in keep]
+    new_rows = []
+    for r in filas:
+        rr = list(r)
+        new_rows.append([rr[i] if i < len(rr) else "" for i in keep])
+
+    return new_cols, new_rows
+
+
 def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[List[Any]]]:
     mapper = inspect(model_cls)
     fk_to_rel: Dict[str, str] = {}
@@ -264,6 +298,8 @@ def _columnas_y_filas(model_cls, limit: int = 10000) -> Tuple[List[str], List[Li
 
     records = model_cls.query.limit(limit).all()
     filas = [[g(r) for g in getters] for r in records]
+
+    columnas, filas = _filtrar_columnas_global(columnas, filas)
     return columnas, filas
 
 
@@ -305,6 +341,7 @@ def _reporte_ordenes_estado() -> Tuple[List[str], List[List[Any]]]:
     for estado, cantidad in q:
         rows.append([_estado_orden_humano(estado), int(cantidad) if cantidad is not None else 0])
 
+    cols, rows = _filtrar_columnas_global(cols, rows)
     return cols, rows
 
 
