@@ -1,0 +1,143 @@
+2026-03-05 02:07:50 | ERROR | Kevin Alejandros | (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT [Ordenes_Proveedores].[ID_Orden_Proveedor] AS [Ordenes_Proveedores_ID_Orden_Proveedor], [Ordenes_Proveedores].[ID_Proveedor] AS [Ordenes_Proveedores_ID_Proveedor], [Ordenes_Proveedores].[ID_Empleado_Encargado] AS [Ordenes_Proveedores_ID_Empleado_Encargado], [Ordenes_Proveedores].[ID_Sucursal] AS [Ordenes_Proveedores_ID_Sucursal], [Ordenes_Proveedores].[Fecha_Inicio] AS [Ordenes_Proveedores_Fecha_Inicio], [Ordenes_Proveedores].[Fecha_Estimada] AS [Ordenes_Proveedores_Fecha_Estimada], [Ordenes_Proveedores].[Fecha_Entregado] AS [Ordenes_Proveedores_Fecha_Entregado], [Ordenes_Proveedores].[Estado] AS [Ordenes_Proveedores_Estado], [Ordenes_Proveedores].[Numero_Factura] AS [Ordenes_Proveedores_Numero_Factura], [Ordenes_Proveedores].[Comentarios] AS [Ordenes_Proveedores_Comentarios], [Proveedores_1].[ID_Proveedor] AS [Proveedores_1_ID_Proveedor], [Proveedores_1].[Telefono] AS [Proveedores_1_Telefono], [Proveedores_1].email AS [Proveedores_1_email], [Proveedores_1].activo AS [Proveedores_1_activo], [Proveedores_1].[Nombre_Proveedor] AS [Proveedores_1_Nombre_Proveedor], [Empleado_1].[ID_Empleado] AS [Empleado_1_ID_Empleado], [Empleado_1].[Nombre] AS [Empleado_1_Nombre], [Empleado_1].[Apellido] AS [Empleado_1_Apellido], [Empleado_1].[Username] AS [Empleado_1_Username], [Empleado_1].[Password] AS [Empleado_1_Password], [Empleado_1].[Telefono] AS [Empleado_1_Telefono], [Empleado_1].[Email] AS [Empleado_1_Email], [Empleado_1].[ID_Puesto] AS [Empleado_1_ID_Puesto], [Empleado_1].[ID_sucursal] AS [Empleado_1_ID_sucursal], [Empleado_1].estado AS [Empleado_1_estado], [Direcciones_1].[ID_Direccion] AS [Direcciones_1_ID_Direccion], [Direcciones_1].[Descripcion] AS [Direcciones_1_Descripcion], [Sucursales_1].[ID_sucursal] AS [Sucursales_1_ID_sucursal], [Sucursales_1].[Descripcion] AS [Sucursales_1_Descripcion], [Sucursales_1].[ID_Direccion] AS [Sucursales_1_ID_Direccion], [Sucursales_1].estado AS [Sucursales_1_estado] 
+FROM [Ordenes_Proveedores] LEFT OUTER JOIN [Proveedores] AS [Proveedores_1] ON [Proveedores_1].[ID_Proveedor] = [Ordenes_Proveedores].[ID_Proveedor] LEFT OUTER JOIN [Empleado] AS [Empleado_1] ON [Empleado_1].[ID_Empleado] = [Ordenes_Proveedores].[ID_Empleado_Encargado] LEFT OUTER JOIN [Sucursales] AS [Sucursales_1] ON [Sucursales_1].[ID_sucursal] = [Ordenes_Proveedores].[ID_Sucursal] LEFT OUTER JOIN [Direcciones] AS [Direcciones_1] ON [Direcciones_1].[ID_Direccion] = [Sucursales_1].[ID_Direccion] 
+WHERE [Ordenes_Proveedores].[ID_Orden_Proveedor] = ?]
+[parameters: ('25',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-05 02:07:50 | ERROR | Kevin Alejandros | Traceback (most recent call last):
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+pyodbc.OperationalError: ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\models\admin_historial_ordenes_proveedores_view.py", line 107, in details_view
+    return super().details_view()
+           ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 69, in inner
+    return self._run_view(f, *args, **kwargs)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\base.py", line 369, in _run_view
+    return fn(self, *args, **kwargs)
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\model\base.py", line 2195, in details_view
+    model = self.get_one(id)
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\flask_admin\contrib\sqla\view.py", line 1119, in get_one
+    return self.session.query(self.model).get(tools.iterdecode(id))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in get
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\util\deprecations.py", line 386, in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1126, in get
+    return self._get_impl(ident, loading.load_on_pk_identity)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 1135, in _get_impl
+    return self.session._get_impl(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        mapper,
+        ^^^^^^^
+    ...<6 lines>...
+        execution_options=self._execution_options,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 3859, in _get_impl
+    return db_load_fn(
+        self,
+    ...<5 lines>...
+        bind_arguments=bind_arguments,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\loading.py", line 695, in load_on_pk_identity
+    session.execute(
+    ~~~~~~~~~~~~~~~^
+        q,
+        ^^
+    ...<2 lines>...
+        bind_arguments=bind_arguments,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2249, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<4 lines>...
+        conn,
+        ^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\orm\context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+        statement, params or {}, execution_options=execution_options
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1419, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<8 lines>...
+        cache_hit=cache_hit,
+    )
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        dialect, context, statement, parameters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e, str_statement, effective_parameters, cursor, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        cursor, str_statement, effective_parameters, context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Documents\PruebaGit\alitas-is2\venv\Lib\site-packages\sqlalchemy\engine\default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+sqlalchemy.exc.OperationalError: (pyodbc.OperationalError) ('08S01', '[08S01] [Microsoft][ODBC Driver 17 for SQL Server]Shared Memory Provider: No hay ningún proceso en el otro extremo de la canalización.\r\n (233) (SQLExecDirectW); [08S01] [Microsoft][ODBC Driver 17 for SQL Server]Communication link failure (233)')
+[SQL: SELECT [Ordenes_Proveedores].[ID_Orden_Proveedor] AS [Ordenes_Proveedores_ID_Orden_Proveedor], [Ordenes_Proveedores].[ID_Proveedor] AS [Ordenes_Proveedores_ID_Proveedor], [Ordenes_Proveedores].[ID_Empleado_Encargado] AS [Ordenes_Proveedores_ID_Empleado_Encargado], [Ordenes_Proveedores].[ID_Sucursal] AS [Ordenes_Proveedores_ID_Sucursal], [Ordenes_Proveedores].[Fecha_Inicio] AS [Ordenes_Proveedores_Fecha_Inicio], [Ordenes_Proveedores].[Fecha_Estimada] AS [Ordenes_Proveedores_Fecha_Estimada], [Ordenes_Proveedores].[Fecha_Entregado] AS [Ordenes_Proveedores_Fecha_Entregado], [Ordenes_Proveedores].[Estado] AS [Ordenes_Proveedores_Estado], [Ordenes_Proveedores].[Numero_Factura] AS [Ordenes_Proveedores_Numero_Factura], [Ordenes_Proveedores].[Comentarios] AS [Ordenes_Proveedores_Comentarios], [Proveedores_1].[ID_Proveedor] AS [Proveedores_1_ID_Proveedor], [Proveedores_1].[Telefono] AS [Proveedores_1_Telefono], [Proveedores_1].email AS [Proveedores_1_email], [Proveedores_1].activo AS [Proveedores_1_activo], [Proveedores_1].[Nombre_Proveedor] AS [Proveedores_1_Nombre_Proveedor], [Empleado_1].[ID_Empleado] AS [Empleado_1_ID_Empleado], [Empleado_1].[Nombre] AS [Empleado_1_Nombre], [Empleado_1].[Apellido] AS [Empleado_1_Apellido], [Empleado_1].[Username] AS [Empleado_1_Username], [Empleado_1].[Password] AS [Empleado_1_Password], [Empleado_1].[Telefono] AS [Empleado_1_Telefono], [Empleado_1].[Email] AS [Empleado_1_Email], [Empleado_1].[ID_Puesto] AS [Empleado_1_ID_Puesto], [Empleado_1].[ID_sucursal] AS [Empleado_1_ID_sucursal], [Empleado_1].estado AS [Empleado_1_estado], [Direcciones_1].[ID_Direccion] AS [Direcciones_1_ID_Direccion], [Direcciones_1].[Descripcion] AS [Direcciones_1_Descripcion], [Sucursales_1].[ID_sucursal] AS [Sucursales_1_ID_sucursal], [Sucursales_1].[Descripcion] AS [Sucursales_1_Descripcion], [Sucursales_1].[ID_Direccion] AS [Sucursales_1_ID_Direccion], [Sucursales_1].estado AS [Sucursales_1_estado] 
+FROM [Ordenes_Proveedores] LEFT OUTER JOIN [Proveedores] AS [Proveedores_1] ON [Proveedores_1].[ID_Proveedor] = [Ordenes_Proveedores].[ID_Proveedor] LEFT OUTER JOIN [Empleado] AS [Empleado_1] ON [Empleado_1].[ID_Empleado] = [Ordenes_Proveedores].[ID_Empleado_Encargado] LEFT OUTER JOIN [Sucursales] AS [Sucursales_1] ON [Sucursales_1].[ID_sucursal] = [Ordenes_Proveedores].[ID_Sucursal] LEFT OUTER JOIN [Direcciones] AS [Direcciones_1] ON [Direcciones_1].[ID_Direccion] = [Sucursales_1].[ID_Direccion] 
+WHERE [Ordenes_Proveedores].[ID_Orden_Proveedor] = ?]
+[parameters: ('25',)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
