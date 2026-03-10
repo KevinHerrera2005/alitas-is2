@@ -125,10 +125,6 @@ def ejecutar_init_sql_si_aplica(odbc_conn_str, init_sql_path, db_name):
 DB_NAME = obtener_db_name()
 connection_string = obtener_connection_string()
 
-init_sql_path = _resource_path("init.sql")
-if os.getenv("SKIP_DB_INIT", "0").strip() != "1":
-    ejecutar_init_sql_si_aplica(connection_string, init_sql_path, DB_NAME)
-
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "clave_super_segura")
 app.config["BABEL_DEFAULT_LOCALE"] = "es"
