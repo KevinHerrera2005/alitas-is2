@@ -499,6 +499,12 @@ def index():
     return redirect(url_for("pagina_principal_bp.menu"))
 
 
+@app.route("/sinconexion")
+def sinconexion():
+    from flask import render_template
+    return render_template("sinconexion.html")
+
+
 def _ensure_bootstrap():
     global _BOOTSTRAPPED
     if _BOOTSTRAPPED:
