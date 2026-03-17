@@ -3,6 +3,8 @@ import traceback
 
 from mensajes_logs import logger_
 
+from flask import redirect, url_for, flash
+from flask_login import current_user
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 
@@ -14,6 +16,20 @@ class RecetaPrecioHistoricoAdmin(ModelView):
     can_edit = False
     can_delete = False
     can_view_details = False
+    puede_exportar_pdf = False
+    puede_exportar_excel = False
+
+    def is_accessible(self):
+        from models.permisos_mixin import endpoint_accesible
+        if not current_user.is_authenticated:
+            return False
+        if getattr(current_user, "tipo", None) != "empleado":
+            return False
+        return endpoint_accesible("receta_precio_historico_admin.index_view")
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("No tienes acceso a esta pantalla.", "danger")
+        return redirect(url_for("login"))
 
     column_list = (
         "nombre_receta",

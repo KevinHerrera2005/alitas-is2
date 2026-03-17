@@ -16,9 +16,17 @@ from sqlalchemy.exc import IntegrityError
 
 from models.proveedores_model import Proveedor, ProveedorInsumo
 from models.insumo_model import Insumo
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class ProveedorAdmin(ModelView):
+class ProveedorAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     create_template = "admin/model/proveedor_create.html"
     edit_template = "admin/model/proveedor_edit.html"
 

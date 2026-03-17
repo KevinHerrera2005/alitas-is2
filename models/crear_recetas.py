@@ -14,6 +14,7 @@ from models import db
 from models.empleado_model import Empleado
 from models.in_re_model import IN_RE
 from models.receta_model import Receta
+from models.permisos_mixin import endpoint_accesible
 
 
 def crear_receta_routes(app):
@@ -21,6 +22,9 @@ def crear_receta_routes(app):
 
     @app.route("/crear_receta", methods=["GET", "POST"])
     def crear_receta():
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            flash("No tienes acceso a esta pantalla.", "danger")
+            return redirect(url_for("login"))
         try:
             insumos_query = db.session.execute(
                 text(
@@ -320,6 +324,9 @@ def editar_receta_routes(app):
 
     @app.route("/editar_receta/<int:id_receta>", methods=["GET", "POST"])
     def editar_receta(id_receta):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            flash("No tienes acceso a esta pantalla.", "danger")
+            return redirect(url_for("login"))
         try:
             receta = Receta.query.get(id_receta)
 

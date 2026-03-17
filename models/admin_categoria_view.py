@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 from mensajes_logs import logger_
 from models.categoria_insumo_model import CategoriaInsumo
+from models.permisos_mixin import PermisosAdminMixin
 
 
 TIPO_CHOICES = [(1, "Sólido"), (2, "Líquido"), (3, "Medición")]
@@ -24,7 +25,14 @@ def fmt_estado(view, context, model, name):
     return m.get(getattr(model, "estado", None), "")
 
 
-class CategoriaAdmin(ModelView):
+class CategoriaAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     create_template = "admin/model/categoria_create.html"
     edit_template = "admin/model/categoria_edit.html"
 

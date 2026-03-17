@@ -10,9 +10,16 @@ from wtforms import StringField
 from wtforms.validators import DataRequired, Length
 
 from models.parametro_sar_model import ParametroSAR
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class ParametroSARAdmin(ModelView):
+class ParametroSARAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     create_template = "admin/model/parametro_sar_create.html"
     edit_template = "admin/model/parametro_sar_edit.html"
 

@@ -21,6 +21,7 @@ class Empleado(db.Model):
     Password = db.Column(db.String(255), nullable=False)
     Telefono = db.Column(db.String(20), nullable=False)
     Email = db.Column(db.String(200), nullable=True)
+    estado= db.Column(db.Integer,nullable=False)
 
     ID_Puesto = db.Column(
         db.Integer,

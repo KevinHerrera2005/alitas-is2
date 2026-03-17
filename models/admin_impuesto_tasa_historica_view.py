@@ -3,6 +3,7 @@ import traceback
 from flask_admin import expose
 from flask import flash, redirect, request, url_for
 from flask_admin.contrib.sqla import ModelView
+from flask_login import current_user
 from sqlalchemy.exc import OperationalError
 
 from mensajes_logs import logger_
@@ -12,6 +13,20 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
     can_create = False
     can_edit = False
     can_delete = False
+    puede_exportar_pdf   = False
+    puede_exportar_excel = False
+
+    def is_accessible(self):
+        from models.permisos_mixin import endpoint_accesible
+        if not current_user.is_authenticated:
+            return False
+        if getattr(current_user, "tipo", None) != "empleado":
+            return False
+        return endpoint_accesible("impuesto_tasa_historica_admin.index_view")
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("No tienes acceso a esta pantalla.", "danger")
+        return redirect(url_for("login"))
 
     can_view_details = True
     can_export = True

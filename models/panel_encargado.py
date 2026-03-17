@@ -339,14 +339,16 @@ def panel():
     fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:
         logger_.Logger.add_to_log("info", "open_panel", "panel_encargado_panel", fecha)
-        return render_template("panel_encargado.html")
+        from models.permisos_mixin import pantallas_del_empleado_actual
+        pantallas_permitidas = pantallas_del_empleado_actual() or set()
+        return render_template("panel_encargado.html", pantallas_permitidas=pantallas_permitidas)
     except Exception as error:
         logger_.Logger.add_to_log("error", str(error), "panel_encargado_panel", fecha)
         logger_.Logger.add_to_log(
             "error", traceback.format_exc(), "panel_encargado_panel", fecha
         )
         flash("Error al abrir el panel. Revisa los logs.", "danger")
-        return render_template("panel_encargado.html"), 200
+        return render_template("panel_encargado.html", pantallas_permitidas=set()), 200
 
 
 @panel_encargado.route("/encargar_insumos_data")

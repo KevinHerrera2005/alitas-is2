@@ -9,9 +9,16 @@ from wtforms import SelectField
 
 from models import db
 from models.unidades_medida_model import Unidades_medida
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class UnidadesMedidaAdmin(ModelView):
+class UnidadesMedidaAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     create_template = "admin/model/unidad_create.html"
     edit_template = "admin/model/unidad_edit.html"
 

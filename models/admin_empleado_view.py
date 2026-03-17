@@ -18,11 +18,19 @@ from models.empleado_model import Empleado, Puesto
 from models.tipo_documento_model import TipoDocumento
 from models.empleado_documento_model import EmpleadoDocumento
 from models.sucursal_model import Sucursal
+from models.permisos_empleado_model import PermisosEmpleado
+from models.permisos_mixin import PermisosAdminMixin
 
 EMAIL_REGEX = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
-class EmpleadoAdmin(ModelView):
+class EmpleadoAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     TIPO_DOC_LABELS = {
         1: "DNI",
         2: "RTN",
@@ -411,14 +419,15 @@ class EmpleadoAdmin(ModelView):
 
     def delete_model(self, model):
         try:
-            model.estado = 0
-            self.session.add(model)
+            self.session.query(EmpleadoDocumento).filter_by(ID_Empleado=model.ID_Empleado).delete()
+            self.session.query(PermisosEmpleado).filter_by(ID_Empleado=model.ID_Empleado).delete()
+            self.session.delete(model)
             self.session.commit()
-            flash("Empleado inactivado.", "success")
+            flash("Empleado eliminado.", "success")
             return True
         except Exception:
             self.session.rollback()
-            flash("No se pudo inactivar el empleado.", "danger")
+            flash("No se puede eliminar el empleado porque tiene órdenes o historial asociado.", "danger")
             return False
 
     def delete_models(self, models):

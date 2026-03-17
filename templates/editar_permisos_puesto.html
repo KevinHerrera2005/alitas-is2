@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Permisos del Puesto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crear_pantalla_accion.css') }}">
+    <style>
+        .pantallas-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .pantalla-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(60, 63, 60, 0.9);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .toggle-checkbox {
+            display: none;
+        }
+
+        .toggle-label {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+            background-color: #555;
+            border-radius: 26px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            flex-shrink: 0;
+        }
+
+        .toggle-label::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: rgb(3, 241, 3);
+        }
+
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <h1>Editar Permisos: {{ puesto.Nombre_Puesto }}</h1>
+
+    <form class="formulario-pantalla-accion" method="POST">
+        <label>Pantallas asignadas:</label>
+
+        <div class="pantallas-grid">
+            {% for pantalla in pantallas_disponibles %}
+            <div class="pantalla-item">
+                <span>{{ pantalla[1] }}</span>
+                <input
+                    type="checkbox"
+                    class="toggle-checkbox"
+                    id="toggle_{{ pantalla[0] }}"
+                    name="pantallas"
+                    value="{{ pantalla[0] }}"
+                    {% if pantalla[0] in pantallas_asignadas_ids %}checked{% endif %}
+                >
+                <label class="toggle-label" for="toggle_{{ pantalla[0] }}"></label>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="boton-guardar">Guardar</button>
+        <a class="volver" href="{{ url_for('ver_permisos_puesto') }}">&#8592; Volver al panel</a>
+    </form>
+</body>
+</html>

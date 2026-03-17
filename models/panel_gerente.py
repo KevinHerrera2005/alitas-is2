@@ -27,7 +27,9 @@ def root():
 @panel_gerente.route("/panel")
 def panel():
     try:
-        return render_template("panel_gerente.html")
+        from models.permisos_mixin import pantallas_del_empleado_actual
+        pantallas_permitidas = pantallas_del_empleado_actual()  # None = acceso total
+        return render_template("panel_gerente.html", pantallas_permitidas=pantallas_permitidas)
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "panel_gerente_panel", fecha)

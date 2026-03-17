@@ -6,12 +6,16 @@ from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.exc import OperationalError
 
 from mensajes_logs import logger_
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class HistorialFacturasAdmin(ModelView):
+class HistorialFacturasAdmin(PermisosAdminMixin, ModelView):
     can_create = False
     can_edit = False
     can_delete = False
+    accion_buscar         = "buscar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
 
     can_view_details = True
     can_export = True

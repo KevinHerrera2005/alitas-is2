@@ -18,7 +18,9 @@ def panel():
             flash("No tienes permiso para acceder a este panel.", "danger")
             return redirect(url_for("pagina_principal_bp.menu"))
 
-        return render_template("panel_repartidor.html")
+        from models.permisos_mixin import pantallas_del_empleado_actual
+        pantallas_permitidas = pantallas_del_empleado_actual() or set()
+        return render_template("panel_repartidor.html", pantallas_permitidas=pantallas_permitidas)
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "panel_repartidor", fecha)

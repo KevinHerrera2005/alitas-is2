@@ -3,6 +3,8 @@ import traceback
 
 from mensajes_logs import logger_
 
+from flask import redirect, url_for, flash
+from flask_login import current_user
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy import func, or_
@@ -15,16 +17,20 @@ from models.direccion_model import Direccion
 from models.usuario_cliente_model import UsuarioCliente
 from models.empleado_model import Empleado
 from models.factura_model import Factura
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class HistorialOrdenesRepartidorAdmin(ModelView):
+class HistorialOrdenesRepartidorAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     can_create = False
     can_edit = False
     can_delete = False
 
     page_size = 20
-    can_search = True
-    column_searchable_list = ("ID_Orden",)
+    column_searchable_list = ()
 
     column_list = (
         "ID_Orden",

@@ -23,34 +23,31 @@ def load_models():
     from .direccion_cliente_model import DireccionDelCliente
     from .metodo_pago_model import MetodoPago
     from .gerente_model import Gerente
-
     from .categoria_recetas_model import Categoria_recetas
     from .sucursal_model import Sucursal
-
     from .in_re_model import IN_RE
     from .insumo_precio_historico_model import InsumoPrecioHistorico
     from .recetas_precio_historico_model import RecetaPrecioHistorico
     from .receta_model import Receta
-
     from .proveedores_model import Proveedor, ProveedorInsumo
-
     from .metodos_money_model import MetodosMoney
     from .pagos_cliente_model import PagosCliente
     from .pago_detalle_model import PagoDetalle
-
     from .factura_model import Factura
     from .factura_detalle_model import FacturaDetalle
-
     from .parametro_sar_model import ParametroSAR
     from .cai_model import CAI
     from .cai_historico_model import CAIHistorico
-
     from .impuesto_tasa_historica_model import ImpuestoTasaHistorica
-
     from .carrito_model import Carrito
-
     from .orden_entrega_model import OrdenEntrega
     from .orden_proveedor_model import OrdenProveedor
     from .ordenes_proveedores_model import OrdenesProveedores, OrdenesProveedoresDetalle
-
     from .historial_ordenes_repartidor_model import HistorialOrdenesRepartidor
+    from .Pantallas_model import Pantallas
+    from .Acciones_model import Acciones
+    from .pantallas_acciones_model import PantallasAcciones
+    from .permisos_puesto_model import PermisosPuesto
+    from .permisos_empleado_model import PermisosEmpleado
+    from .estado_pantalla_empleado_model import EstadoPantallaEmpleado
+    

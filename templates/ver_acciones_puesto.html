@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acciones del Puesto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantallas_acciones.css') }}">
+</head>
+<body>
+    <h1 class="titulo">Acciones del puesto: {{ puesto.Nombre_Puesto }}</h1>
+
+    <div class="buscador-fila">
+        <a href="{{ url_for('ver_permisos_puesto') }}">
+            <button type="button" class="botoncrear">&#8592; Volver</button>
+        </a>
+        <a href="{{ url_for('editar_permisos_puesto', id_puesto=puesto.ID_Puesto) }}">
+            <button type="button" class="botoncrear">Editar</button>
+        </a>
+    </div>
+
+    <div class="divisiones">
+        {% if pantallas %}
+            {% for nombre_pantalla, acciones in pantallas.items() %}
+            <div class="caja">
+                <strong>{{ nombre_pantalla }}</strong>
+                <ul style="margin-top: 10px; padding-left: 18px; color: antiquewhite;">
+                    {% for accion in acciones %}
+                    <li>{{ accion }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: antiquewhite; margin: 20px;">Este puesto no tiene pantallas asignadas.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

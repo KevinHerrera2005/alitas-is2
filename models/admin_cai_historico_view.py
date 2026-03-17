@@ -5,6 +5,8 @@ from mensajes_logs import logger_
 
 from flask_admin import expose
 from flask_admin.contrib.sqla import ModelView
+from flask import flash, redirect, url_for
+from flask_login import current_user
 from models.cai_historico_model import CAIHistorico
 from models.sucursal_model import Sucursal
 
@@ -14,6 +16,20 @@ class CAIHistoricoAdmin(ModelView):
     can_edit = False
     can_delete = False
     can_view_details = True
+    puede_exportar_pdf   = False
+    puede_exportar_excel = False
+
+    def is_accessible(self):
+        from models.permisos_mixin import endpoint_accesible
+        if not current_user.is_authenticated:
+            return False
+        if getattr(current_user, "tipo", None) != "empleado":
+            return False
+        return endpoint_accesible("cai_historico_admin.index_view")
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("No tienes acceso a esta pantalla.", "danger")
+        return redirect(url_for("login"))
 
     column_default_sort = ("Fecha_Registro", True)
 

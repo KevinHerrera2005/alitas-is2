@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Permisos del Puesto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crear_pantalla_accion.css') }}">
+</head>
+<body>
+
+    <h1>Definir Permisos del Puesto</h1>
+
+    <form class="formulario-pantalla-accion" method="POST">
+        <label for="puesto">Puesto:</label>
+        <select id="puesto" name="puesto" required>
+            <option value="">-- Selecciona un puesto --</option>
+            {% for puesto in puestos %}
+            <option value="{{ puesto[0] }}">{{ puesto[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <a class="boton-agregar-enlace" href="{{ url_for('crear_permisos_puesto') }}">➕ Agregar</a>
+
+        <label for="pantalla_accion">Acciones de la pantalla:</label>
+        <select id="pantalla_accion">
+            <option value="">-- Selecciona una acción de pantalla --</option>
+            {% for pantalla in pantalla_accion %}
+            <option value="{{ pantalla[0] }}">{{ pantalla[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <a class="boton-agregar-enlace" href="{{ url_for('ver_pantallas_acciones') }}">➕ Agregar</a>
+
+        <div class="botones-inline">
+            <button type="button" class="boton-secundario" id="btnAgregarPantallaAccion">➕ Agregar permiso</button>
+        </div>
+
+        <div class="lista-acciones" id="listaPermisos" style="display: none;"></div>
+
+        <div id="inputsPermisosOcultos"></div>
+
+        <button type="submit" class="boton-guardar">Guardar</button>
+
+        <a class="volver" href="{{ url_for('ver_permisos_puesto') }}">⬅ Volver al panel</a>
+    </form>
+
+    <script>
+        const puestoSelect = document.getElementById('puesto');
+        const pantallaAccionSelect = document.getElementById('pantalla_accion');
+        const btnAgregarPantallaAccion = document.getElementById('btnAgregarPantallaAccion');
+        const listaPermisos = document.getElementById('listaPermisos');
+        const inputsPermisosOcultos = document.getElementById('inputsPermisosOcultos');
+
+        let permisosSeleccionados = [];
+
+        function actualizarListaPermisos() {
+            listaPermisos.innerHTML = '';
+            inputsPermisosOcultos.innerHTML = '';
+
+            if (permisosSeleccionados.length === 0) {
+                listaPermisos.style.display = 'none';
+                return;
+            }
+
+            listaPermisos.style.display = 'block';
+
+            for (let i = 0; i < permisosSeleccionados.length; i++) {
+                const item = permisosSeleccionados[i];
+
+                const fila = document.createElement('p');
+                fila.textContent = (i + 1) + '. ' + item.nombre;
+                listaPermisos.appendChild(fila);
+
+                const inputHidden = document.createElement('input');
+                inputHidden.type = 'hidden';
+                inputHidden.name = 'pantalla_accion';
+                inputHidden.value = item.id;
+                inputsPermisosOcultos.appendChild(inputHidden);
+            }
+        }
+
+        btnAgregarPantallaAccion.addEventListener('click', function () {
+            const puestoValor = puestoSelect.value;
+            const pantallaAccionValor = pantallaAccionSelect.value;
+            const pantallaAccionTexto = pantallaAccionSelect.options[pantallaAccionSelect.selectedIndex].text;
+
+            if (!puestoValor) {
+                alert('Selecciona un puesto.');
+                return;
+            }
+
+            if (!pantallaAccionValor) {
+                alert('Selecciona una acción de pantalla.');
+                return;
+            }
+
+            let existe = false;
+
+            for (let i = 0; i < permisosSeleccionados.length; i++) {
+                if (permisosSeleccionados[i].id === pantallaAccionValor) {
+                    existe = true;
+                    break;
+                }
+            }
+
+            if (existe) {
+                alert('Ese permiso ya fue agregado.');
+                return;
+            }
+
+            permisosSeleccionados.push({
+                id: pantallaAccionValor,
+                nombre: pantallaAccionTexto
+            });
+
+            actualizarListaPermisos();
+            pantallaAccionSelect.value = '';
+        });
+    </script>
+</body>
+</html>

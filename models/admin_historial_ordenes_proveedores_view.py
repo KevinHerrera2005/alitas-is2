@@ -7,13 +7,17 @@ from flask_admin.contrib.sqla import ModelView
 from sqlalchemy.exc import DBAPIError, OperationalError
 
 from mensajes_logs import logger_
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class HistorialOrdenesProveedoresAdmin(ModelView):
+class HistorialOrdenesProveedoresAdmin(PermisosAdminMixin, ModelView):
     can_create = False
     can_edit = False
     can_delete = False
     can_view_details = True
+    accion_buscar = "buscar"
+    accion_exportar_pdf = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
 
     column_list = (
         "ID_Orden_Proveedor",

@@ -57,25 +57,42 @@
 
   <div class="wrap">
 
+    {% if 'impuestos_admin.index_view' in pantallas_permitidas %}
     <div class="card">
       <a href="{{ url_for('impuestos_admin.index_view') }}">&gt; Impuestos</a>
     </div>
+    {% endif %}
 
-      <div class="card">
-    <a href="{{ url_for('impuesto_tasa_historica_admin.index_view') }}">&gt; Historial tasa impuestos</a>
-    </div>
+    {% if 'impuesto_tasa_historica_admin.index_view' in pantallas_permitidas %}
     <div class="card">
-  <a href="{{ url_for('cai.index_view') }}">&gt; CAI</a>
+      <a href="{{ url_for('impuesto_tasa_historica_admin.index_view') }}">&gt; Historial tasa impuestos</a>
     </div>
-      <div class="card">
-    <a href="{{ url_for('cai_historico_admin.index_view') }}">&gt; CAI histórico</a>
-  </div>
-  <div class="card">
+    {% endif %}
+
+    {% if 'cai.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('cai.index_view') }}">&gt; CAI</a>
+    </div>
+    {% endif %}
+
+    {% if 'cai_historico_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('cai_historico_admin.index_view') }}">&gt; CAI histórico</a>
+    </div>
+    {% endif %}
+
+    {% if 'parametros_sar_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
       <a href="{{ url_for('parametros_sar_admin.index_view') }}">&gt; Parámetros SAR</a>
     </div>
-            <div class="card">
-  <a href="{{ url_for('historial_facturas_admin.index_view') }}">&gt; Facturas</a>
-</div>
+    {% endif %}
+
+    {% if 'historial_facturas_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('historial_facturas_admin.index_view') }}">&gt; Facturas</a>
+    </div>
+    {% endif %}
+
   </div>
 
   </div>

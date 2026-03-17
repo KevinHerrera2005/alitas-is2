@@ -131,13 +131,19 @@
 <header>
     <h1>👨‍🍳 Panel de recetas</h1>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;">
+        {% if permisos.exportar_pdf %}
         <a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='receta', formato='pdf') }}">Exportar PDF</a>
+        {% endif %}
+        {% if permisos.exportar_excel %}
         <a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='receta', formato='excel') }}">Exportar Excel</a>
+        {% endif %}
     </div>
 </header>
 
 <nav>
+    {% if permisos.crear %}
     <a href="{{ url_for('crear_receta') }}">➕ Crear Nueva Receta</a>
+    {% endif %}
     <a href="{{ url_for('login_jefe.panel_jefe') }}">⬅ Volver al panel principal</a>
 </nav>
 
@@ -146,9 +152,11 @@
     <div class="categoria" id="cat-{{ loop.index }}">
         <h2 class="d-flex justify-content-between align-items-center">
             <span>{{ categoria }}</span>
+            {% if permisos.eliminar_categoria %}
             <button class="btn-action1" type="button" onclick='eliminarCategoria({{ categoria|tojson }}, this)'>
                 Eliminar categoría
             </button>
+            {% endif %}
         </h2>
 
         <div class="items">
@@ -158,30 +166,38 @@
                 <div class="descripcion text-secondary">{{ item.descripcion }}</div>
                 <div class="precio text-danger fw-bold">{{ item.precio }}</div>
 
+                {% if permisos.estado %}
                 <button
                     class="boton-estado {{ 'activo' if item.activo == 1 else 'inactivo' }}"
                     type="button"
                     onclick="toggleEstado({{ item.id }}, this)">
                     {{ 'Activo' if item.activo == 1 else 'Inactivo' }}
                 </button>
+                {% endif %}
 
+                {% if permisos.ver_ingredientes %}
                 <a href="{{ url_for('jefe_ver_receta', id_receta=item.id) }}" class="boton-ver">
                     Ver ingredientes
                 </a>
+                {% endif %}
 
+                {% if permisos.editar %}
                 <button
                     class="btn-action"
                     type="button"
                     onclick="window.location.href='{{ url_for('editar_receta', id_receta=item.id) }}'">
                     Editar
                 </button>
+                {% endif %}
 
+                {% if permisos.eliminar %}
                 <button
                     class="btn-action1"
                     type="button"
                     onclick="confirmarEliminacion({{ item.id }}, this)">
                     Eliminar
                 </button>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

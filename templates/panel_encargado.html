@@ -107,6 +107,7 @@
         </p>
 
         <div class="row g-3">
+            {% if 'panel_encargado.encargar_insumos' in pantallas_permitidas %}
             <div class="col-12">
                 <a
                     href="{{ url_for('panel_encargado.encargar_insumos') }}"
@@ -119,7 +120,9 @@
                     Crear solicitudes de compra para reponer insumos cuando el stock sea bajo.
                 </p>
             </div>
+            {% endif %}
 
+            {% if 'ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
             <div class="col-12">
                 <a
                     href="{{ url_for('ordenes_proveedores_admin.index_view') }}"
@@ -132,19 +135,22 @@
                     Consultar y actualizar el estado de las órdenes enviadas a los proveedores.
                 </p>
             </div>
+            {% endif %}
 
+            {% if 'historial_ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
             <div class="col-12">
-    <a
-        href="{{ url_for('historial_ordenes_proveedores_admin.index_view') }}"
-        class="btn-action btn-action-secondary"
-        id="btn-historial-ordenes-proveedores"
-    >
-        Historial de órdenes a proveedores
-    </a>
-    <p class="action-caption">
-        Visualizar órdenes finalizadas (Entregadas o Canceladas). Solo lectura.
-    </p>
-</div>
+                <a
+                    href="{{ url_for('historial_ordenes_proveedores_admin.index_view') }}"
+                    class="btn-action btn-action-secondary"
+                    id="btn-historial-ordenes-proveedores"
+                >
+                    Historial de órdenes a proveedores
+                </a>
+                <p class="action-caption">
+                    Visualizar órdenes finalizadas (Entregadas o Canceladas). Solo lectura.
+                </p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

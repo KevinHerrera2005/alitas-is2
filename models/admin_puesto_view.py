@@ -12,9 +12,17 @@ from sqlalchemy import func
 
 from models import db
 from models.empleado_model import Puesto
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class PuestoAdmin(ModelView):
+class PuestoAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     create_template = "admin/model/empleado_create.html"
     edit_template = "admin/model/empleado_edit.html"
 

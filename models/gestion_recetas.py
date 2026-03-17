@@ -7,6 +7,7 @@ from flask import render_template, jsonify, request, redirect, url_for, flash
 from flask_login import current_user
 from models import db
 from models.receta_model import Receta
+from models.permisos_mixin import tiene_accion_en_pantalla, endpoint_accesible
 from sqlalchemy import text
 
 def gestion_receta_routes(app):
@@ -25,6 +26,9 @@ def gestion_receta_routes(app):
     # este boton es para abrir el listado de recetas desde el panel del jefe de cocina
     @app.route("/crud_recetas")
     def crud_recetas(*args,**kwargs):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            flash("No tienes acceso a esta pantalla.", "danger")
+            return redirect(url_for("login"))
         try:
 
             sid = _sucursal_id_actual()
@@ -74,10 +78,22 @@ def gestion_receta_routes(app):
                     "activo": activo,
                 })
 
+            permisos_recetas = {
+                "crear":              tiene_accion_en_pantalla("crud_recetas", "crear"),
+                "editar":             tiene_accion_en_pantalla("crud_recetas", "editar"),
+                "eliminar":           tiene_accion_en_pantalla("crud_recetas", "eliminar"),
+                "ver_ingredientes":   tiene_accion_en_pantalla("crud_recetas", "ver ingredientes"),
+                "eliminar_categoria": tiene_accion_en_pantalla("crud_recetas", "eliminar categoria"),
+                "estado":             tiene_accion_en_pantalla("crud_recetas", "estado"),
+                "exportar_pdf":       tiene_accion_en_pantalla("crud_recetas", "exportar pdf"),
+                "exportar_excel":     tiene_accion_en_pantalla("crud_recetas", "exportar excel"),
+            }
+
             return render_template(
                 "crud_recetas.html",
                 categorias=categorias,
-                nombres_categorias=nombres_categorias
+                nombres_categorias=nombres_categorias,
+                permisos=permisos_recetas
             )
         except Exception as error:
                 fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -87,6 +103,8 @@ def gestion_receta_routes(app):
     # este boton es para cambiar el estado de la receta entre activo e inactivo
     @app.route("/toggle_receta_estado", methods=["POST"])
     def toggle_receta_estado(*args,**kwargs):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            return jsonify({"success": False, "message": "Sin acceso"}), 403
         try:
 
             sid = _sucursal_id_actual()
@@ -114,6 +132,8 @@ def gestion_receta_routes(app):
     # este boton es para borrar una receta
     @app.route("/eliminar_receta/<int:id_receta>", methods=["DELETE"])
     def eliminar_receta(id_receta,*args,**kwargs):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            return jsonify({"success": False, "message": "Sin acceso"}), 403
         try:
 
             sid = _sucursal_id_actual()
@@ -161,6 +181,8 @@ def gestion_receta_routes(app):
     # este boton es para borrar una categoria de recetas
     @app.route("/eliminar_categoria/<path:nombre_categoria>", methods=["DELETE"])
     def eliminar_categoria(nombre_categoria,*args,**kwargs):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            return jsonify({"success": False, "message": "Sin acceso"}), 403
         try:
 
             nombre = (nombre_categoria or "").strip()
@@ -213,6 +235,9 @@ def gestion_receta_routes(app):
     # este boton es para ver los ingredientes y detalles de una receta
     @app.route("/jefe/ver_receta/<int:id_receta>")
     def jefe_ver_receta(id_receta,*args,**kwargs):
+        if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
+            flash("No tienes acceso a esta pantalla.", "danger")
+            return redirect(url_for("login"))
         try:
 
             sid = _sucursal_id_actual()

@@ -33,13 +33,21 @@ th.column-header a .glyphicon {
 
     {{ layout.messages() }}
 
-    {% if admin_view and admin_view.model %}
-      <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin:12px 0;">
-        {% set _rk = admin_view.model.__name__|lower %}
-        <a class="btn btn-sm btn-danger" href="{{ url_for('reports.exportar', reporte=_rk, formato='pdf') }}">Exportar PDF</a>
-        <a class="btn btn-sm btn-success" href="{{ url_for('reports.exportar', reporte=_rk, formato='excel') }}">Exportar Excel</a>
-      </div>
+{% if admin_view and admin_view.model %}
+  {% set _pdf   = (admin_view.puede_exportar_pdf   if admin_view.puede_exportar_pdf   is defined else true) %}
+  {% set _excel = (admin_view.puede_exportar_excel if admin_view.puede_exportar_excel is defined else true) %}
+  {% if _pdf or _excel %}
+  <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin:12px 0;">
+    {% set _rk = admin_view.model.__name__|lower %}
+    {% if _pdf %}
+      <a class="btn btn-sm btn-danger" href="{{ url_for('reports.exportar', reporte=_rk, formato='pdf') }}">Exportar PDF</a>
     {% endif %}
+    {% if _excel %}
+      <a class="btn btn-sm btn-success" href="{{ url_for('reports.exportar', reporte=_rk, formato='excel') }}">Exportar Excel</a>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endif %}
 
 
     {% set render_ctx = h.resolve_ctx() %}

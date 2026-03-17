@@ -5,16 +5,16 @@ from wtforms import SelectField, TextAreaField, StringField
 
 from models.receta_model import Receta
 from models.categoria_recetas_model import Categoria_recetas
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class RecetaAdmin(ModelView):
-    def is_accessible(self):
-        return current_user.is_authenticated and getattr(current_user, "tipo", None) == "empleado"
-
-    def inaccessible_callback(self, name, **kwargs):
-        flash("No tienes permiso para acceder a Recetas.", "danger")
-        return redirect(url_for("login"))
-
+class RecetaAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     def is_visible(self):
         return self.is_accessible()
 

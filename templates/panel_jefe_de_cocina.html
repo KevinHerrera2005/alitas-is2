@@ -72,41 +72,59 @@
 </div>
 
 <div class="contenedor">
+    {% if 'crud_recetas' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('crud_recetas') }}'">
         Recetas
     </div>
+    {% endif %}
 
+    {% if 'insumo.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('insumo.index_view') }}'">
         Insumos
     </div>
+    {% endif %}
 
+    {% if 'categoriainsumo.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('categoriainsumo.index_view') }}'">
         Categoría de los Insumos
     </div>
+    {% endif %}
 
+    {% if 'categoria_recetas_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('categoria_recetas_admin.index_view') }}'">
         Categoría de las Recetas
     </div>
+    {% endif %}
 
+    {% if 'unidades_medida_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('unidades_medida_admin.index_view') }}'">
         Unidades de Medida
     </div>
+    {% endif %}
 
+    {% if 'insumo_precio_historico_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('insumo_precio_historico_admin.index_view') }}'">
         Histórico de insumos
     </div>
+    {% endif %}
 
+    {% if 'receta_precio_historico_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('receta_precio_historico_admin.index_view') }}'">
         Histórico de recetas
     </div>
+    {% endif %}
 
+    {% if 'orden_entrega_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('orden_entrega_admin.index_view') }}'">
         Órdenes
     </div>
+    {% endif %}
 
+    {% if 'historial_ordenes_repartidor_admin.index_view' in pantallas_permitidas %}
     <div class="card" onclick="window.location.href='{{ url_for('historial_ordenes_repartidor_admin.index_view') }}'">
         Historial de órdenes
     </div>
+    {% endif %}
 </div>
 
 <footer>

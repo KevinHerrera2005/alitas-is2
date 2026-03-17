@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Panel del admin | Alitas El Comelón</title>
+  <style>
+body{
+    background-color: rgb(32, 26, 26);
+    position: relative;
+    margin: 0;
+}
+    .top{
+      background:rgba(86, 111, 221, 0.219);
+      color:#fff;
+      padding:14px 20px;
+      font-weight:700;
+    }
+    .wrap{
+      max-width:1100px;
+      margin:28px auto;
+      padding:0 16px;
+      display:flex;
+      gap:24px;
+      flex-wrap:wrap;
+    }
+    .card{
+      background: rgb(64, 73, 70);
+      border-radius:12px;
+      box-shadow:0 2px 8px rgba(0,0,0,.08);
+      width:210px;
+      height:120px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      transition:.2s;
+    }
+    .card:hover{
+      transform:scale(1.05);
+    }
+    .card a{
+      color:#111;
+      text-decoration:none;
+      font-weight:600;
+    }
+    .footer{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      background:rgba(86, 111, 221, 0.219);
+      text-align:center;padding:8px 0;
+      font-size:12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top">🧮 Panel del admin | Alitas El Comelón</div>
+
+  <div class="wrap">
+
+    {% if 'acciones_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('acciones_admin.index_view') }}"> Acciones </a>
+    </div>
+    {% endif %}
+
+    {% if 'pantallas_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('pantallas_admin.index_view') }}"> Pantallas </a>
+    </div>
+    {% endif %}
+
+    {% if 'ver_pantallas_acciones' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('ver_pantallas_acciones') }}">Pantallas_Acciones </a>
+    </div>
+    {% endif %}
+
+    {% if 'ver_permisos_puesto' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('ver_permisos_puesto') }}">Permisos de los puestos </a>
+    </div>
+    {% endif %}
+
+    {% if 'ver_permisos_empleado' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('ver_permisos_empleado') }}">Permisos de los empleados</a>
+    </div>
+    {% endif %}
+
+  </div>
+
+  </div>
+
+  <div class="footer">© 2025 Alitas El Comelón - Panel del Contador</div>
+
+</body>
+</html>

@@ -14,9 +14,16 @@ from models import db
 from models.cai_model import CAI
 from models.sucursal_model import Sucursal
 from models.validaciones import validarFechafinal, validarRangos
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class CAIAdmin(ModelView):
+class CAIAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     create_template = "admin/model/cai_create.html"
     edit_template = "admin/model/cai_edit.html"
 

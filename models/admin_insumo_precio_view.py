@@ -1,6 +1,7 @@
 from datetime import timedelta, datetime
 import traceback
-from flask import render_template
+from flask import render_template, redirect, url_for, flash
+from flask_login import current_user
 from mensajes_logs import logger_
 
 from flask_admin import expose
@@ -16,6 +17,20 @@ class InsumoPrecioHistoricoAdmin(ModelView):
 
     can_view_details = True
     can_export = True
+    puede_exportar_pdf = False
+    puede_exportar_excel = False
+
+    def is_accessible(self):
+        from models.permisos_mixin import endpoint_accesible
+        if not current_user.is_authenticated:
+            return False
+        if getattr(current_user, "tipo", None) != "empleado":
+            return False
+        return endpoint_accesible("insumo_precio_historico_admin.index_view")
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("No tienes acceso a esta pantalla.", "danger")
+        return redirect(url_for("login"))
 
     column_list = (
         "ID_Insumo_precio_historico",

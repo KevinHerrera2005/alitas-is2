@@ -11,9 +11,17 @@ from wtforms import StringField, SelectField
 from sqlalchemy import text
 
 from models.direccion_model import Direccion
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class SucursalAdmin(ModelView):
+class SucursalAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     can_search = True
     column_searchable_list = ("Descripcion",)
 

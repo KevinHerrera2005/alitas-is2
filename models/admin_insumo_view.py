@@ -11,9 +11,16 @@ from mensajes_logs import logger_
 from models.unidades_medida_model import Unidades_medida
 from models.categoria_insumo_model import CategoriaInsumo
 from models.insumo_model import Insumo
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class InsumoAdmin(ModelView):
+class InsumoAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     def render(self, template, **kwargs):
         kwargs.setdefault("panel_color", "#c40000")
         return super().render(template, **kwargs)

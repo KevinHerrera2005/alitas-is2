@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permisos de Puestos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantallas_acciones.css') }}">
+</head>
+<body>
+    <form action="{{ url_for('ver_permisos_puesto') }}" method="POST">
+        <h1 class="titulo">Permisos de los Puestos</h1>
+
+        <div class="buscador-fila">
+            <div class="buscar">
+                <input class="texto" placeholder="Buscar">
+            </div>
+            <a href="{{ url_for('crear_permisos_puesto') }}">
+                <button type="button" class="botoncrear">Crear</button>
+            </a>
+        </div>
+
+        <div class="divisiones">
+            {% for permiso in registro_permisos_puestos %}
+            <div class="caja">
+                <p>{{ permiso[0] }}</p>
+                <a href="{{ url_for('editar_permisos_puesto', id_puesto=permiso[1]) }}">
+                    <div class="botones">Editar</div>
+                </a>
+                <a href="{{ url_for('ver_acciones_puesto', id_puesto=permiso[1]) }}">
+                    <div class="botonesver">Ver Acciones</div>
+                </a>
+                <button class="botoneseliminar" type="submit" name="eliminar" value="{{ permiso[1] }}"
+                    onclick="return confirm('¿Deseas eliminar todos los permisos de este puesto?')">Eliminar</button>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+</body>
+</html>

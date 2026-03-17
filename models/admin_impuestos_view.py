@@ -15,9 +15,16 @@ from models import db
 from models.impuestos_model import Impuesto, ImpuestoCategoria
 from models.categoria_insumo_model import CategoriaInsumo
 from models.insumo_model import Insumo
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class ImpuestoAdmin(ModelView):
+class ImpuestoAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     create_template = "admin/model/impuesto_create.html"
     edit_template = "admin/model/impuesto_edit.html"
 
@@ -87,7 +94,7 @@ class ImpuestoAdmin(ModelView):
         return super().render(template, **kwargs)
 
     def is_visible(self):
-        return True
+        return self.is_accessible()
 
     def _build_categoria_choices(self):
         categorias = CategoriaInsumo.query.order_by(

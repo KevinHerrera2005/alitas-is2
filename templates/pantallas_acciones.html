@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantallas Acciones</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantallas_acciones.css') }}">
+</head>
+<body>
+    <form action="{{ url_for('ver_pantallas_acciones') }}" method="POST">
+        <h1 class="titulo">Pantallas Acciones</h1>
+
+        <div class="buscador-fila">
+            <div class="buscar">
+                <input class="texto" placeholder="Buscar">
+            </div>
+            <a href="{{ url_for('crear_pantalla') }}">
+                <button type="button" class="botoncrear">Crear</button>
+            </a>
+        </div>
+
+        <div class="divisiones">
+            {% for pantalla in nombre_pantalla %}
+            <div class="caja">
+                {{ pantalla[0] }}
+                <a href="{{ url_for('editar_pantalla_accion', id_pantalla=pantalla[1]) }}">
+                    <div class="botones">Editar</div>
+                </a>
+                <a href="{{ url_for('ver_acciones_pantalla', id_pantalla=pantalla[1]) }}">
+                    <div class="botonesver">Ver Acciones</div>
+                </a>
+                <button class="botoneseliminar" type="submit" name="eliminar" value="{{ pantalla[1] }}"
+                    onclick="return confirm('¿Deseas eliminar esta pantalla y todas sus acciones?')">Eliminar</button>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+</body>
+</html>

@@ -7,9 +7,16 @@ from flask_admin.contrib.sqla import ModelView
 from sqlalchemy import func
 from flask import flash, request, redirect
 from models.categoria_recetas_model import Categoria_recetas
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class CategoriaRecetaAdmin(ModelView):
+class CategoriaRecetaAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_crear          = "crear"
+    accion_editar         = "editar"
+    accion_eliminar       = "eliminar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
     can_search = True
     column_searchable_list = ("Nombre_categoria_receta",)
 

@@ -5,6 +5,10 @@ from flask_login import UserMixin, login_user, logout_user, login_required
 import smtplib
 import ssl
 from email.mime.text import MIMEText
+from models.permisos_puesto_model import PermisosPuesto
+from models.pantallas_acciones_model import PantallasAcciones
+from models.Pantallas_model import Pantallas
+from models.empleado_model import Puesto
 from email.mime.multipart import MIMEMultipart
 import secrets
 from sqlalchemy.exc import IntegrityError
@@ -134,7 +138,8 @@ def _crear_direccion_safe(texto_direccion: str):
     setattr(obj, campo, texto_direccion)
     return obj
 
-
+##
+##
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -167,18 +172,59 @@ def login():
             session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
 
-            if empleado.ID_Puesto == 1:
-                return redirect(url_for("login_jefe.panel_jefe"))
-            if empleado.ID_Puesto == 10:
-                return redirect(url_for("panel_contador.panel"))
-            if empleado.ID_Puesto == 4:
-                return redirect(url_for("panel_repartidor.panel"))
-            if empleado.ID_Puesto == 14:
-                return redirect(url_for("panel_encargado.panel"))
-            if empleado.ID_Puesto == 16:
-                return redirect(url_for("panel_gerente.panel"))
+            _q_base = (
+                db.session.query(Pantallas.url)
+                .select_from(PermisosPuesto)
+                .join(
+                    PantallasAcciones,
+                    PantallasAcciones.ID_Pantalla_Accion == PermisosPuesto.ID_Pantalla_Accion
+                )
+                .join(
+                    Pantallas,
+                    Pantallas.ID_Pantalla == PantallasAcciones.ID_Pantalla
+                )
+                .filter(
+                    PermisosPuesto.ID_Puesto == empleado.ID_Puesto,
+                    PermisosPuesto.estado == 1,
+                    PantallasAcciones.estado == 1,
+                    Pantallas.estado == 1
+                )
+            )
+            # 1) Buscar el panel en PermisosPuesto
+            permiso = _q_base.filter(Pantallas.url.ilike('%panel%')).first()
 
-            return redirect(url_for("pagina_principal_bp.menu"))
+            # 2) Si no está en PermisosPuesto, buscarlo directamente en Pantallas
+            #    usando palabras del nombre del puesto (ej. "Jefe de Cocina" → busca "jefe" o "cocina")
+            if not permiso:
+                puesto_row = db.session.query(Puesto.Nombre_Puesto).filter(
+                    Puesto.ID_Puesto == empleado.ID_Puesto
+                ).first()
+                if puesto_row:
+                    palabras = [p for p in puesto_row.Nombre_Puesto.lower().split() if len(p) > 3]
+                    for palabra in palabras:
+                        permiso = db.session.query(Pantallas.url).filter(
+                            Pantallas.url.ilike('%panel%'),
+                            Pantallas.Nombre.ilike(f'%{palabra}%'),
+                            Pantallas.estado == 1
+                        ).first()
+                        if permiso:
+                            break
+
+            # 3) Fallback: cualquier pantalla del puesto disponible
+            if not permiso:
+                permiso = _q_base.first()
+
+            if not permiso:
+                flash("No hay una pantalla activa asignada para este puesto.", "warning")
+                return redirect(url_for("pagina_principal_bp.menu"))
+
+            endpoint = (permiso.url or "").strip().strip('"')
+
+            if not endpoint:
+                flash("La pantalla asignada no tiene una URL válida.", "danger")
+                return redirect(url_for("pagina_principal_bp.menu"))
+
+            return redirect(url_for(endpoint))
 
         usuario = ClienteModel.query.filter_by(Username=username).first()
         if usuario and bcrypt.check_password_hash(usuario.password, password):
@@ -196,8 +242,6 @@ def login():
         flash("Usuario o contraseña equivocados", "danger")
 
     return render_template("login.html")
-
-
 @app.route("/logout")
 @login_required
 def logout():

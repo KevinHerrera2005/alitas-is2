@@ -15,6 +15,7 @@ from wtforms.validators import ValidationError
 from models import db
 from models.insumo_model import Insumo
 from models.unidades_medida_model import Unidades_medida
+from models.permisos_mixin import PermisosAdminMixin
 
 
 class SecureModelView(ModelView):
@@ -63,10 +64,12 @@ def _convertir_cantidad(cantidad: float, unidad_origen: int, unidad_destino: int
     return base / equiv_d
 
 
-class OrdenesProveedoresAdmin(SecureModelView):
+class OrdenesProveedoresAdmin(PermisosAdminMixin, SecureModelView):
     can_create = False
-    can_edit = True
     can_delete = False
+    accion_editar = "editar"
+    accion_exportar_pdf = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
 
     edit_template = "admin/model/ordenes_proveedores_edit.html"
 

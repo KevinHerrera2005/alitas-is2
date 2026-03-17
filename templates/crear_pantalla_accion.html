@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Acciones de las Pantallas</title>
+    <link rel="stylesheet" href="/static/css/crear_pantalla_accion.css">
+</head>
+<body>
+    
+    <h1>Definir Acciones de las Pantallas</h1>
+
+    <form class="formulario-pantalla-accion" method="POST">
+        <label for="pantalla">Pantalla:</label>
+        <select id="pantalla" name="pantalla" required>
+            <option value="">-- Selecciona una pantalla --</option>
+            {% for pantalla in pantalla_opcion %}
+            <option value="{{ pantalla[0] }}">{{ pantalla[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <a class="boton-agregar-enlace" href="{{ url_for('crear_pantalla') }}">➕ Agregar</a>
+
+        <label for="acciones">Acciones:</label>
+        <select id="acciones">
+            <option value="">-- Selecciona una acción --</option>
+            {% for accion in acciones %}
+            <option value="{{ accion[0] }}">{{ accion[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <a class="boton-agregar-enlace" href="{{ url_for('acciones_admin.index_view') }}">➕ Agregar</a>
+
+        <div class="botones-inline">
+            <button type="button" class="boton-secundario" id="btnAgregarAccion">➕ Agregar acción</button>
+        </div>
+
+        <div class="lista-acciones" id="listaAcciones" style="display: none;"></div>
+
+        <div id="inputsAccionesOcultos"></div>
+
+        <button type="submit" class="boton-guardar">Guardar</button>
+
+        <a class="volver" href="/ver_pantallasacciones">⬅ Volver al panel</a>
+    </form>
+
+    <script>
+        const pantallaSelect = document.getElementById('pantalla');
+        const accionesSelect = document.getElementById('acciones');
+        const btnAgregarAccion = document.getElementById('btnAgregarAccion');
+        const listaAcciones = document.getElementById('listaAcciones');
+        const inputsAccionesOcultos = document.getElementById('inputsAccionesOcultos');
+
+        let accionesSeleccionadas = [];
+
+        function actualizarListaAcciones() {
+            listaAcciones.innerHTML = '';
+            inputsAccionesOcultos.innerHTML = '';
+
+            if (accionesSeleccionadas.length === 0) {
+                listaAcciones.style.display = 'none';
+                return;
+            }
+
+            listaAcciones.style.display = 'block';
+
+            for (let i = 0; i < accionesSeleccionadas.length; i++) {
+                const item = accionesSeleccionadas[i];
+
+                const fila = document.createElement('p');
+                fila.textContent = (i + 1) + '. ' + item.nombre;
+                listaAcciones.appendChild(fila);
+
+                const inputHidden = document.createElement('input');
+                inputHidden.type = 'hidden';
+                inputHidden.name = 'acciones';
+                inputHidden.value = item.id;
+                inputsAccionesOcultos.appendChild(inputHidden);
+            }
+        }
+
+        btnAgregarAccion.addEventListener('click', function () {
+            const pantallaValor = pantallaSelect.value;
+            const accionValor = accionesSelect.value;
+            const accionTexto = accionesSelect.options[accionesSelect.selectedIndex].text;
+
+            if (!pantallaValor) {
+                alert('Selecciona una pantalla.');
+                return;
+            }
+
+            if (!accionValor) {
+                alert('Selecciona una acción.');
+                return;
+            }
+
+            let existe = false;
+
+            for (let i = 0; i < accionesSeleccionadas.length; i++) {
+                if (accionesSeleccionadas[i].id === accionValor) {
+                    existe = true;
+                    break;
+                }
+            }
+
+            if (existe) {
+                alert('Esa acción ya fue agregada.');
+                return;
+            }
+
+            accionesSeleccionadas.push({
+                id: accionValor,
+                nombre: accionTexto
+            });
+
+            actualizarListaAcciones();
+            accionesSelect.value = '';
+        });
+    </script>
+</body>
+</html>

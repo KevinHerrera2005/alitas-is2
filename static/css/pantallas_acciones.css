@@ -1,0 +1,140 @@
+body{
+    background-color: rgb(0, 0, 0);
+    position: relative;
+    margin: 0;
+}
+
+.divisiones{
+    display: flex;
+    flex-direction: column;
+}
+
+.caja{
+    margin: 10px;
+    background-color: rgb(64, 73, 70);
+    position: relative;
+    border-radius: 20px;
+    width: 600px;
+    padding: 40px;
+    color: antiquewhite;
+}
+
+.botones{
+    background-color: rgb(98, 112, 107);
+    border-radius: 35px;
+    width: 65px;
+    height: 25px;
+    bottom: 5px;
+    right: 10px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: absolute;
+}
+
+.botonesver{
+    background-color: rgb(98, 112, 107);
+    border-radius: 35px;
+    width: 100px;
+    height: 25px;
+    bottom: 5px;
+    right: 83px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: absolute;
+}
+
+.botoneseliminar{
+    background-color: rgb(155, 91, 91);
+    color: rgb(97, 23, 23);
+    border-radius: 35px;
+    width: 100px;
+    height: 25px;
+    bottom: 5px;
+    right: 190px;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: absolute;
+}
+
+.titulo{
+    position: relative;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    color: rgb(3, 241, 3);
+    display: flex;
+    padding: 20px;
+    justify-content: center;
+    background-color: rgba(86, 111, 221, 0.219);
+}
+
+.buscador-fila{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+}
+
+.buscar{
+    width: 300px;
+    height: 40px;
+    padding: 10px 12px 10px 40px;
+    background-color: rgb(142, 157, 170);
+    border: 1px solid rgb(80, 90, 100);
+    border-radius: 8px;
+    display: block;
+    box-sizing: border-box;
+    background-image: url('../img/64673.png');
+    background-repeat: no-repeat;
+    background-size: 20px 20px;
+    background-position: 12px center;
+}
+
+.texto{
+    width: 220px;
+    background-color: rgba(255, 255, 255, 0.507);
+    outline: none;
+    border: none;
+}
+
+.botoncrear{
+    background-color: rgb(8, 131, 153);
+    color: rgb(43, 57, 136);
+    border-radius: 35px;
+    width: 90px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

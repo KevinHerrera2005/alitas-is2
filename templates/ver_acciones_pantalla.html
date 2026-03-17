@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acciones de la Pantalla</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantallas_acciones.css') }}">
+</head>
+<body>
+    <h1 class="titulo">Acciones de: {{ pantalla.Nombre }}</h1>
+
+    <div class="buscador-fila">
+        <a href="{{ url_for('ver_pantallas_acciones') }}">
+            <button type="button" class="botoncrear">&#8592; Volver</button>
+        </a>
+        <a href="{{ url_for('editar_pantalla_accion', id_pantalla=pantalla.ID_Pantalla) }}">
+            <button type="button" class="botoncrear">Editar</button>
+        </a>
+    </div>
+
+    <div class="divisiones">
+        {% if acciones %}
+            {% for accion in acciones %}
+            <div class="caja">
+                {{ accion[0] }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: antiquewhite; margin: 20px;">Esta pantalla no tiene acciones asignadas.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

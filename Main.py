@@ -27,6 +27,7 @@ from flask_admin.contrib.sqla import validators as fa_validators
 from flask_babel import Babel
 from models import db
 
+
 fa_validators.Unique.field_flags = {"unique": True}
 
 _BOOTSTRAPPED = False
@@ -337,12 +338,17 @@ class MyAdminIndexView(AdminIndexView):
 
 
 def bootstrap_app(flask_app):
+    from models.Pantallas_model import Pantallas
+    from models.Acciones_model import Acciones
+    from models.pantallas_acciones_model import PantallasAcciones
     from models.proveedores_model import ProveedorInsumo
     from models.impuestos_model import ImpuestoCategoria
     from models.direccion_cliente_model import DireccionDelCliente
     from models.pago_detalle_model import PagoDetalle
     from models.factura_model import Factura
     from models.factura_detalle_model import FacturaDetalle
+    from models.admin_pantallas_view import PantallasAdmin
+    from models.admin_acciones_view import AccionesAdmin
 
     from models.insumo_model import Insumo
     from models.categoria_insumo_model import CategoriaInsumo
@@ -424,7 +430,10 @@ def bootstrap_app(flask_app):
     admin.add_view(OrdenesProveedoresDetalleAdmin(OrdenesProveedoresDetalle, db.session, category="Órdenes", name="Detalle órdenes proveedores", endpoint="ordenes_proveedores_detalle_admin"))
     admin.add_view(HistorialOrdenesRepartidorAdmin(HistorialOrdenesRepartidor, db.session, name="Historial de órdenes", endpoint="historial_ordenes_repartidor_admin", category=None))
     admin.add_view(HistorialOrdenesProveedoresAdmin(OrdenesProveedores, db.session, name="Historial órdenes proveedores", endpoint="historial_ordenes_proveedores_admin"))
+    admin.add_view(PantallasAdmin(Pantallas, db.session, category="Seguridad", name="Pantallas", endpoint="pantallas_admin"))
+    admin.add_view(AccionesAdmin(Acciones, db.session, category="Seguridad", name="Acciones", endpoint="acciones_admin"))
 
+    
     from models.panel_repartidor import panel_repartidor
     from models.panel_encargado import panel_encargado
     from models.usuario_cliente_routes import usuario_cliente_bp
@@ -479,9 +488,11 @@ def bootstrap_app(flask_app):
     metodos_pago_routes(flask_app)
 
     import models.login_crear_usuario
-
+    import models.admin_pantallas_acciones_view
+    import models.admin_permisos_de_puestos
+    import models.admin_permiso_de_los_empleados
     return admin
-
+#######
 
 @app.route("/")
 def index():

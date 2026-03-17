@@ -16,9 +16,15 @@ from models.orden_entrega_model import OrdenEntrega
 from models.historial_ordenes_repartidor_model import HistorialOrdenesRepartidor
 from models.empleado_model import Empleado
 from models.usuario_cliente_model import UsuarioCliente
+from models.permisos_mixin import PermisosAdminMixin
 
 
-class OrdenEntregaAdmin(ModelView):
+class OrdenEntregaAdmin(PermisosAdminMixin, ModelView):
+    accion_buscar         = "buscar"
+    accion_editar         = "editar"
+    accion_exportar_pdf   = "exportar pdf"
+    accion_exportar_excel = "exportar excel"
+
     can_create = False
     can_delete = False
     can_view_details = True

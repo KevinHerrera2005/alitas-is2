@@ -10,7 +10,9 @@ panel_contador = Blueprint("panel_contador", __name__)
 @login_required
 def panel():
     try:
-        return render_template("panel_contador.html")
+        from models.permisos_mixin import pantallas_del_empleado_actual
+        pantallas_permitidas = pantallas_del_empleado_actual() or set()
+        return render_template("panel_contador.html", pantallas_permitidas=pantallas_permitidas)
     except Exception as error:
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         logger_.Logger.add_to_log("error", str(error), "orden_entrega_eliminar", fecha)

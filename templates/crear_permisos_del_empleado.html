@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Definir Permisos del Empleado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/crear_pantalla_accion.css') }}">
+</head>
+<body>
+
+    <h1>Definir Permisos del Empleado</h1>
+
+    <form class="formulario-pantalla-accion" method="POST">
+        <label for="empleado">Empleado:</label>
+        <select id="empleado" name="empleado" required>
+            <option value="">-- Selecciona un empleado --</option>
+            {% for emp in empleado %}
+            <option value="{{ emp[0] }}">{{ emp[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="permiso">Permiso de pantalla:</label>
+        <select id="permiso">
+            <option value="">-- Selecciona un permiso --</option>
+            {% for p in permiso %}
+            <option value="{{ p[0] }}">{{ p[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="botones-inline">
+            <button type="button" class="boton-secundario" id="btnAgregarPermiso">➕ Agregar permiso</button>
+        </div>
+
+        <div class="lista-acciones" id="listaPermisos" style="display: none;"></div>
+
+        <div id="inputsPermisosOcultos"></div>
+
+        <button type="submit" class="boton-guardar">Guardar</button>
+
+        <a class="volver" href="{{ url_for('ver_permisos_empleado') }}">⬅ Volver al panel</a>
+    </form>
+
+    <script>
+        const empleadoSelect = document.getElementById('empleado');
+        const permisoSelect = document.getElementById('permiso');
+        const btnAgregarPermiso = document.getElementById('btnAgregarPermiso');
+        const listaPermisos = document.getElementById('listaPermisos');
+        const inputsPermisosOcultos = document.getElementById('inputsPermisosOcultos');
+
+        let permisosSeleccionados = [];
+
+        function actualizarListaPermisos() {
+            listaPermisos.innerHTML = '';
+            inputsPermisosOcultos.innerHTML = '';
+
+            if (permisosSeleccionados.length === 0) {
+                listaPermisos.style.display = 'none';
+                return;
+            }
+
+            listaPermisos.style.display = 'block';
+
+            for (let i = 0; i < permisosSeleccionados.length; i++) {
+                const item = permisosSeleccionados[i];
+
+                const fila = document.createElement('p');
+                fila.textContent = (i + 1) + '. ' + item.nombre;
+                listaPermisos.appendChild(fila);
+
+                const inputHidden = document.createElement('input');
+                inputHidden.type = 'hidden';
+                inputHidden.name = 'permisos';
+                inputHidden.value = item.id;
+                inputsPermisosOcultos.appendChild(inputHidden);
+            }
+        }
+
+        btnAgregarPermiso.addEventListener('click', function () {
+            const empleadoValor = empleadoSelect.value;
+            const permisoValor = permisoSelect.value;
+            const permisoTexto = permisoSelect.options[permisoSelect.selectedIndex].text;
+
+            if (!empleadoValor) {
+                alert('Selecciona un empleado.');
+                return;
+            }
+
+            if (!permisoValor) {
+                alert('Selecciona un permiso.');
+                return;
+            }
+
+            for (let i = 0; i < permisosSeleccionados.length; i++) {
+                if (permisosSeleccionados[i].id === permisoValor) {
+                    alert('Ese permiso ya fue agregado.');
+                    return;
+                }
+            }
+
+            permisosSeleccionados.push({
+                id: permisoValor,
+                nombre: permisoTexto
+            });
+
+            actualizarListaPermisos();
+            permisoSelect.value = '';
+        });
+    </script>
+</body>
+</html>
