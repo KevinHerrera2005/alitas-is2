@@ -146,6 +146,34 @@ db.init_app(app)
 from models import load_models
 load_models()
 
+# ── Helpers de permisos disponibles en TODOS los templates ─────────────────
+@app.context_processor
+def _inyectar_helpers_permisos():
+    """
+    Expone funciones de permisos directamente en Jinja2.
+
+    Uso en cualquier template:
+        {% if tiene_accion('historial_ordenes_repartidor_admin.index_view', 'exportar pdf') %}
+            <a ...>Exportar PDF</a>
+        {% endif %}
+
+        {% if tiene_accion_global('exportar excel') %}
+            <a ...>Exportar Excel</a>
+        {% endif %}
+    """
+    try:
+        from models.permisos_mixin import tiene_accion_en_pantalla, tiene_accion_empleado
+        return dict(
+            tiene_accion=tiene_accion_en_pantalla,        # (pantalla_url, nombre_accion) → bool
+            tiene_accion_global=tiene_accion_empleado,    # (nombre_accion) → bool
+        )
+    except Exception:
+        return dict(
+            tiene_accion=lambda *a, **k: True,
+            tiene_accion_global=lambda *a, **k: True,
+        )
+# ───────────────────────────────────────────────────────────────────────────
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"

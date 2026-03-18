@@ -77,7 +77,14 @@
 
       <main class="content">
         <h1 class="title">Mis pedidos</h1>
-<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;"><a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='pdf') }}">Exportar PDF</a><a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='excel') }}">Exportar Excel</a></div>
+<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;">
+  {% if tiene_accion_global('exportar pdf') %}
+  <a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='pdf') }}">Exportar PDF</a>
+  {% endif %}
+  {% if tiene_accion_global('exportar excel') %}
+  <a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='ordentrega', formato='excel') }}">Exportar Excel</a>
+  {% endif %}
+</div>
 
 
         {% with messages = get_flashed_messages(with_categories=true) %}

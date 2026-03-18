@@ -1,4 +1,11 @@
-<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;"><a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='proveedor', formato='pdf') }}">Exportar PDF</a><a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='proveedor', formato='excel') }}">Exportar Excel</a></div>
+<div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;">
+  {% if tiene_accion_global('exportar pdf') %}
+  <a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='proveedor', formato='pdf') }}">Exportar PDF</a>
+  {% endif %}
+  {% if tiene_accion_global('exportar excel') %}
+  <a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='proveedor', formato='excel') }}">Exportar Excel</a>
+  {% endif %}
+</div>
 {% extends 'admin/model/edit.html' %}
 
 {% block body %}
