@@ -1,97 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Panel del admin | Alitas El Comelón</title>
-  <style>
-body{
-    background-color: rgb(32, 26, 26);
-    position: relative;
-    margin: 0;
-}
-    .top{
-      background:rgba(86, 111, 221, 0.219);
-      color:#fff;
-      padding:14px 20px;
-      font-weight:700;
-    }
-    .wrap{
-      max-width:1100px;
-      margin:28px auto;
-      padding:0 16px;
-      display:flex;
-      gap:24px;
-      flex-wrap:wrap;
-    }
-    .card{
-      background: rgb(64, 73, 70);
-      border-radius:12px;
-      box-shadow:0 2px 8px rgba(0,0,0,.08);
-      width:210px;
-      height:120px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      transition:.2s;
-    }
-    .card:hover{
-      transform:scale(1.05);
-    }
-    .card a{
-      color:#111;
-      text-decoration:none;
-      font-weight:600;
-    }
-    .footer{
-      position:fixed;
-      left:0;right:0;bottom:0;
-      background:rgba(86, 111, 221, 0.219);
-      text-align:center;padding:8px 0;
-      font-size:12px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin | Alitas El Comelón</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/permisos_de_los_empleados.css') }}">
+    <style>
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .nav-card {
+            background: rgba(13, 25, 45, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 22px;
+            padding: 28px 24px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(34, 195, 170, 0.4);
+            box-shadow: 0 12px 30px rgba(22, 177, 162, 0.15);
+        }
+
+        .nav-card-titulo {
+            font-size: 18px;
+            font-weight: 800;
+            color: #eef4ff;
+        }
+
+        .nav-card-desc {
+            font-size: 13px;
+            color: #8da9d8;
+            line-height: 1.4;
+        }
+
+        .nav-card-flecha {
+            margin-top: 12px;
+            color: #22c3aa;
+            font-size: 18px;
+            font-weight: 800;
+        }
+    </style>
 </head>
 <body>
+    <div class="contenedor">
+        <div class="encabezado">
+            <div>
+                <h1 class="titulo">Panel Admin</h1>
+                <p class="subtitulo">Centro de control del administrador. Gestiona pantallas, acciones y permisos del sistema.</p>
+            </div>
+            <div class="sesion">Sesión: <strong>Administrador</strong></div>
+        </div>
 
-  <div class="top">🧮 Panel del admin | Alitas El Comelón</div>
+        <div class="panel">
+            <div class="panel-cabecera">
+                <div class="panel-titulo">Módulos disponibles</div>
+                <div class="panel-etiqueta">Alitas El Comelón</div>
+            </div>
+            <div class="panel-cuerpo">
+                <div class="nav-grid">
 
-  <div class="wrap">
+                    {% if 'acciones_admin.index_view' in pantallas_permitidas %}
+                    <a class="nav-card" href="{{ url_for('acciones_admin.index_view') }}">
+                        <div class="nav-card-titulo">Acciones</div>
+                        <div class="nav-card-desc">Administra las acciones disponibles en el sistema.</div>
+                        <div class="nav-card-flecha">→</div>
+                    </a>
+                    {% endif %}
 
-    {% if 'acciones_admin.index_view' in pantallas_permitidas %}
-    <div class="card">
-      <a href="{{ url_for('acciones_admin.index_view') }}"> Acciones </a>
+                    {% if 'pantallas_admin.index_view' in pantallas_permitidas %}
+                    <a class="nav-card" href="{{ url_for('pantallas_admin.index_view') }}">
+                        <div class="nav-card-titulo">Pantallas</div>
+                        <div class="nav-card-desc">Gestiona las pantallas registradas en el sistema.</div>
+                        <div class="nav-card-flecha">→</div>
+                    </a>
+                    {% endif %}
+
+                    {% if 'ver_pantallas_acciones' in pantallas_permitidas %}
+                    <a class="nav-card" href="{{ url_for('ver_pantallas_acciones') }}">
+                        <div class="nav-card-titulo">Pantallas & Acciones</div>
+                        <div class="nav-card-desc">Vincula acciones a pantallas y configura su comportamiento.</div>
+                        <div class="nav-card-flecha">→</div>
+                    </a>
+                    {% endif %}
+
+                    {% if 'ver_permisos_puesto' in pantallas_permitidas %}
+                    <a class="nav-card" href="{{ url_for('ver_permisos_puesto') }}">
+                        <div class="nav-card-titulo">Permisos por Puesto</div>
+                        <div class="nav-card-desc">Define los permisos base que tendrá cada puesto de trabajo.</div>
+                        <div class="nav-card-flecha">→</div>
+                    </a>
+                    {% endif %}
+
+                    {% if 'ver_permisos_empleado' in pantallas_permitidas %}
+                    <a class="nav-card" href="{{ url_for('ver_permisos_empleado') }}">
+                        <div class="nav-card-titulo">Permisos por Empleado</div>
+                        <div class="nav-card-desc">Ajusta permisos individuales para cada empleado activo.</div>
+                        <div class="nav-card-flecha">→</div>
+                    </a>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
     </div>
-    {% endif %}
-
-    {% if 'pantallas_admin.index_view' in pantallas_permitidas %}
-    <div class="card">
-      <a href="{{ url_for('pantallas_admin.index_view') }}"> Pantallas </a>
-    </div>
-    {% endif %}
-
-    {% if 'ver_pantallas_acciones' in pantallas_permitidas %}
-    <div class="card">
-      <a href="{{ url_for('ver_pantallas_acciones') }}">Pantallas_Acciones </a>
-    </div>
-    {% endif %}
-
-    {% if 'ver_permisos_puesto' in pantallas_permitidas %}
-    <div class="card">
-      <a href="{{ url_for('ver_permisos_puesto') }}">Permisos de los puestos </a>
-    </div>
-    {% endif %}
-
-    {% if 'ver_permisos_empleado' in pantallas_permitidas %}
-    <div class="card">
-      <a href="{{ url_for('ver_permisos_empleado') }}">Permisos de los empleados</a>
-    </div>
-    {% endif %}
-
-  </div>
-
-  </div>
-
-  <div class="footer">© 2025 Alitas El Comelón - Panel del Contador</div>
-
 </body>
 </html>

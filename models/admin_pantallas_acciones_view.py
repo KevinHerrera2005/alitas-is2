@@ -29,9 +29,7 @@ def _borrar_pantallas_acciones_por_ids(ids_pantalla_accion):
 
 @app.route("/panel_admin", methods=["GET"])
 def panel_admin():
-    from models.permisos_mixin import pantallas_del_empleado_actual
-    pantallas_permitidas = pantallas_del_empleado_actual() or set()
-    return render_template("panel_admin.html", pantallas_permitidas=pantallas_permitidas)
+    return redirect(url_for("ver_permisos_empleado"))
 
 
 @app.route("/ver_pantallasacciones", methods=["GET", "POST"])
@@ -49,7 +47,7 @@ def ver_pantallas_acciones():
             _borrar_pantallas_acciones_por_ids(ids)
             db.session.commit()
             flash("Pantalla eliminada correctamente", "success")
-            return redirect(url_for("ver_pantallas_acciones"))
+            return redirect(url_for("ver_permisos_empleado", modulo="pantallas_acciones"))
 
     registro_pantalla = db.session.query(
         Pantallas.Nombre,
@@ -118,6 +116,89 @@ def editar_pantalla_accion(id_pantalla):
         todas_acciones=todas_acciones,
         asignadas_ids=asignadas_ids
     )
+
+
+@app.route("/toggle_accion_estado/<int:id_accion>", methods=["POST"])
+def toggle_accion_estado(id_accion):
+    accion = db.session.get(Acciones, id_accion)
+    if accion:
+        accion.estado = 0 if accion.estado == 1 else 1
+        db.session.commit()
+    return redirect(url_for("ver_permisos_empleado", modulo="acciones_admin"))
+
+
+@app.route("/crear_accion_registro", methods=["GET", "POST"])
+def crear_accion_registro():
+    if request.method == "POST":
+        nombre = (request.form.get("nombre") or "").strip()
+        if not nombre:
+            flash("El nombre de la acción es requerido.", "warning")
+            return render_template("admin_accion_form.html", accion=None)
+        db.session.add(Acciones(Nombre=nombre, estado=1))
+        db.session.commit()
+        flash("Acción creada correctamente.", "success")
+        return redirect(url_for("ver_permisos_empleado", modulo="acciones_admin"))
+    return render_template("admin_accion_form.html", accion=None)
+
+
+@app.route("/editar_accion_registro/<int:id_accion>", methods=["GET", "POST"])
+def editar_accion_registro(id_accion):
+    accion = db.session.get(Acciones, id_accion)
+    if not accion:
+        flash("Acción no encontrada.", "danger")
+        return redirect(url_for("ver_permisos_empleado", modulo="acciones_admin"))
+    if request.method == "POST":
+        nombre = (request.form.get("nombre") or "").strip()
+        if not nombre:
+            flash("El nombre de la acción es requerido.", "warning")
+            return render_template("admin_accion_form.html", accion=accion)
+        accion.Nombre = nombre
+        db.session.commit()
+        flash("Acción actualizada correctamente.", "success")
+        return redirect(url_for("ver_permisos_empleado", modulo="acciones_admin"))
+    return render_template("admin_accion_form.html", accion=accion)
+
+
+@app.route("/toggle_pantalla_estado/<int:id_pantalla>", methods=["POST"])
+def toggle_pantalla_estado(id_pantalla):
+    pantalla = db.session.get(Pantallas, id_pantalla)
+    if pantalla:
+        pantalla.estado = 0 if pantalla.estado == 1 else 1
+        db.session.commit()
+    return redirect(url_for("ver_permisos_empleado", modulo="pantallas_admin"))
+
+
+@app.route("/crear_pantalla_registro", methods=["GET", "POST"])
+def crear_pantalla_registro():
+    if request.method == "POST":
+        nombre = (request.form.get("nombre") or "").strip()
+        url_val = (request.form.get("url") or "").strip()
+        if not nombre or not url_val:
+            flash("Nombre y endpoint son requeridos.", "warning")
+            return render_template("admin_pantalla_form.html", pantalla=None)
+        db.session.add(Pantallas(Nombre=nombre, url=url_val, estado=1))
+        db.session.commit()
+        flash("Pantalla creada correctamente.", "success")
+        return redirect(url_for("ver_permisos_empleado", modulo="pantallas_admin"))
+    return render_template("admin_pantalla_form.html", pantalla=None)
+
+
+@app.route("/editar_pantalla_registro/<int:id_pantalla>", methods=["GET", "POST"])
+def editar_pantalla_registro(id_pantalla):
+    pantalla = db.session.get(Pantallas, id_pantalla)
+    if not pantalla:
+        flash("Pantalla no encontrada.", "danger")
+        return redirect(url_for("ver_permisos_empleado", modulo="pantallas_admin"))
+    if request.method == "POST":
+        pantalla.Nombre = (request.form.get("nombre") or "").strip()
+        pantalla.url = (request.form.get("url") or "").strip()
+        if not pantalla.Nombre or not pantalla.url:
+            flash("Nombre y endpoint son requeridos.", "warning")
+            return render_template("admin_pantalla_form.html", pantalla=pantalla)
+        db.session.commit()
+        flash("Pantalla actualizada correctamente.", "success")
+        return redirect(url_for("ver_permisos_empleado", modulo="pantallas_admin"))
+    return render_template("admin_pantalla_form.html", pantalla=pantalla)
 
 
 @app.route("/crear_pantalla_accion", methods=["GET", "POST"])

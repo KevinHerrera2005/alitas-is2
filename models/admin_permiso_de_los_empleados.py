@@ -136,7 +136,7 @@ def ver_permisos_empleado():
 
         db.session.commit()
         flash("Permisos actualizados correctamente.", "success")
-        return redirect(url_for("ver_permisos_empleado", empleado_id=empleado_id))
+        return redirect(url_for("ver_permisos_empleado", empleado_id=empleado_id, modulo="permisos_empleado"))
 
     # --- GET ---
     empleado_seleccionado = None
@@ -236,14 +236,57 @@ def ver_permisos_empleado():
                 if p["estado"] == 1
             )
 
+    modulo = request.args.get("modulo", "permisos_empleado")
+
+    # Datos para módulo Permisos por Puesto
+    registro_permisos_puestos = db.session.query(
+        Puesto.Nombre_Puesto,
+        Puesto.ID_Puesto
+    ).join(
+        PermisosPuesto, Puesto.ID_Puesto == PermisosPuesto.ID_Puesto
+    ).distinct().all()
+
+    # Datos para módulo Pantallas & Acciones (solo las vinculadas a acciones)
+    nombre_pantalla = db.session.query(
+        Pantallas.Nombre,
+        Pantallas.ID_Pantalla
+    ).join(
+        PantallasAcciones,
+        Pantallas.ID_Pantalla == PantallasAcciones.ID_Pantalla
+    ).distinct().all()
+
+    # Datos para módulo Pantallas Admin (todas las pantallas)
+    todas_pantallas = db.session.query(
+        Pantallas.ID_Pantalla,
+        Pantallas.Nombre,
+        Pantallas.url,
+        Pantallas.estado
+    ).order_by(Pantallas.Nombre).all()
+
+    # Datos para módulo Acciones Admin
+    todas_acciones = db.session.query(
+        Acciones.ID_Accion,
+        Acciones.Nombre,
+        Acciones.estado
+    ).order_by(Acciones.Nombre).all()
+
+    from models.permisos_mixin import pantallas_del_empleado_actual
+    pantallas_permitidas = pantallas_del_empleado_actual() or set()
+
     return render_template(
         "permisos_de_los_empleados.html",
+        modulo=modulo,
         empleados=empleados,
         empleado_id=empleado_id,
         empleado_seleccionado=empleado_seleccionado,
         permisos_agrupados=permisos_agrupados,
         total_permisos=total_permisos,
-        permisos_activos=permisos_activos
+        permisos_activos=permisos_activos,
+        pantallas_permitidas=pantallas_permitidas,
+        registro_permisos_puestos=registro_permisos_puestos,
+        nombre_pantalla=nombre_pantalla,
+        todas_pantallas=todas_pantallas,
+        todas_acciones=todas_acciones
     )
 
 

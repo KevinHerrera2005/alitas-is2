@@ -36,7 +36,7 @@ def ver_permisos_puesto():
             _borrar_permisos_puesto_por_ids(ids)
             db.session.commit()
             flash("Permisos del puesto eliminados correctamente", "success")
-            return redirect(url_for("ver_permisos_puesto"))
+            return redirect(url_for("ver_permisos_empleado", modulo="permisos_puesto"))
 
     registro_permisos_puestos = db.session.query(
         Puesto.Nombre_Puesto,

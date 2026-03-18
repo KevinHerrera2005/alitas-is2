@@ -4,30 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acciones de la Pantalla</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pantallas_acciones.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/permisos_de_los_empleados.css') }}">
+    <style>
+        .accion-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            border-radius: 18px;
+            background: rgba(13, 25, 45, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 10px;
+        }
+
+        .accion-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .accion-punto {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #22c3aa, #67d9cb);
+            flex-shrink: 0;
+        }
+
+        .accion-nombre {
+            font-size: 17px;
+            font-weight: 700;
+            color: #eef4ff;
+        }
+
+        .nav-botones {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
-    <h1 class="titulo">Acciones de: {{ pantalla.Nombre }}</h1>
-
-    <div class="buscador-fila">
-        <a href="{{ url_for('ver_pantallas_acciones') }}">
-            <button type="button" class="botoncrear">&#8592; Volver</button>
-        </a>
-        <a href="{{ url_for('editar_pantalla_accion', id_pantalla=pantalla.ID_Pantalla) }}">
-            <button type="button" class="botoncrear">Editar</button>
-        </a>
-    </div>
-
-    <div class="divisiones">
-        {% if acciones %}
-            {% for accion in acciones %}
-            <div class="caja">
-                {{ accion[0] }}
+    <div class="contenedor">
+        <div class="encabezado">
+            <div>
+                <h1 class="titulo">{{ pantalla.Nombre }}</h1>
+                <p class="subtitulo">Acciones disponibles para esta pantalla dentro del sistema.</p>
             </div>
-            {% endfor %}
-        {% else %}
-            <p style="color: antiquewhite; margin: 20px;">Esta pantalla no tiene acciones asignadas.</p>
-        {% endif %}
+            <div class="sesion">Sesión: <strong>Administrador</strong></div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alertas">
+                    {% for category, message in messages %}
+                        <div class="alerta alerta-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="panel">
+            <div class="panel-cabecera">
+                <div class="panel-titulo">Acciones de la pantalla</div>
+                <div class="nav-botones">
+                    <a href="{{ url_for('ver_pantallas_acciones') }}" class="boton-secundario" style="text-decoration:none; padding: 10px 18px; font-size:14px; border-radius:12px; font-weight:700; display:inline-flex; align-items:center;">← Volver</a>
+                    <a href="{{ url_for('editar_pantalla_accion', id_pantalla=pantalla.ID_Pantalla) }}" class="boton-principal" style="text-decoration:none; padding: 10px 18px; font-size:14px; border-radius:12px; font-weight:700; display:inline-flex; align-items:center;">Editar</a>
+                </div>
+            </div>
+            <div class="panel-cuerpo">
+                {% if acciones %}
+                    {% for accion in acciones %}
+                    <div class="accion-item">
+                        <div class="accion-punto"></div>
+                        <div class="accion-nombre">{{ accion[0] }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="vacio">Esta pantalla no tiene acciones asignadas.</div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </body>
 </html>
