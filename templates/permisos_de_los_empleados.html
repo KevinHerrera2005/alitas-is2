@@ -201,6 +201,7 @@
         .toggle-inactivo:hover { background: rgba(255,255,255,0.12); }
         .dot-activo  { width:7px; height:7px; border-radius:50%; background:#22c3aa; }
         .dot-inactivo{ width:7px; height:7px; border-radius:50%; background:#5a7099; }
+        .oculto { display: none !important; }
     </style>
 </head>
 <body>
@@ -209,7 +210,10 @@
             <div>
                 {% if modulo == 'permisos_puesto' %}
                     <h1 class="titulo">Permisos por Puesto</h1>
-                    <p class="subtitulo">Define los permisos base que tendrá cada puesto de trabajo en el sistema.</p>
+                    <p class="subtitulo">Define qué acciones podrá realizar cada puesto en cada pantalla del sistema.</p>
+                {% elif modulo == 'asignacion_empleados' %}
+                    <h1 class="titulo">Asignación de Empleados</h1>
+                    <p class="subtitulo">Asigna o cambia el puesto de cada empleado y registra nuevos usuarios.</p>
                 {% elif modulo == 'pantallas_acciones' %}
                     <h1 class="titulo">Pantallas & Acciones</h1>
                     <p class="subtitulo">Gestiona las pantallas del sistema y las acciones disponibles en cada una.</p>
@@ -336,30 +340,193 @@
                 {# ── MÓDULO: Permisos por Puesto ── #}
                 {% elif modulo == 'permisos_puesto' %}
                 <div class="panel-cabecera">
-                    <div class="panel-titulo">Puestos configurados</div>
-                    <a href="{{ url_for('crear_permisos_puesto') }}" class="boton-principal" style="text-decoration:none; padding:10px 20px; font-size:14px;">+ Nuevo</a>
+                    <div class="panel-titulo">Puesto configurado</div>
+                    {% if puesto_seleccionado %}
+                        <div class="panel-etiqueta">Editando: {{ puesto_seleccionado.Nombre_Puesto }}</div>
+                    {% else %}
+                        <div class="panel-etiqueta">Selecciona un puesto</div>
+                    {% endif %}
                 </div>
                 <div class="panel-cuerpo">
-                    <input class="input-buscar" type="text" placeholder="Buscar puesto..." id="buscador-puesto">
-                    <form action="{{ url_for('ver_permisos_puesto') }}" method="POST">
-                        <div id="lista-puestos">
-                            {% if registro_permisos_puestos %}
-                                {% for permiso in registro_permisos_puestos %}
-                                <div class="lista-item">
-                                    <div class="lista-item-nombre">{{ permiso[0] }}</div>
-                                    <div class="lista-acciones">
-                                        <a href="{{ url_for('ver_acciones_puesto', id_puesto=permiso[1]) }}" class="btn-lista boton-secundario boton-info">Ver acciones</a>
-                                        <a href="{{ url_for('editar_permisos_puesto', id_puesto=permiso[1]) }}" class="btn-lista boton-secundario">Editar</a>
-                                        <button class="btn-lista boton-secundario boton-peligro" type="submit" name="eliminar" value="{{ permiso[1] }}"
-                                            onclick="return confirm('¿Deseas eliminar todos los permisos de este puesto?')">Eliminar</button>
+                    {# ── Selector de puesto ── #}
+                    <form method="GET" style="margin-bottom:0;">
+                        <input type="hidden" name="modulo" value="permisos_puesto">
+                        <div class="selector" style="margin-bottom:12px;">
+                            <div class="campo" style="flex:1;">
+                                <label for="puesto_id">Puesto</label>
+                                <select name="puesto_id" id="puesto_id" onchange="this.form.submit()">
+                                    {% for p in todos_puestos %}
+                                        <option value="{{ p.ID_Puesto }}" {% if puesto_id == p.ID_Puesto %}selected{% endif %}>
+                                            {{ p.Nombre_Puesto }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    {# ── Botón + Nuevo Puesto ── #}
+                    <button class="boton-secundario" style="margin-bottom:18px;width:100%;font-size:13px;" onclick="document.getElementById('form-nuevo-puesto').classList.toggle('oculto')">
+                        + Nuevo Puesto
+                    </button>
+                    <div id="form-nuevo-puesto" class="oculto" style="margin-bottom:18px;">
+                        <form method="POST" action="{{ url_for('crear_puesto_nuevo') }}">
+                            <div class="campo" style="margin-bottom:10px;">
+                                <label>Nombre del nuevo puesto</label>
+                                <input type="text" name="nombre_puesto" placeholder="Ej: Cocinero, Cajero..." required
+                                    style="width:100%;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 14px;font-size:14px;outline:none;">
+                            </div>
+                            <button type="submit" class="boton-principal" style="width:100%;font-size:13px;">Crear puesto</button>
+                        </form>
+                    </div>
+
+                    {# ── Toggles de acciones por pantalla ── #}
+                    {% if puesto_seleccionado %}
+                        <form method="POST" action="{{ url_for('guardar_permisos_puesto_hub') }}">
+                            <input type="hidden" name="puesto_id" value="{{ puesto_seleccionado.ID_Puesto }}">
+                            {% if permisos_puesto_agrupados %}
+                                {% for grupo in permisos_puesto_agrupados %}
+                                <div class="permiso-grupo">
+                                    <div class="permiso-grupo-cabecera">
+                                        <div class="cabecera-izquierda">
+                                            <div class="permiso-grupo-titulo">{{ grupo.pantalla }}</div>
+                                            <div class="permiso-grupo-subtitulo">{{ grupo.acciones|length }} acción(es)</div>
+                                        </div>
+                                    </div>
+                                    <div class="permiso-lista">
+                                        {% for acc in grupo.acciones %}
+                                        <label class="permiso-item">
+                                            <div>
+                                                <div class="permiso-accion">{{ acc.accion }}</div>
+                                                <div class="permiso-detalle">Acción dentro de {{ grupo.pantalla }}</div>
+                                            </div>
+                                            <div class="permiso-control">
+                                                <span class="estado-texto">{% if acc.estado == 1 %}Sí{% else %}No{% endif %}</span>
+                                                <span class="switch">
+                                                    <input type="checkbox" class="sub-toggle"
+                                                        name="accion_{{ acc.id_pantalla_accion }}" value="1"
+                                                        {% if acc.estado == 1 %}checked{% endif %}>
+                                                    <span class="slider"></span>
+                                                </span>
+                                            </div>
+                                        </label>
+                                        {% endfor %}
                                     </div>
                                 </div>
                                 {% endfor %}
+                                <div class="acciones">
+                                    <button type="submit" class="boton-principal">Guardar cambios</button>
+                                    <a href="{{ url_for('ver_permisos_empleado', puesto_id=puesto_seleccionado.ID_Puesto, modulo='permisos_puesto') }}"
+                                       class="boton-secundario">Restablecer</a>
+                                </div>
                             {% else %}
-                                <div class="vacio">No hay puestos configurados. Crea el primero.</div>
+                                <div class="vacio">No hay pantallas con acciones configuradas en el sistema.</div>
                             {% endif %}
-                        </div>
-                    </form>
+                        </form>
+                    {% else %}
+                        <div class="vacio">No hay puestos disponibles. Crea el primero.</div>
+                    {% endif %}
+                </div>
+
+                {# ── MÓDULO: Asignación de Empleados ── #}
+                {% elif modulo == 'asignacion_empleados' %}
+                <div class="panel-cabecera">
+                    <div class="panel-titulo">Empleados activos</div>
+                    <button class="boton-principal" style="font-size:13px;border:none;cursor:pointer;"
+                        onclick="document.getElementById('form-nuevo-empleado').classList.toggle('oculto')">+ Nuevo Empleado</button>
+                </div>
+                <div class="panel-cuerpo">
+
+                    {# ── Formulario nuevo empleado (colapsable) ── #}
+                    <div id="form-nuevo-empleado" class="oculto" style="margin-bottom:22px;padding:18px;background:rgba(13,25,45,0.92);border:1px solid rgba(34,195,170,0.18);border-radius:16px;">
+                        <div style="font-size:15px;font-weight:800;color:#eef4ff;margin-bottom:14px;">Nuevo empleado</div>
+                        <form method="POST" action="{{ url_for('crear_empleado_nuevo') }}">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                                <div class="campo">
+                                    <label>Nombre *</label>
+                                    <input type="text" name="nombre" required placeholder="Nombre"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Apellido *</label>
+                                    <input type="text" name="apellido" required placeholder="Apellido"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Username *</label>
+                                    <input type="text" name="username" required placeholder="usuario123"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Contraseña *</label>
+                                    <input type="password" name="password" required placeholder="••••••••"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Teléfono *</label>
+                                    <input type="text" name="telefono" required placeholder="9999-9999"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Email</label>
+                                    <input type="email" name="email" placeholder="correo@ejemplo.com"
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 12px;font-size:13px;outline:none;">
+                                </div>
+                                <div class="campo">
+                                    <label>Puesto *</label>
+                                    <select name="puesto_id_emp" required
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 10px;font-size:13px;outline:none;">
+                                        <option value="">Seleccionar…</option>
+                                        {% for p in todos_puestos %}
+                                        <option value="{{ p.ID_Puesto }}">{{ p.Nombre_Puesto }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="campo">
+                                    <label>Sucursal *</label>
+                                    <select name="sucursal_id" required
+                                        style="width:100%;height:40px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 10px;font-size:13px;outline:none;">
+                                        <option value="">Seleccionar…</option>
+                                        {% for s in todas_sucursales %}
+                                        <option value="{{ s.ID_sucursal }}">{{ s.Descripcion }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="boton-principal" style="width:100%;font-size:13px;">Crear empleado</button>
+                        </form>
+                    </div>
+
+                    {# ── Lista de empleados con asignación de puesto ── #}
+                    <input class="input-buscar" type="text" placeholder="Buscar empleado..." id="buscador-empleados-asig">
+                    <div id="lista-empleados-asig">
+                        {% if todos_empleados_asignacion %}
+                            {% for emp in todos_empleados_asignacion %}
+                            <div class="lista-item empleado-asig-item">
+                                <div>
+                                    <div class="lista-item-nombre">{{ emp.Nombre }} {{ emp.Apellido }}</div>
+                                    <div style="font-size:12px;color:#7a96c0;margin-top:3px;">Puesto actual: <strong style="color:#22c3aa;">{{ emp.Nombre_Puesto }}</strong></div>
+                                </div>
+                                <form method="POST" action="{{ url_for('asignar_puesto_empleado') }}" style="display:flex;gap:8px;align-items:center;flex-shrink:0;">
+                                    <input type="hidden" name="empleado_id" value="{{ emp.ID_Empleado }}">
+                                    <select name="nuevo_puesto_id"
+                                        style="height:36px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(6,15,28,0.88);color:#f4f8ff;padding:0 10px;font-size:13px;outline:none;">
+                                        {% for p in todos_puestos %}
+                                        <option value="{{ p.ID_Puesto }}" {% if emp.ID_Puesto == p.ID_Puesto %}selected{% endif %}>
+                                            {{ p.Nombre_Puesto }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn-lista boton-principal" style="padding:8px 14px;font-size:12px;white-space:nowrap;">
+                                        Asignar
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="vacio">No hay empleados activos registrados.</div>
+                        {% endif %}
+                    </div>
                 </div>
 
                 {# ── MÓDULO: Pantallas & Acciones ── #}
@@ -515,6 +682,15 @@
                             </a>
                             {% endif %}
 
+                            <a class="modulo-item {% if modulo == 'asignacion_empleados' %}modulo-activo{% endif %}"
+                               href="{{ url_for('ver_permisos_empleado', modulo='asignacion_empleados') }}">
+                                <div class="modulo-punto"></div>
+                                <div>
+                                    <div class="modulo-titulo">Asignación de Empleados</div>
+                                    <div class="modulo-desc">Asigna puestos y registra usuarios</div>
+                                </div>
+                            </a>
+
                             {% if 'ver_pantallas_acciones' in pantallas_permitidas %}
                             <a class="modulo-item {% if modulo == 'pantallas_acciones' %}modulo-activo{% endif %}"
                                href="{{ url_for('ver_permisos_empleado', modulo='pantallas_acciones') }}">
@@ -636,6 +812,25 @@
                 document.querySelectorAll('#tabla-pantallas-body tr').forEach(function (row) {
                     var texto = row.textContent.toLowerCase();
                     row.style.display = texto.includes(t) ? '' : 'none';
+                });
+            });
+        }
+
+        // Toggle texto Sí/No en permisos_puesto
+        document.querySelectorAll('.sub-toggle').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                var et = this.closest('.permiso-control') && this.closest('.permiso-control').querySelector('.estado-texto');
+                if (et) et.textContent = this.checked ? 'Sí' : 'No';
+            });
+        });
+
+        // Buscador empleados asignación
+        var buscadorEmpAsig = document.getElementById('buscador-empleados-asig');
+        if (buscadorEmpAsig) {
+            buscadorEmpAsig.addEventListener('input', function () {
+                var t = this.value.toLowerCase();
+                document.querySelectorAll('#lista-empleados-asig .empleado-asig-item').forEach(function (item) {
+                    item.style.display = item.querySelector('.lista-item-nombre').textContent.toLowerCase().includes(t) ? '' : 'none';
                 });
             });
         }
