@@ -92,7 +92,13 @@ def tiene_accion_en_pantalla(pantalla_url: str, nombre_accion: str) -> bool:
     """
     Comprueba si el puesto del empleado actual tiene una acción activa
     en una pantalla específica. Cacheado por request.
+    Los gerentes y otros tipos que no sean empleados tienen acceso total.
     """
+    if not current_user.is_authenticated:
+        return False
+    # Gerentes y no-empleados tienen acceso total a todas las acciones
+    if getattr(current_user, "tipo", None) != "empleado":
+        return True
     id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
     if not id_puesto:
         return False
@@ -109,7 +115,13 @@ def tiene_accion_empleado(nombre_accion: str) -> bool:
     """
     Compatibilidad con código existente.
     Verifica si el puesto del empleado tiene la acción activa en CUALQUIER pantalla.
+    Los gerentes y otros tipos que no sean empleados tienen acceso total.
     """
+    if not current_user.is_authenticated:
+        return False
+    # Gerentes y no-empleados tienen acceso total
+    if getattr(current_user, "tipo", None) != "empleado":
+        return True
     id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
     if not id_puesto:
         return False
@@ -154,9 +166,14 @@ class PermisosAdminMixin:
     accion_exportar_excel = None
 
     def _tiene_permiso(self, accion):
-        """Si la acción no está configurada, se permite por defecto. Verifica por pantalla."""
+        """Si la acción no está configurada, se permite por defecto. Verifica por pantalla.
+        Los gerentes y no-empleados siempre tienen acceso total."""
         if not accion:
             return True
+        if not current_user.is_authenticated:
+            return False
+        if getattr(current_user, "tipo", None) != "empleado":
+            return True  # Gerentes tienen acceso total a todos los botones
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return tiene_accion_en_pantalla(pantalla_url, accion)
 
@@ -192,7 +209,10 @@ class PermisosAdminMixin:
     def is_accessible(self):
         if not current_user.is_authenticated:
             return False
-        if getattr(current_user, "tipo", None) != "empleado":
+        tipo = getattr(current_user, "tipo", None)
+        if tipo == "gerente":
+            return True  # El gerente tiene acceso total a todas las vistas
+        if tipo != "empleado":
             return False
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return endpoint_accesible(pantalla_url)
@@ -200,3 +220,6 @@ class PermisosAdminMixin:
     def inaccessible_callback(self, name, **kwargs):
         flash("No tienes acceso a esta pantalla.", "danger")
         return redirect(url_for("login"))
+
+    def is_visible(self):
+        return self.is_accessible()

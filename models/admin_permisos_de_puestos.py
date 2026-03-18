@@ -168,26 +168,34 @@ def guardar_permisos_puesto_hub():
         .all()
     )
 
-    existentes = {
-        pp.ID_Pantalla_Accion: pp
-        for pp in db.session.query(PermisosPuesto)
+    # IDs de todas las PantallasAcciones activas que procesaremos
+    ids_pa_activas = {pa.ID_Pantalla_Accion for pa in todas_pa}
+
+    # IDs que ya tienen al menos un registro PermisosPuesto para este puesto
+    ids_con_registro = {
+        r[0] for r in db.session.query(PermisosPuesto.ID_Pantalla_Accion)
         .filter(PermisosPuesto.ID_Puesto == puesto_id)
         .all()
     }
 
     for pa in todas_pa:
         nuevo_estado = 1 if request.form.get(f"accion_{pa.ID_Pantalla_Accion}") == "1" else 0
-        pp = existentes.get(pa.ID_Pantalla_Accion)
-        if pp:
-            pp.estado = nuevo_estado
+
+        if pa.ID_Pantalla_Accion in ids_con_registro:
+            # UPDATE masivo: actualiza TODOS los registros coincidentes (cubre duplicados)
+            db.session.query(PermisosPuesto).filter(
+                PermisosPuesto.ID_Puesto == puesto_id,
+                PermisosPuesto.ID_Pantalla_Accion == pa.ID_Pantalla_Accion,
+            ).update({"estado": nuevo_estado}, synchronize_session=False)
         else:
             db.session.add(PermisosPuesto(
                 ID_Puesto=puesto_id,
                 ID_Pantalla_Accion=pa.ID_Pantalla_Accion,
-                estado=nuevo_estado
+                estado=nuevo_estado,
             ))
 
     db.session.commit()
+    db.session.expire_all()
     flash("Permisos del puesto actualizados correctamente.", "success")
     return redirect(url_for("ver_permisos_empleado", modulo="permisos_puesto", puesto_id=puesto_id))
 

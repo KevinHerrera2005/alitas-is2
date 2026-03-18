@@ -160,7 +160,12 @@ def login():
             return redirect(url_for("panel_gerente.panel"))
 
         empleado = Empleado.query.filter_by(Username=username).first()
-        if empleado and empleado.Password == password:
+        _pwd_emp = empleado.Password if empleado else None
+        _emp_ok = empleado and (
+            (isinstance(_pwd_emp, str) and _pwd_emp.startswith("$2") and bcrypt.check_password_hash(_pwd_emp, password))
+            or _pwd_emp == password
+        )
+        if _emp_ok:
             user = UserLogin(
                 tipo="empleado",
                 db_id=empleado.ID_Empleado,
