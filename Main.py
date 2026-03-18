@@ -447,7 +447,7 @@ def bootstrap_app(flask_app):
     admin.add_view(ImpuestoAdmin(Impuesto, db.session, category="Contabilidad", name="Impuestos", endpoint="impuestos_admin"))
     admin.add_view(ImpuestoTasaHistoricaAdmin(ImpuestoTasaHistorica, db.session, category="Contabilidad", name="Histórico tasas", endpoint="impuesto_tasa_historica_admin"))
     admin.add_view(CarritoAdmin(Carrito, db.session, category="Contabilidad", name="Carrito"))
-    admin.add_view(UsuarioClienteAdmin(UsuarioCliente, db.session))
+    admin.add_view(UsuarioClienteAdmin(UsuarioCliente, db.session, name="Usuarios", endpoint="usuarios_cliente_admin", category="Gerencia"))
     admin.add_view(CAIAdmin(CAI, db.session, name="CAI", category="Contabilidad"))
     admin.add_view(CAIHistoricoAdmin(CAIHistorico, db.session, name="CAI histórico", category="Contabilidad", endpoint="cai_historico_admin"))
     admin.add_view(TipoDocumentoAdmin(TipoDocumento, db.session, category="Personal", name="Tipos de documentos", endpoint="tipos_documento_admin"))

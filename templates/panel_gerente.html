@@ -81,6 +81,12 @@
     </div>
     {% endif %}
 
+    {% if pantallas_permitidas is none or 'usuarios_cliente_admin.index_view' in pantallas_permitidas %}
+    <div class="card">
+      <a href="{{ url_for('usuarios_cliente_admin.index_view') }}">&gt; Usuarios</a>
+    </div>
+    {% endif %}
+
   </div>
   
 
