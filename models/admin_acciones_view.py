@@ -49,6 +49,9 @@ class AccionesAdmin(PermisosAdminMixin, ModelView):
         },
     }
 
+    def is_visible(self):
+        return False
+
     def on_model_change(self, form, model, is_created):
         model.Nombre = (form.Nombre.data or "").strip()
         model.estado = 1 if str(form.estado.data).strip() == "1" else 0

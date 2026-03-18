@@ -9,27 +9,80 @@
     </div>
     <style>
       th.column-header a,
-th.column-header a:hover,
-th.column-header a:focus {
-  pointer-events: none !important;
-  cursor: default !important;
-  text-decoration: none !important;
-  color: inherit !important;
-}
+      th.column-header a:hover,
+      th.column-header a:focus {
+        pointer-events: none !important;
+        cursor: default !important;
+        text-decoration: none !important;
+        color: inherit !important;
+      }
+      th.column-header a .fa,
+      th.column-header a .glyphicon {
+        display: none !important;
+      }
+      .nav-tabs a[href*="/export/"],
+      .nav-tabs a[href$="/export/"] {
+        display: none !important;
+      }
+      .dropdown-toggle,
+      .dropdown-menu {
+        display: none !important;
+      }
 
-th.column-header a .fa,
-th.column-header a .glyphicon {
-  display: none !important;
-}
-  .nav-tabs a[href*="/export/"],
-  .nav-tabs a[href$="/export/"] {
-    display: none !important;
-  }
-.dropdown-toggle,
-.dropdown-menu {
-  display: none !important;
-}
-</style>
+      /* ── Barra de navegación entre pantallas del empleado ── */
+      .emp-nav-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 10px 16px;
+        background: #1c2740;
+        border-bottom: 2px solid #2a4070;
+        margin-bottom: 4px;
+      }
+      .emp-nav-link {
+        color: #a0b8d8;
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: background 0.18s, color 0.18s;
+        white-space: nowrap;
+      }
+      .emp-nav-link:hover {
+        background: rgba(255,255,255,0.1);
+        color: #fff;
+        text-decoration: none;
+      }
+      .emp-nav-link.emp-nav-activo {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border-color: rgba(255,255,255,0.28);
+        font-weight: 700;
+      }
+    </style>
+
+    {# ── Barra de navegación: muestra solo las pantallas configuradas para el puesto ── #}
+    {% set _nav_count = namespace(n=0) %}
+    {% for v in admin_view.admin._views %}
+      {% if v.endpoint and v.endpoint != 'admin' and v.is_visible() and endpoint_accesible(v.endpoint + '.index_view') %}
+        {% set _nav_count.n = _nav_count.n + 1 %}
+      {% endif %}
+    {% endfor %}
+
+    {% if _nav_count.n > 1 %}
+    <div class="emp-nav-bar">
+      {% for v in admin_view.admin._views %}
+        {% if v.endpoint and v.endpoint != 'admin' and v.is_visible() and endpoint_accesible(v.endpoint + '.index_view') %}
+          <a href="{{ url_for(v.endpoint + '.index_view') }}"
+             class="emp-nav-link{% if v.endpoint == admin_view.endpoint %} emp-nav-activo{% endif %}">
+            {{ v.name }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
 
     {{ layout.messages() }}
 

@@ -202,6 +202,17 @@
         .dot-activo  { width:7px; height:7px; border-radius:50%; background:#22c3aa; }
         .dot-inactivo{ width:7px; height:7px; border-radius:50%; background:#5a7099; }
         .oculto { display: none !important; }
+
+        /* ── Colapso de grupos de permisos ── */
+        .permiso-lista.colapsada {
+            display: none !important;
+        }
+        .permiso-grupo-cabecera:hover .grupo-chevron {
+            color: #22c3aa;
+        }
+        .grupo-chevron.colapsado {
+            transform: rotate(-90deg);
+        }
     </style>
 </head>
 <body>
@@ -295,11 +306,12 @@
                             {% if permisos_puesto_agrupados %}
                                 {% for grupo in permisos_puesto_agrupados %}
                                 <div class="permiso-grupo">
-                                    <div class="permiso-grupo-cabecera">
+                                    <div class="permiso-grupo-cabecera" onclick="toggleGrupo(this)" style="cursor:pointer;user-select:none;">
                                         <div class="cabecera-izquierda">
                                             <div class="permiso-grupo-titulo">{{ grupo.pantalla }}</div>
                                             <div class="permiso-grupo-subtitulo">{{ grupo.acciones|length }} acción(es)</div>
                                         </div>
+                                        <span class="grupo-chevron" style="font-size:18px;color:#7a96c0;transition:transform 0.25s;display:inline-block;">▾</span>
                                     </div>
                                     <div class="permiso-lista">
                                         {% for acc in grupo.acciones %}
@@ -662,6 +674,15 @@
                     row.style.display = texto.includes(t) ? '' : 'none';
                 });
             });
+        }
+
+        // Colapsar / expandir grupo de permisos
+        function toggleGrupo(cabecera) {
+            var lista   = cabecera.parentElement.querySelector('.permiso-lista');
+            var chevron = cabecera.querySelector('.grupo-chevron');
+            if (!lista) return;
+            var colapsada = lista.classList.toggle('colapsada');
+            if (chevron) chevron.classList.toggle('colapsado', colapsada);
         }
 
         // Toggle texto Sí/No en permisos_puesto

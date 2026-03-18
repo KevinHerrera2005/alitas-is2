@@ -162,15 +162,17 @@ def _inyectar_helpers_permisos():
         {% endif %}
     """
     try:
-        from models.permisos_mixin import tiene_accion_en_pantalla, tiene_accion_empleado
+        from models.permisos_mixin import tiene_accion_en_pantalla, tiene_accion_empleado, endpoint_accesible
         return dict(
             tiene_accion=tiene_accion_en_pantalla,        # (pantalla_url, nombre_accion) → bool
             tiene_accion_global=tiene_accion_empleado,    # (nombre_accion) → bool
+            endpoint_accesible=endpoint_accesible,        # (endpoint) → bool
         )
     except Exception:
         return dict(
             tiene_accion=lambda *a, **k: True,
             tiene_accion_global=lambda *a, **k: True,
+            endpoint_accesible=lambda *a, **k: True,
         )
 # ───────────────────────────────────────────────────────────────────────────
 
