@@ -208,10 +208,7 @@
     <div class="contenedor">
         <div class="encabezado">
             <div>
-                {% if modulo == 'permisos_puesto' %}
-                    <h1 class="titulo">Permisos por Puesto</h1>
-                    <p class="subtitulo">Define qué acciones podrá realizar cada puesto en cada pantalla del sistema.</p>
-                {% elif modulo == 'asignacion_empleados' %}
+                {% if modulo == 'asignacion_empleados' %}
                     <h1 class="titulo">Asignación de Empleados</h1>
                     <p class="subtitulo">Asigna o cambia el puesto de cada empleado y registra nuevos usuarios.</p>
                 {% elif modulo == 'pantallas_acciones' %}
@@ -224,8 +221,8 @@
                     <h1 class="titulo">Acciones del Sistema</h1>
                     <p class="subtitulo">Administra las acciones disponibles que se pueden asignar a las pantallas del sistema.</p>
                 {% else %}
-                    <h1 class="titulo">Permisos por Empleado</h1>
-                    <p class="subtitulo">Define qué permisos individuales tendrá cada empleado según los permisos base del puesto asignado.</p>
+                    <h1 class="titulo">Permisos por Puesto</h1>
+                    <p class="subtitulo">Define qué acciones podrá realizar cada puesto en cada pantalla del sistema.</p>
                 {% endif %}
             </div>
             <div class="sesion">Sesión: <strong>Administrador</strong></div>
@@ -248,97 +245,8 @@
                ═══════════════════════════════════════════════ #}
             <div class="panel">
 
-                {# ── MÓDULO: Permisos por Empleado ── #}
-                {% if modulo == 'permisos_empleado' %}
-                <div class="panel-cabecera">
-                    <div class="panel-titulo">Usuario afectado</div>
-                    {% if empleado_seleccionado %}
-                        <div class="panel-etiqueta">Editando: {{ empleado_seleccionado.nombre }} {{ empleado_seleccionado.apellido }}</div>
-                    {% else %}
-                        <div class="panel-etiqueta">Selecciona un empleado</div>
-                    {% endif %}
-                </div>
-                <div class="panel-cuerpo">
-                    <form method="GET">
-                        <input type="hidden" name="modulo" value="permisos_empleado">
-                        <div class="selector">
-                            <div class="campo">
-                                <label for="empleado_id">Usuario</label>
-                                <select name="empleado_id" id="empleado_id" onchange="this.form.submit()">
-                                    {% for empleado in empleados %}
-                                        <option value="{{ empleado.id_empleado }}" {% if empleado_id == empleado.id_empleado %}selected{% endif %}>
-                                            {{ empleado.nombre }} {{ empleado.apellido }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="campo">
-                                <label for="puesto">Puesto</label>
-                                <input id="puesto" type="text" value="{% if empleado_seleccionado %}{{ empleado_seleccionado.puesto }}{% else %}Sin selección{% endif %}" readonly>
-                            </div>
-                        </div>
-                    </form>
-
-                    {% if empleado_seleccionado %}
-                        <form method="POST">
-                            <input type="hidden" name="empleado_id" value="{{ empleado_seleccionado.id_empleado }}">
-                            {% if permisos_agrupados %}
-                                {% for grupo in permisos_agrupados %}
-                                    <div class="permiso-grupo" data-id-pantalla="{{ grupo.id_pantalla }}">
-                                        <div class="permiso-grupo-cabecera">
-                                            <div class="cabecera-izquierda">
-                                                <div class="permiso-grupo-titulo">{{ grupo.pantalla }}</div>
-                                                <div class="permiso-grupo-subtitulo">{{ grupo.permisos|length }} permiso(s)</div>
-                                            </div>
-                                            <label class="pantalla-master-control" for="master-{{ grupo.id_pantalla }}">
-                                                <span class="estado-pantalla-texto">{% if grupo.pantalla_activa %}Activa{% else %}Inactiva{% endif %}</span>
-                                                <span class="switch">
-                                                    <input type="checkbox" id="master-{{ grupo.id_pantalla }}" class="master-toggle"
-                                                        name="pantalla_activa_{{ grupo.id_pantalla }}" value="1"
-                                                        data-pantalla="{{ grupo.id_pantalla }}"
-                                                        {% if grupo.pantalla_activa %}checked{% endif %}>
-                                                    <span class="slider"></span>
-                                                </span>
-                                            </label>
-                                        </div>
-                                        <div class="permiso-lista {% if not grupo.pantalla_activa %}bloqueada{% endif %}" id="lista-pantalla-{{ grupo.id_pantalla }}">
-                                            {% for permiso in grupo.permisos %}
-                                                <label class="permiso-item">
-                                                    <div>
-                                                        <div class="permiso-accion">{{ permiso.accion }}</div>
-                                                        <div class="permiso-detalle">Acción disponible dentro de {{ grupo.pantalla }}</div>
-                                                    </div>
-                                                    <div class="permiso-control">
-                                                        <span class="estado-texto">{% if permiso.estado == 1 %}Sí{% else %}No{% endif %}</span>
-                                                        <span class="switch">
-                                                            <input type="checkbox" class="sub-toggle"
-                                                                name="permiso_{{ permiso.id_permiso_puesto }}" value="1"
-                                                                data-pantalla="{{ grupo.id_pantalla }}"
-                                                                {% if permiso.estado == 1 %}checked{% endif %}
-                                                                {% if not grupo.pantalla_activa %}disabled{% endif %}>
-                                                            <span class="slider"></span>
-                                                        </span>
-                                                    </div>
-                                                </label>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                                <div class="acciones">
-                                    <button type="submit" class="boton-principal">Guardar cambios</button>
-                                    <a href="{{ url_for('ver_permisos_empleado', empleado_id=empleado_seleccionado.id_empleado, modulo='permisos_empleado') }}" class="boton-secundario">Restablecer</a>
-                                </div>
-                            {% else %}
-                                <div class="vacio">Este puesto todavía no tiene permisos base configurados en Permisos_Puesto.</div>
-                            {% endif %}
-                        </form>
-                    {% else %}
-                        <div class="vacio">No hay empleados activos disponibles para editar permisos.</div>
-                    {% endif %}
-                </div>
-
                 {# ── MÓDULO: Permisos por Puesto ── #}
-                {% elif modulo == 'permisos_puesto' %}
+                {% if modulo == 'permisos_puesto' or modulo not in ['asignacion_empleados','pantallas_acciones','pantallas_admin','acciones_admin'] %}
                 <div class="panel-cabecera">
                     <div class="panel-titulo">Puesto configurado</div>
                     {% if puesto_seleccionado %}
@@ -660,17 +568,6 @@
                     <div class="panel-cuerpo">
                         <div class="modulos-lista">
 
-                            {% if 'ver_permisos_empleado' in pantallas_permitidas %}
-                            <a class="modulo-item {% if modulo == 'permisos_empleado' %}modulo-activo{% endif %}"
-                               href="{{ url_for('ver_permisos_empleado', modulo='permisos_empleado') }}">
-                                <div class="modulo-punto"></div>
-                                <div>
-                                    <div class="modulo-titulo">Permisos por Empleado</div>
-                                    <div class="modulo-desc">Ajusta permisos individuales</div>
-                                </div>
-                            </a>
-                            {% endif %}
-
                             {% if 'ver_permisos_puesto' in pantallas_permitidas %}
                             <a class="modulo-item {% if modulo == 'permisos_puesto' %}modulo-activo{% endif %}"
                                href="{{ url_for('ver_permisos_empleado', modulo='permisos_puesto') }}">
@@ -733,55 +630,6 @@
     </div>
 
     <script>
-        // Toggle maestro por pantalla (módulo permisos_empleado)
-        document.querySelectorAll('.master-toggle').forEach(function (masterCheck) {
-            masterCheck.addEventListener('change', function () {
-                var idPantalla = this.dataset.pantalla;
-                var lista = document.getElementById('lista-pantalla-' + idPantalla);
-                var etiqueta = this.closest('.pantalla-master-control').querySelector('.estado-pantalla-texto');
-                var subToggles = document.querySelectorAll('.sub-toggle[data-pantalla="' + idPantalla + '"]');
-                if (this.checked) {
-                    etiqueta.textContent = 'Activa';
-                    lista.classList.remove('bloqueada');
-                    subToggles.forEach(function (sub) {
-                        sub.disabled = false;
-                        var previo = sub.dataset.prevChecked;
-                        if (previo !== undefined) {
-                            sub.checked = previo === '1';
-                            var estadoTexto = sub.closest('.permiso-control').querySelector('.estado-texto');
-                            if (estadoTexto) estadoTexto.textContent = sub.checked ? 'Sí' : 'No';
-                        }
-                    });
-                } else {
-                    etiqueta.textContent = 'Inactiva';
-                    lista.classList.add('bloqueada');
-                    subToggles.forEach(function (sub) {
-                        sub.dataset.prevChecked = sub.checked ? '1' : '0';
-                        sub.disabled = true;
-                    });
-                }
-            });
-        });
-
-        // Toggle individual
-        document.querySelectorAll('.sub-toggle').forEach(function (checkbox) {
-            checkbox.addEventListener('change', function () {
-                var estado = this.closest('.permiso-control').querySelector('.estado-texto');
-                if (estado) estado.textContent = this.checked ? 'Sí' : 'No';
-            });
-        });
-
-        // Buscador de puestos
-        var buscadorPuesto = document.getElementById('buscador-puesto');
-        if (buscadorPuesto) {
-            buscadorPuesto.addEventListener('input', function () {
-                var t = this.value.toLowerCase();
-                document.querySelectorAll('#lista-puestos .lista-item').forEach(function (item) {
-                    item.style.display = item.querySelector('.lista-item-nombre').textContent.toLowerCase().includes(t) ? '' : 'none';
-                });
-            });
-        }
-
         // Buscador de pantallas (módulo pantallas_acciones)
         var buscadorPantalla = document.getElementById('buscador-pantalla');
         if (buscadorPantalla) {
