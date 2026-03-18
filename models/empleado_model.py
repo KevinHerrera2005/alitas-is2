@@ -13,6 +13,7 @@ class Puesto(db.Model):
 
 class Empleado(db.Model):
     __tablename__ = "Empleado"
+    __table_args__ = {"implicit_returning": False}   # SQL Server: evita conflicto OUTPUT con triggers
 
     ID_Empleado = db.Column(db.Integer, primary_key=True)
     Nombre = db.Column(db.String(100), nullable=False)

@@ -527,6 +527,37 @@ def verificar_conexion_db():
         return redirect(url_for("sinconexion"))
 
 
+@app.errorhandler(Exception)
+def handle_db_runtime_error(e):
+    """Captura OperationalError/InterfaceError de SQLAlchemy que ocurren
+    durante una query (cuando la BD cae en medio de una petición) y redirige
+    a la vista sinconexion.html con log automático."""
+    from sqlalchemy.exc import OperationalError, InterfaceError
+    import traceback
+    from flask import request as req
+
+    if not isinstance(e, (OperationalError, InterfaceError)):
+        raise e          # re-lanzar para no ocultar otros errores
+
+    try:
+        from mensajes_logs import logger_
+        from datetime import datetime
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        pantalla = req.path.strip("/").replace("/", "_") or "inicio"
+        boton = req.method.lower()
+        nombre_log = f"db_caida_en_query_{pantalla}_{boton}"
+        logger_.Logger.add_to_log(
+            "error",
+            f"BD caída durante query. Pantalla: {req.path} | Acción: {req.method} | Error: {str(e)}",
+            nombre_log, fecha
+        )
+        logger_.Logger.add_to_log("error", traceback.format_exc(), nombre_log, fecha)
+    except Exception:
+        pass
+
+    return redirect(url_for("sinconexion"))
+
+
 def _ensure_bootstrap():
     global _BOOTSTRAPPED
     if _BOOTSTRAPPED:
