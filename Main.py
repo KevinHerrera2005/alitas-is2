@@ -505,6 +505,25 @@ def sinconexion():
     return render_template("sinconexion.html")
 
 
+@app.before_request
+def verificar_conexion_db():
+    from flask import request
+    import pyodbc
+    import traceback
+    from mensajes_logs import logger_
+    if request.path.startswith("/sinconexion") or request.path.startswith("/static/"):
+        return None
+    try:
+        conn = pyodbc.connect(connection_string, timeout=3)
+        conn.close()
+    except Exception as e:
+        from datetime import datetime
+        fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
+        logger_.Logger.add_to_log("error", f"Motor de base de datos apagado. Redirigiendo a sinconexion. Ruta: {request.path} | Error: {str(e)}", "sin_conexion", fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), "sin_conexion", fecha)
+        return redirect(url_for("sinconexion"))
+
+
 def _ensure_bootstrap():
     global _BOOTSTRAPPED
     if _BOOTSTRAPPED:
