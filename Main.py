@@ -519,8 +519,11 @@ def verificar_conexion_db():
     except Exception as e:
         from datetime import datetime
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
-        logger_.Logger.add_to_log("error", f"Motor de base de datos apagado. Redirigiendo a sinconexion. Ruta: {request.path} | Error: {str(e)}", "sin_conexion", fecha)
-        logger_.Logger.add_to_log("error", traceback.format_exc(), "sin_conexion", fecha)
+        pantalla = request.path.strip("/").replace("/", "_") or "inicio"
+        boton = request.method.lower()
+        nombre_log = f"sin_conexion_{pantalla}_{boton}"
+        logger_.Logger.add_to_log("error", f"Motor de base de datos apagado. Pantalla: {request.path} | Accion: {request.method} | Error: {str(e)}", nombre_log, fecha)
+        logger_.Logger.add_to_log("error", traceback.format_exc(), nombre_log, fecha)
         return redirect(url_for("sinconexion"))
 
 
