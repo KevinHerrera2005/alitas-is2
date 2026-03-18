@@ -216,7 +216,7 @@ def crear_puesto_nuevo():
         db.session.add(PermisosPuesto(
             ID_Puesto=nuevo_puesto.ID_Puesto,
             ID_Pantalla_Accion=pa.ID_Pantalla_Accion,
-            estado=1
+            estado=0          # vacío por defecto; admin activa manualmente
         ))
 
     db.session.commit()
