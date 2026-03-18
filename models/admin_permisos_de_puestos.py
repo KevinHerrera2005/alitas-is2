@@ -275,12 +275,18 @@ def crear_empleado_nuevo():
         flash("Todos los campos obligatorios deben completarse.", "warning")
         return redirect(url_for("ver_permisos_empleado", modulo="asignacion_empleados"))
 
-    existente = db.session.query(Empleado).filter_by(Username=username).first()
-    if existente:
+    # Validar username único
+    if db.session.query(Empleado).filter_by(Username=username).first():
         flash(f'El username "{username}" ya está en uso.', "danger")
         return redirect(url_for("ver_permisos_empleado", modulo="asignacion_empleados"))
 
+    # Validar email único (si se proporcionó)
+    if email and db.session.query(Empleado).filter_by(Email=email).first():
+        flash(f'El correo "{email}" ya está registrado en otro empleado.', "danger")
+        return redirect(url_for("ver_permisos_empleado", modulo="asignacion_empleados"))
+
     from flask_bcrypt import Bcrypt
+    from sqlalchemy.exc import IntegrityError
     bcrypt = Bcrypt(app)
     hashed = bcrypt.generate_password_hash(password).decode("utf-8")
 
@@ -296,6 +302,18 @@ def crear_empleado_nuevo():
         estado=1
     )
     db.session.add(nuevo)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError as e:
+        db.session.rollback()
+        msg = str(e.orig) if hasattr(e, "orig") else str(e)
+        if "IX_Empleado_Email" in msg or "Email" in msg:
+            flash(f'El correo "{email}" ya está registrado en otro empleado.', "danger")
+        elif "Username" in msg or "IX_Empleado" in msg:
+            flash(f'El username "{username}" ya está en uso.', "danger")
+        else:
+            flash("No se pudo crear el empleado: dato duplicado o inválido.", "danger")
+        return redirect(url_for("ver_permisos_empleado", modulo="asignacion_empleados"))
+
     flash(f'Empleado "{nombre} {apellido}" creado correctamente.', "success")
     return redirect(url_for("ver_permisos_empleado", modulo="asignacion_empleados"))
