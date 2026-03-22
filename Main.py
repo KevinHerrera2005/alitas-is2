@@ -547,24 +547,6 @@ def bootstrap_app(flask_app):
         )
     )
     admin.add_view(
-        InsumoPrecioHistoricoAdmin(
-            InsumoPrecioHistorico,
-            db.session,
-            category="Auditoría de Precios",
-            name="Histórico de Insumos",
-            endpoint="insumo_precio_historico",
-        )
-    )
-    admin.add_view(
-        RecetaPrecioHistoricoAdmin(
-            RecetaPrecioHistorico,
-            db.session,
-            category="Auditoría de Precios",
-            name="Histórico de Recetas",
-            endpoint="receta_precio_historico",
-        )
-    )
-    admin.add_view(
         RecetaAdmin(
             Receta, db.session, category="Recetas", name="Recetas", endpoint="recetas"
         )
