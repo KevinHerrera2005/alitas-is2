@@ -188,7 +188,8 @@
   {% endfor %}
 </div>
 
-<!-- Subnavbar propio de recetas -->
+<!-- Subnavbar propio de recetas (solo si hay acciones disponibles) -->
+{% if permisos.crear or permisos.exportar_pdf or permisos.exportar_excel %}
 <div class="recetas-nav">
     {% if permisos.crear %}
     <a href="{{ url_for('crear_receta') }}">+ Crear Nueva Receta</a>
@@ -202,6 +203,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 <div class="contenedor">
     {% for categoria, items in categorias.items() %}
