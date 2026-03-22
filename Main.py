@@ -439,7 +439,8 @@ def bootstrap_app(flask_app):
         flask_app,
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
-        template_mode="bootstrap4"
+        template_mode="bootstrap4",
+        url='/panel'
     )
     admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas_admin"))
     admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))

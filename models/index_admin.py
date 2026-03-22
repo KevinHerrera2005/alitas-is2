@@ -13,7 +13,7 @@ def _solo_staff():
     return verificar_tipo("gerente", "empleado")
 
 
-@index_admin_bp.route("/index_admin")
+@index_admin_bp.route("/index")
 def index():
     from flask import redirect, url_for as _url_for
     from models.permisos_mixin import es_admin_panel, pantallas_del_empleado_actual
@@ -54,7 +54,7 @@ def index():
             'encargado compras insumos':       'bienvenido_enc.png',
             'repartidor':                      'bienvenido_repartidor.png',
             'consultor':                       'bienvenida_consultor.png',
-            'gerente':                         'bienvenido_ger.png',
+            'gerente':                         'bienvenida_gerente.png',
             'admin roles':                     'bienvenido_administrador.png',
         }
         imagen_puesto = _IMAGENES_PUESTO.get(nombre_puesto.lower().strip(), 'logo_bienvenido.png')
