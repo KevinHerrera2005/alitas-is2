@@ -44,38 +44,61 @@
     }
     .btn-logout-top:hover { background: rgba(0,0,0,0.45); color: #fff; text-decoration: none; }
 
-    .section-title {
-      font-weight: 700;
-      font-size: 0.82rem;
-      color: #777;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      margin: 32px 0 12px;
-      border-left: 4px solid #c30d0d;
-      padding-left: 10px;
-    }
-
-    .mod-card {
-      background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
-      padding: 20px 18px;
-      text-decoration: none;
-      color: #111;
+    /* ── Vista bienvenida ── */
+    .bienvenida-wrap {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      transition: .18s;
-      height: 100%;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
     }
-    .mod-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(0,0,0,.13);
-      color: #c30d0d;
+    .bienvenida-img {
+      max-width: 320px;
+      width: 100%;
+      margin-bottom: 24px;
     }
-    .mod-card .icon { font-size: 1.7rem; line-height: 1; }
-    .mod-card .title { font-weight: 700; font-size: 0.97rem; margin-top: 4px; }
-    .mod-card .desc { font-size: .8rem; color: #888; line-height: 1.35; }
+    .bienvenida-titulo {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    .bienvenida-sub {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 28px;
+      max-width: 420px;
+    }
+    /* ── Navbar pantallas ── */
+    .emp-nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 24px;
+      background: #1c2740;
+      border-bottom: 2px solid #2a4070;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .emp-nav-link {
+      color: #a0b8d8;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .emp-nav-link:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      text-decoration: none;
+    }
 
     .footer {
       background: #c30d0d;
@@ -107,6 +130,33 @@
   </div>
 </div>
 
+{# ── Navbar con los botones de pantalla ── #}
+{% if pantallas_nav %}
+<div class="emp-nav-bar">
+  {% for p in pantallas_nav %}
+    <a href="{{ p.url }}" class="emp-nav-link">{{ p.nombre }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Bienvenida (imagen + descripción) ── #}
+<div class="bienvenida-wrap">
+  <img src="{{ url_for('static', filename='img/' ~ imagen_puesto) }}"
+       alt="Bienvenida {{ nombre_puesto }}"
+       class="bienvenida-img">
+  <div class="bienvenida-titulo">¡Bienvenido, {{ nombre_usuario }}!</div>
+  <p class="bienvenida-sub">
+    Estás ingresando como <strong>{{ nombre_puesto }}</strong>.
+    Selecciona una pantalla del menú superior para comenzar.
+  </p>
+  {% if not pantallas_nav %}
+  <p style="color:#999;font-size:0.9rem;">No tienes pantallas asignadas. Contacta al administrador.</p>
+  {% endif %}
+</div>
+
+{# bloque de tarjetas eliminado — el botón redirige directo al navbar Flask-Admin #}
+{# INICIO bloque eliminado #}
+{% if false %}
 <div class="container py-4">
 
   {# ── SISTEMA (solo admin/gerente) ── #}
@@ -465,6 +515,7 @@
   {% endif %}
 
 </div>
+{% endif %}{# fin bloque eliminado #}
 
 <div class="footer">
   <span>© 2025 Alitas El Comelón</span>
