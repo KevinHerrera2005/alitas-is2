@@ -16,8 +16,8 @@ class CAIHistoricoAdmin(ModelView):
     can_edit = False
     can_delete = False
     can_view_details = True
-    puede_exportar_pdf   = False
-    puede_exportar_excel = False
+    puede_exportar_pdf   = True
+    puede_exportar_excel = True
 
     def is_accessible(self):
         from models.permisos_mixin import endpoint_accesible
