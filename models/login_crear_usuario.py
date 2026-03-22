@@ -158,7 +158,7 @@ def login():
             login_user(user)
             session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
-            return redirect(url_for("panel_gerente.panel"))
+            return redirect(url_for("index_admin_bp.index"))
 
         empleado = Empleado.query.filter_by(Username=username).first()
         _pwd_emp = empleado.Password if empleado else None
@@ -178,59 +178,7 @@ def login():
             session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
 
-            _q_base = (
-                db.session.query(Pantallas.url)
-                .select_from(PermisosPuesto)
-                .join(
-                    PantallasAcciones,
-                    PantallasAcciones.ID_Pantalla_Accion == PermisosPuesto.ID_Pantalla_Accion
-                )
-                .join(
-                    Pantallas,
-                    Pantallas.ID_Pantalla == PantallasAcciones.ID_Pantalla
-                )
-                .filter(
-                    PermisosPuesto.ID_Puesto == empleado.ID_Puesto,
-                    PermisosPuesto.estado == 1,
-                    PantallasAcciones.estado == 1,
-                    Pantallas.estado == 1
-                )
-            )
-            # 1) Buscar el panel en PermisosPuesto
-            permiso = _q_base.filter(Pantallas.url.ilike('%panel%')).first()
-
-            # 2) Si no está en PermisosPuesto, buscarlo directamente en Pantallas
-            #    usando palabras del nombre del puesto (ej. "Jefe de Cocina" → busca "jefe" o "cocina")
-            if not permiso:
-                puesto_row = db.session.query(Puesto.Nombre_Puesto).filter(
-                    Puesto.ID_Puesto == empleado.ID_Puesto
-                ).first()
-                if puesto_row:
-                    palabras = [p for p in puesto_row.Nombre_Puesto.lower().split() if len(p) > 3]
-                    for palabra in palabras:
-                        permiso = db.session.query(Pantallas.url).filter(
-                            Pantallas.url.ilike('%panel%'),
-                            Pantallas.Nombre.ilike(f'%{palabra}%'),
-                            Pantallas.estado == 1
-                        ).first()
-                        if permiso:
-                            break
-
-            # 3) Fallback: cualquier pantalla del puesto disponible
-            if not permiso:
-                permiso = _q_base.first()
-
-            if not permiso:
-                flash("No hay una pantalla activa asignada para este puesto.", "warning")
-                return redirect(url_for("pagina_principal_bp.menu"))
-
-            endpoint = (permiso.url or "").strip().strip('"')
-
-            if not endpoint:
-                flash("La pantalla asignada no tiene una URL válida.", "danger")
-                return redirect(url_for("pagina_principal_bp.menu"))
-
-            return redirect(url_for(endpoint))
+            return redirect(url_for("index_admin_bp.index"))
 
         usuario = ClienteModel.query.filter_by(Username=username).first()
         if usuario and bcrypt.check_password_hash(usuario.password, password):

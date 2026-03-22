@@ -480,6 +480,7 @@ def bootstrap_app(flask_app):
     from models.panel_gerente import panel_gerente
     from models.panel_contador import panel_contador
     from models.panel_gerente_empleado import panel_gerente_emp
+    from models.index_admin import index_admin_bp
 
     flask_app.register_blueprint(mis_pedidos_bp)
     flask_app.register_blueprint(cancelar_bp)
@@ -495,6 +496,7 @@ def bootstrap_app(flask_app):
     flask_app.register_blueprint(panel_repartidor)
     flask_app.register_blueprint(panel_encargado)
     flask_app.register_blueprint(panel_gerente_emp)
+    flask_app.register_blueprint(index_admin_bp)
     flask_app.register_blueprint(password_reset_bp)
 
     from reports.routes import reports_bp
