@@ -139,6 +139,9 @@ def tiene_accion_en_pantalla(pantalla_url: str, nombre_accion: str) -> bool:
     """
     if not current_user.is_authenticated:
         return False
+    # Admins y gerentes tienen acceso total a todas las acciones
+    if es_admin_panel():
+        return True
     id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
     if not id_puesto:
         return False

@@ -52,10 +52,16 @@
         /* ── Subnavbar recetas ── */
         .recetas-nav {
             display: flex; align-items: center; gap: 16px;
-            background: #e60000; padding: 10px 24px;
+            background: transparent; padding: 10px 24px;
         }
-        .recetas-nav a { color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
-        .recetas-nav a:hover { opacity: 0.8; text-decoration: none; color: #fff; }
+        .recetas-nav .btn-crear-receta {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #c30d0d; color: #fff;
+            border: none; border-radius: 6px;
+            padding: 7px 18px; font-size: 13px; font-weight: 700;
+            text-decoration: none; transition: background 0.18s;
+        }
+        .recetas-nav .btn-crear-receta:hover { background: #a00909; color: #fff; text-decoration: none; }
         /* ── Footer ── */
         footer {
             background: #c30d0d; text-align: center;
@@ -192,7 +198,7 @@
 {% if permisos.crear or permisos.exportar_pdf or permisos.exportar_excel %}
 <div class="recetas-nav">
     {% if permisos.crear %}
-    <a href="{{ url_for('crear_receta') }}">+ Crear Nueva Receta</a>
+    <a href="{{ url_for('crear_receta') }}" class="btn-crear-receta">+ Crear Nueva Receta</a>
     {% endif %}
     <div style="margin-left:auto;display:flex;gap:10px;">
         {% if permisos.exportar_pdf %}
