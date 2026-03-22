@@ -225,6 +225,7 @@ def _build_user_from_prefix(pref, real_id):
             tipo="gerente",
             db_id=getattr(g, "ID_gerente", real_id),
             nombre=getattr(g, "Username", None),
+            id_puesto=getattr(g, "ID_Puesto", None),
             id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
         )
 
@@ -478,6 +479,7 @@ def bootstrap_app(flask_app):
     from models.login_jefe_de_cocina import bp_login_jefe
     from models.panel_gerente import panel_gerente
     from models.panel_contador import panel_contador
+    from models.panel_gerente_empleado import panel_gerente_emp
 
     flask_app.register_blueprint(mis_pedidos_bp)
     flask_app.register_blueprint(cancelar_bp)
@@ -492,6 +494,7 @@ def bootstrap_app(flask_app):
     flask_app.register_blueprint(usuario_cliente_bp)
     flask_app.register_blueprint(panel_repartidor)
     flask_app.register_blueprint(panel_encargado)
+    flask_app.register_blueprint(panel_gerente_emp)
     flask_app.register_blueprint(password_reset_bp)
 
     from reports.routes import reports_bp

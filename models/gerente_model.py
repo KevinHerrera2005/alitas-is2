@@ -14,6 +14,11 @@ class Gerente(db.Model, UserMixin):
         nullable=False
     )
 
+    ID_Puesto = db.Column(
+        db.Integer,
+        db.ForeignKey('Puesto.ID_Puesto'),
+        nullable=True
+    )
 
     def get_id(self):
         return str(self.ID_gerente)

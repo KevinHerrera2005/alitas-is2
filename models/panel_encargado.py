@@ -38,6 +38,12 @@ panel_encargado = Blueprint("panel_encargado", __name__)
 
 
 @panel_encargado.before_request
+def _solo_empleado():
+    from models.permisos_mixin import verificar_tipo
+    return verificar_tipo("empleado")
+
+
+@panel_encargado.before_request
 def _panel_encargado_log_request():
     fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
     try:

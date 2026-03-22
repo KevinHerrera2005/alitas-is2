@@ -23,30 +23,30 @@ def pantallas_del_empleado_actual():
     if not hasattr(g, "_pantallas_empleado_cache"):
         if not current_user.is_authenticated:
             g._pantallas_empleado_cache = set()
-        elif getattr(current_user, "tipo", None) != "empleado":
-            g._pantallas_empleado_cache = None   # acceso total
         else:
-            try:
-                from models.Pantallas_model import Pantallas
-
-                id_puesto = current_user.id_puesto
-
-                filas = (
-                    db.session.query(Pantallas.url)
-                    .join(PantallasAcciones, PantallasAcciones.ID_Pantalla == Pantallas.ID_Pantalla)
-                    .join(PermisosPuesto, PermisosPuesto.ID_Pantalla_Accion == PantallasAcciones.ID_Pantalla_Accion)
-                    .filter(
-                        PermisosPuesto.ID_Puesto == id_puesto,
-                        PermisosPuesto.estado == 1,
-                        Pantallas.estado == 1,
-                        PantallasAcciones.estado == 1,
-                    )
-                    .distinct()
-                    .all()
-                )
-                g._pantallas_empleado_cache = {r[0] for r in filas}
-            except Exception:
+            id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
+            if not id_puesto:
                 g._pantallas_empleado_cache = set()
+            else:
+                try:
+                    from models.Pantallas_model import Pantallas
+
+                    filas = (
+                        db.session.query(Pantallas.url)
+                        .join(PantallasAcciones, PantallasAcciones.ID_Pantalla == Pantallas.ID_Pantalla)
+                        .join(PermisosPuesto, PermisosPuesto.ID_Pantalla_Accion == PantallasAcciones.ID_Pantalla_Accion)
+                        .filter(
+                            PermisosPuesto.ID_Puesto == int(id_puesto),
+                            PermisosPuesto.estado == 1,
+                            Pantallas.estado == 1,
+                            PantallasAcciones.estado == 1,
+                        )
+                        .distinct()
+                        .all()
+                    )
+                    g._pantallas_empleado_cache = {r[0] for r in filas}
+                except Exception:
+                    g._pantallas_empleado_cache = set()
 
     return g._pantallas_empleado_cache
 
@@ -54,13 +54,11 @@ def pantallas_del_empleado_actual():
 def endpoint_accesible(endpoint: str) -> bool:
     """
     Verifica si el endpoint/url de pantalla está permitido para el usuario actual.
-    Los gerentes (u otros tipos) siempre tienen acceso total.
+    Todos los usuarios (incluido gerente) pasan por PermisosPuesto.
     """
     if not current_user.is_authenticated:
         return False
     pantallas = pantallas_del_empleado_actual()
-    if pantallas is None:
-        return True   # gerente u otro tipo → acceso total
     return endpoint in pantallas
 
 
@@ -96,9 +94,6 @@ def tiene_accion_en_pantalla(pantalla_url: str, nombre_accion: str) -> bool:
     """
     if not current_user.is_authenticated:
         return False
-    # Gerentes y no-empleados tienen acceso total a todas las acciones
-    if getattr(current_user, "tipo", None) != "empleado":
-        return True
     id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
     if not id_puesto:
         return False
@@ -119,9 +114,6 @@ def tiene_accion_empleado(nombre_accion: str) -> bool:
     """
     if not current_user.is_authenticated:
         return False
-    # Gerentes y no-empleados tienen acceso total
-    if getattr(current_user, "tipo", None) != "empleado":
-        return True
     id_puesto = getattr(current_user, "id_puesto", None) or getattr(current_user, "ID_Puesto", None)
     if not id_puesto:
         return False
@@ -167,13 +159,11 @@ class PermisosAdminMixin:
 
     def _tiene_permiso(self, accion):
         """Si la acción no está configurada, se permite por defecto. Verifica por pantalla.
-        Los gerentes y no-empleados siempre tienen acceso total."""
+        Todos los usuarios pasan por PermisosPuesto según su id_puesto."""
         if not accion:
             return True
         if not current_user.is_authenticated:
             return False
-        if getattr(current_user, "tipo", None) != "empleado":
-            return True  # Gerentes tienen acceso total a todos los botones
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return tiene_accion_en_pantalla(pantalla_url, accion)
 
@@ -210,9 +200,7 @@ class PermisosAdminMixin:
         if not current_user.is_authenticated:
             return False
         tipo = getattr(current_user, "tipo", None)
-        if tipo == "gerente":
-            return True  # El gerente tiene acceso total a todas las vistas
-        if tipo != "empleado":
+        if tipo not in ("empleado", "gerente"):
             return False
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return endpoint_accesible(pantalla_url)
@@ -223,3 +211,18 @@ class PermisosAdminMixin:
 
     def is_visible(self):
         return self.is_accessible()
+
+
+def verificar_tipo(*tipos_permitidos):
+    """
+    Verifica que el usuario autenticado sea de uno de los tipos indicados.
+    Retorna un redirect con mensaje si no tiene acceso, o None si sí tiene.
+    Usar en before_request de blueprints.
+    """
+    if not current_user.is_authenticated:
+        flash("Debes iniciar sesión para continuar.", "warning")
+        return redirect(url_for("login"))
+    if getattr(current_user, "tipo", None) not in tipos_permitidos:
+        flash("No tienes permisos para acceder a esta página.", "danger")
+        return redirect(url_for("login"))
+    return None

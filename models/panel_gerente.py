@@ -9,6 +9,12 @@ from flask_login import current_user
 panel_gerente = Blueprint("panel_gerente", __name__, url_prefix="/gerente")
 
 
+@panel_gerente.before_request
+def _solo_gerente():
+    from models.permisos_mixin import verificar_tipo
+    return verificar_tipo("gerente")
+
+
 # Este botón sirve para entrar a la raíz del panel gerente.
 @panel_gerente.route("/")
 def root():

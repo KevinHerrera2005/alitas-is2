@@ -6,6 +6,13 @@ import traceback
 
 panel_contador = Blueprint("panel_contador", __name__)
 
+
+@panel_contador.before_request
+def _solo_empleado():
+    from models.permisos_mixin import verificar_tipo
+    return verificar_tipo("empleado")
+
+
 @panel_contador.route("/panel_contador")
 @login_required
 def panel():

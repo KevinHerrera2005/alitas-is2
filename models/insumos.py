@@ -5,6 +5,13 @@ from sqlalchemy import text
 
 bp_insumos = Blueprint('insumos', __name__, url_prefix='/insumos')
 
+
+@bp_insumos.before_request
+def _solo_empleado():
+    from models.permisos_mixin import verificar_tipo
+    return verificar_tipo("empleado")
+
+
 @bp_insumos.route('/', methods=['GET'])
 def listar_insumos():
 

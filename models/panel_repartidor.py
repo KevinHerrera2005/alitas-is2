@@ -8,6 +8,12 @@ from mensajes_logs import logger_
 panel_repartidor = Blueprint("panel_repartidor", __name__)
 
 
+@panel_repartidor.before_request
+def _solo_empleado():
+    from models.permisos_mixin import verificar_tipo
+    return verificar_tipo("empleado")
+
+
 @panel_repartidor.route("/panel_repartidor")
 def panel():
     try:

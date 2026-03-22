@@ -152,6 +152,7 @@ def login():
                 tipo="gerente",
                 db_id=g.ID_gerente,
                 nombre=g.Username,
+                id_puesto=getattr(g, "ID_Puesto", None),
                 id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
             )
             login_user(user)
