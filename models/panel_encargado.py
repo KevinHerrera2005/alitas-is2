@@ -615,39 +615,10 @@ def encargar_insumos():
             else []
         )
 
-        # Construir navbar compartido
-        from models.permisos_mixin import pantallas_del_empleado_actual
-        _permisos = pantallas_del_empleado_actual() or set()
-        _EXCLUIR_NAV = {
-            'acciones.index_view', 'impuesto_tasa_historica.index_view',
-            'carrito.index_view', 'usuarios_cliente.index_view',
-            'empleado_documento.index_view', 'pantallas.index_view',
-        }
-        _NOMBRES_CUSTOM = {
-            'panel_encargado.encargar_insumos': 'Encargar Insumos',
-            'crud_recetas': 'Recetas',
-        }
-        pantallas_nav = []
-        _urls_vistas = set()
-        try:
-            _admin_obj = current_app.extensions.get('admin')
-            _admin_inst = (_admin_obj[0] if isinstance(_admin_obj, list) else _admin_obj)
-            for _v in _admin_inst._views:
-                if not _v.endpoint or _v.endpoint == 'admin':
-                    continue
-                ep = _v.endpoint + '.index_view'
-                if ep in _permisos and ep not in _EXCLUIR_NAV:
-                    pantallas_nav.append({'nombre': _v.name, 'url': url_for(ep)})
-                    _urls_vistas.add(ep)
-        except Exception:
-            pass
-        for ep in sorted(_permisos):
-            if ep in _EXCLUIR_NAV or ep in _urls_vistas:
-                continue
-            try:
-                pantallas_nav.append({'nombre': _NOMBRES_CUSTOM.get(ep, ep.replace('_', ' ').replace('.', ' ').title()), 'url': url_for(ep)})
-            except Exception:
-                pass
+        # Navbar compartido: pasar las vistas del admin al template
+        _admin_obj = current_app.extensions.get('admin')
+        _admin_inst = (_admin_obj[0] if isinstance(_admin_obj, list) else _admin_obj)
+        admin_views = list(_admin_inst._views) if _admin_inst else []
 
         return render_template(
             "encargar_insumos.html",
@@ -655,7 +626,7 @@ def encargar_insumos():
             sucursales=sucursales_ui,
             sucursal_defecto_id=sucursal_id,
             todos=modo_todos,
-            pantallas_nav=pantallas_nav,
+            admin_views=admin_views,
         )
 
     except Exception as error:

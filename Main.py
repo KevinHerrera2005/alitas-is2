@@ -8,7 +8,10 @@ if BASE_DIR not in sys.path:
 
 print("BASE_DIR:", BASE_DIR)
 print("EXISTE credenciales:", os.path.isdir(os.path.join(BASE_DIR, "credenciales")))
-print("EXISTE base_de_datos.py:", os.path.isfile(os.path.join(BASE_DIR, "credenciales", "base_de_datos.py")))
+print(
+    "EXISTE base_de_datos.py:",
+    os.path.isfile(os.path.join(BASE_DIR, "credenciales", "base_de_datos.py")),
+)
 
 from credenciales.base_de_datos import obtener_connection_string, obtener_db_name
 
@@ -81,6 +84,7 @@ def _set_database_in_conn_str(conn_str, db_name):
 
 def _db_exists(master_conn_str, db_name):
     import pyodbc
+
     conn = pyodbc.connect(master_conn_str, autocommit=True)
     try:
         cur = conn.cursor()
@@ -123,6 +127,7 @@ def ejecutar_init_sql_si_aplica(odbc_conn_str, init_sql_path, db_name):
 
     print("[INIT] init.sql ejecutado.")
 
+
 DB_NAME = obtener_db_name()
 connection_string = obtener_connection_string()
 
@@ -131,20 +136,29 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "clave_super_segura")
 app.config["BABEL_DEFAULT_LOCALE"] = "es"
 babel = Babel(app)
 import pytz
+
 app.config["COMPANY_NAME"] = os.getenv("COMPANY_NAME", "Alitas El Comelon")
-app.config["COMPANY_LOGO_PATH"] = _resource_path(os.getenv("COMPANY_LOGO_RELATIVE", os.path.join("static", "img", "logo.png")))
-app.config["REPORTS_TIMEZONE"] = pytz.timezone(os.getenv("REPORTS_TZ", "America/Tegucigalpa"))
+app.config["COMPANY_LOGO_PATH"] = _resource_path(
+    os.getenv("COMPANY_LOGO_RELATIVE", os.path.join("static", "img", "logo.png"))
+)
+app.config["REPORTS_TIMEZONE"] = pytz.timezone(
+    os.getenv("REPORTS_TZ", "America/Tegucigalpa")
+)
 
 app.config["GMAIL_USER"] = os.getenv("GMAIL_USER", "alitaselcomelon@gmail.com")
 app.config["GMAIL_PASSWORD"] = os.getenv("GMAIL_PASSWORD", "hhbggiqfxnqzpmzo")
 
-app.config["SQLALCHEMY_DATABASE_URI"] = f"mssql+pyodbc:///?odbc_connect={quote_plus(connection_string)}"
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    f"mssql+pyodbc:///?odbc_connect={quote_plus(connection_string)}"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
 from models import load_models
+
 load_models()
+
 
 # ── Helpers de permisos disponibles en TODOS los templates ─────────────────
 @app.context_processor
@@ -163,9 +177,12 @@ def _inyectar_helpers_permisos():
     """
     try:
         from models.permisos_mixin import (
-            tiene_accion_en_pantalla, tiene_accion_empleado,
-            endpoint_accesible, endpoints_en_db,
+            tiene_accion_en_pantalla,
+            tiene_accion_empleado,
+            endpoint_accesible,
+            endpoints_en_db,
         )
+
         _db_set = endpoints_en_db()
         return dict(
             tiene_accion=tiene_accion_en_pantalla,
@@ -180,6 +197,8 @@ def _inyectar_helpers_permisos():
             endpoint_accesible=lambda *a, **k: True,
             endpoint_en_db=lambda *a, **k: True,
         )
+
+
 # ───────────────────────────────────────────────────────────────────────────
 
 login_manager = LoginManager()
@@ -232,7 +251,8 @@ def _build_user_from_prefix(pref, real_id):
             db_id=getattr(g, "ID_gerente", real_id),
             nombre=getattr(g, "Username", None),
             id_puesto=getattr(g, "ID_Puesto", None),
-            id_sucursal=getattr(g, "ID_sucursal", None) or getattr(g, "id_sucursal", None),
+            id_sucursal=getattr(g, "ID_sucursal", None)
+            or getattr(g, "id_sucursal", None),
         )
 
     if pref == "E":
@@ -244,7 +264,8 @@ def _build_user_from_prefix(pref, real_id):
             db_id=getattr(e, "ID_Empleado", real_id),
             nombre=getattr(e, "Nombre", None),
             id_puesto=getattr(e, "ID_Puesto", None),
-            id_sucursal=getattr(e, "ID_sucursal", None) or getattr(e, "id_sucursal", None),
+            id_sucursal=getattr(e, "ID_sucursal", None)
+            or getattr(e, "id_sucursal", None),
         )
 
     if pref == "C":
@@ -255,7 +276,8 @@ def _build_user_from_prefix(pref, real_id):
             tipo="cliente",
             db_id=getattr(c, "ID_Usuario_ClienteF", real_id),
             nombre=getattr(c, "nombre", None) or getattr(c, "Username", None),
-            id_sucursal=getattr(c, "ID_sucursal", None) or getattr(c, "id_sucursal", None),
+            id_sucursal=getattr(c, "ID_sucursal", None)
+            or getattr(c, "id_sucursal", None),
         )
 
     return None
@@ -301,17 +323,23 @@ def load_user_from_request(req):
 
     return None
 
+
 import time
 
 _CONFIRM_CODES = {}
+
 
 def registrar_codigo_confirmacion(destino, codigo, ttl_seconds=600):
     destino = (destino or "").strip().lower()
     codigo = (codigo or "").strip()
     if not destino or not codigo:
         return False
-    _CONFIRM_CODES[destino] = {"codigo": codigo, "expira": time.time() + int(ttl_seconds)}
+    _CONFIRM_CODES[destino] = {
+        "codigo": codigo,
+        "expira": time.time() + int(ttl_seconds),
+    }
     return True
+
 
 def validar_codigo_confirmacion(destino, codigo):
     destino = (destino or "").strip().lower()
@@ -333,12 +361,15 @@ def validar_codigo_confirmacion(destino, codigo):
     _CONFIRM_CODES.pop(destino, None)
     return True
 
+
 def enviar_y_registrar_codigo_confirmacion(destino, codigo, ttl_seconds=600):
     ok, err = enviar_codigo_confirmacion(destino, codigo)
     if not ok:
         return False, err
     registrar_codigo_confirmacion(destino, codigo, ttl_seconds=ttl_seconds)
     return True, None
+
+
 def enviar_codigo_confirmacion(destino, codigo):
     remitente = (app.config.get("GMAIL_USER") or "").strip()
     clave = (app.config.get("GMAIL_PASSWORD") or "").strip()
@@ -359,7 +390,9 @@ def enviar_codigo_confirmacion(destino, codigo):
 
     try:
         contexto = ssl.create_default_context()
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=contexto, timeout=20) as servidor:
+        with smtplib.SMTP_SSL(
+            "smtp.gmail.com", 465, context=contexto, timeout=20
+        ) as servidor:
             servidor.login(remitente, clave)
             servidor.sendmail(remitente, [destino], mensaje.as_string())
         return True, None
@@ -407,7 +440,10 @@ def bootstrap_app(flask_app):
     from models.empleado_documento_model import EmpleadoDocumento
     from models.parametro_sar_model import ParametroSAR
     from models.orden_entrega_model import OrdenEntrega
-    from models.ordenes_proveedores_model import OrdenesProveedores, OrdenesProveedoresDetalle
+    from models.ordenes_proveedores_model import (
+        OrdenesProveedores,
+        OrdenesProveedoresDetalle,
+    )
     from models.historial_ordenes_repartidor_model import HistorialOrdenesRepartidor
 
     from models.admin_unidades_medida_view import UnidadesMedidaAdmin
@@ -431,58 +467,239 @@ def bootstrap_app(flask_app):
     from models.admin_empleado_documento_view import EmpleadoDocumentoAdmin
     from models.admin_parametro_sar_view import ParametroSARAdmin
     from models.admin_orden_entrega_view import OrdenEntregaAdmin
-    from models.admin_ordenes_proveedores_view import OrdenesProveedoresAdmin, OrdenesProveedoresDetalleAdmin
-    from models.historial_ordenes_repartidor_admin import HistorialOrdenesRepartidorAdmin
-    from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
-    from models.admin_historial_ordenes_proveedores_view import HistorialOrdenesProveedoresAdmin
+    from models.admin_ordenes_proveedores_view import (
+        OrdenesProveedoresAdmin,
+        OrdenesProveedoresDetalleAdmin,
+    )
+    from models.historial_ordenes_repartidor_admin import (
+        HistorialOrdenesRepartidorAdmin,
+    )
+    from models.admin_historial_ordenes_proveedores_view import (
+        HistorialOrdenesProveedoresAdmin,
+    )
+    from models.admin_historial_ordenes_proveedores_view import (
+        HistorialOrdenesProveedoresAdmin,
+    )
+
     admin = Admin(
         flask_app,
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
         template_mode="bootstrap4",
-        url='/empleado'
+        url="/empleado",
     )
-    admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas"))
-    admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))
-    admin.add_view(CategoriaAdmin(CategoriaInsumo, db.session, category="Inventario", name="Categorías"))
-    admin.add_view(UnidadesMedidaAdmin(Unidades_medida, db.session, category="Inventario", name="Unidades de Medida", endpoint="unidades_medida"))
-    admin.add_view(EmpleadoAdmin(Empleado, db.session, category="Personal", name="Empleados", endpoint="empleados"))
-    admin.add_view(PuestoAdmin(Puesto, db.session, category="Personal", name="Puestos", endpoint="puestos"))
-    admin.add_view(CategoriaRecetaAdmin(Categoria_recetas, db.session, category="Recetas", name="Categoría de las Recetas", endpoint="categoria_recetas"))
-    admin.add_view(SucursalAdmin(Sucursal, db.session, category="Gerencia", name="Sucursales", endpoint="sucursales"))
-    admin.add_view(InsumoPrecioHistoricoAdmin(InsumoPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Insumos", endpoint="insumo_precio_historico"))
-    admin.add_view(RecetaPrecioHistoricoAdmin(RecetaPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Recetas", endpoint="receta_precio_historico"))
-    admin.add_view(RecetaAdmin(Receta, db.session, category="Recetas", name="Recetas", endpoint="recetas"))
-    admin.add_view(ProveedorAdmin(Proveedor, db.session, category="Gerencia", name="Proveedores", endpoint="proveedores"))
-    admin.add_view(ImpuestoAdmin(Impuesto, db.session, category="Contabilidad", name="Impuestos", endpoint="impuestos"))
-    admin.add_view(ImpuestoTasaHistoricaAdmin(ImpuestoTasaHistorica, db.session, category="Contabilidad", name="Histórico tasas", endpoint="impuesto_tasa_historica"))
-    admin.add_view(CarritoAdmin(Carrito, db.session, category="Contabilidad", name="Carrito"))
-    admin.add_view(UsuarioClienteAdmin(UsuarioCliente, db.session, name="Usuarios", endpoint="usuarios_cliente", category="Gerencia"))
+    admin.add_view(
+        HistorialFacturasAdmin(
+            Factura,
+            db.session,
+            category="Contabilidad",
+            name="Facturas",
+            endpoint="historial_facturas",
+        )
+    )
+    admin.add_view(
+        InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos")
+    )
+    admin.add_view(
+        CategoriaAdmin(
+            CategoriaInsumo, db.session, category="Inventario", name="Categorías"
+        )
+    )
+    admin.add_view(
+        UnidadesMedidaAdmin(
+            Unidades_medida,
+            db.session,
+            category="Inventario",
+            name="Unidades de Medida",
+            endpoint="unidades_medida",
+        )
+    )
+    admin.add_view(
+        EmpleadoAdmin(
+            Empleado,
+            db.session,
+            category="Personal",
+            name="Empleados",
+            endpoint="empleados",
+        )
+    )
+    admin.add_view(
+        PuestoAdmin(
+            Puesto, db.session, category="Personal", name="Puestos", endpoint="puestos"
+        )
+    )
+    admin.add_view(
+        CategoriaRecetaAdmin(
+            Categoria_recetas,
+            db.session,
+            category="Recetas",
+            name="Categoría de las Recetas",
+            endpoint="categoria_recetas",
+        )
+    )
+    admin.add_view(
+        SucursalAdmin(
+            Sucursal,
+            db.session,
+            category="Gerencia",
+            name="Sucursales",
+            endpoint="sucursales",
+        )
+    )
+    admin.add_view(
+        InsumoPrecioHistoricoAdmin(
+            InsumoPrecioHistorico,
+            db.session,
+            category="Auditoría de Precios",
+            name="Histórico de Insumos",
+            endpoint="insumo_precio_historico",
+        )
+    )
+    admin.add_view(
+        RecetaPrecioHistoricoAdmin(
+            RecetaPrecioHistorico,
+            db.session,
+            category="Auditoría de Precios",
+            name="Histórico de Recetas",
+            endpoint="receta_precio_historico",
+        )
+    )
+    admin.add_view(
+        RecetaAdmin(
+            Receta, db.session, category="Recetas", name="Recetas", endpoint="recetas"
+        )
+    )
+    admin.add_view(
+        ProveedorAdmin(
+            Proveedor,
+            db.session,
+            category="Gerencia",
+            name="Proveedores",
+            endpoint="proveedores",
+        )
+    )
+    admin.add_view(
+        ImpuestoAdmin(
+            Impuesto,
+            db.session,
+            category="Contabilidad",
+            name="Impuestos",
+            endpoint="impuestos",
+        )
+    )
+    admin.add_view(
+        CarritoAdmin(Carrito, db.session, category="Contabilidad", name="Carrito")
+    )
+    admin.add_view(
+        UsuarioClienteAdmin(
+            UsuarioCliente,
+            db.session,
+            name="Usuarios",
+            endpoint="usuarios_cliente",
+            category="Gerencia",
+        )
+    )
     admin.add_view(CAIAdmin(CAI, db.session, name="CAI", category="Contabilidad"))
-    admin.add_view(CAIHistoricoAdmin(CAIHistorico, db.session, name="CAI histórico", category="Contabilidad", endpoint="cai_historico"))
-    admin.add_view(TipoDocumentoAdmin(TipoDocumento, db.session, category="Personal", name="Tipos de documentos", endpoint="tipos_documento"))
-    admin.add_view(EmpleadoDocumentoAdmin(EmpleadoDocumento, db.session, category="Personal", name="Documentos de empleados", endpoint="empleado_documento"))
-    admin.add_view(ParametroSARAdmin(ParametroSAR, db.session, name="Parámetros SAR", endpoint="parametros_sar"))
-    admin.add_view(OrdenEntregaAdmin(OrdenEntrega, db.session, category="Reparto", name="Órdenes de entrega", endpoint="orden_entrega"))
-    admin.add_view(OrdenesProveedoresAdmin(OrdenesProveedores, db.session, category="Órdenes", name="Órdenes a proveedores", endpoint="ordenes_proveedores"))
-    admin.add_view(OrdenesProveedoresDetalleAdmin(OrdenesProveedoresDetalle, db.session, category="Órdenes", name="Detalle órdenes proveedores", endpoint="ordenes_proveedores_detalle"))
-    admin.add_view(HistorialOrdenesRepartidorAdmin(HistorialOrdenesRepartidor, db.session, name="Historial de órdenes", endpoint="historial_ordenes_repartidor", category=None))
-    admin.add_view(HistorialOrdenesProveedoresAdmin(OrdenesProveedores, db.session, name="Historial órdenes proveedores", endpoint="historial_ordenes_proveedores"))
-    admin.add_view(PantallasAdmin(Pantallas, db.session, category="Seguridad", name="Pantallas", endpoint="pantallas"))
-    admin.add_view(AccionesAdmin(Acciones, db.session, category="Seguridad", name="Acciones", endpoint="acciones"))
+    admin.add_view(
+        CAIHistoricoAdmin(
+            CAIHistorico,
+            db.session,
+            name="CAI histórico",
+            category="Contabilidad",
+            endpoint="cai_historico",
+        )
+    )
+    admin.add_view(
+        TipoDocumentoAdmin(
+            TipoDocumento,
+            db.session,
+            category="Personal",
+            name="Tipos de documentos",
+            endpoint="tipos_documento",
+        )
+    )
+    admin.add_view(
+        EmpleadoDocumentoAdmin(
+            EmpleadoDocumento,
+            db.session,
+            category="Personal",
+            name="Documentos de empleados",
+            endpoint="empleado_documento",
+        )
+    )
+    admin.add_view(
+        ParametroSARAdmin(
+            ParametroSAR, db.session, name="Parámetros SAR", endpoint="parametros_sar"
+        )
+    )
+    admin.add_view(
+        OrdenEntregaAdmin(
+            OrdenEntrega,
+            db.session,
+            category="Reparto",
+            name="Órdenes de entrega",
+            endpoint="orden_entrega",
+        )
+    )
+    admin.add_view(
+        OrdenesProveedoresAdmin(
+            OrdenesProveedores,
+            db.session,
+            category="Órdenes",
+            name="Órdenes a proveedores",
+            endpoint="ordenes_proveedores",
+        )
+    )
+    admin.add_view(
+        OrdenesProveedoresDetalleAdmin(
+            OrdenesProveedoresDetalle,
+            db.session,
+            category="Órdenes",
+            name="Detalle órdenes proveedores",
+            endpoint="ordenes_proveedores_detalle",
+        )
+    )
+    admin.add_view(
+        HistorialOrdenesRepartidorAdmin(
+            HistorialOrdenesRepartidor,
+            db.session,
+            name="Historial de órdenes",
+            endpoint="historial_ordenes_repartidor",
+            category=None,
+        )
+    )
+    admin.add_view(
+        HistorialOrdenesProveedoresAdmin(
+            OrdenesProveedores,
+            db.session,
+            name="Historial órdenes proveedores",
+            endpoint="historial_ordenes_proveedores",
+        )
+    )
+    admin.add_view(
+        AccionesAdmin(
+            Acciones,
+            db.session,
+            category="Seguridad",
+            name="Acciones",
+            endpoint="acciones",
+        )
+    )
 
     # Migración automática: actualiza Pantallas.url en la BD (quita sufijo _admin de endpoints)
     with flask_app.app_context():
         try:
             from sqlalchemy import text as _sql_text
+
             db.session.execute(
-                _sql_text("UPDATE Pantallas SET url = REPLACE(url, '_admin.index_view', '.index_view') WHERE url LIKE '%_admin.index_view%'")
+                _sql_text(
+                    "UPDATE Pantallas SET url = REPLACE(url, '_admin.index_view', '.index_view') WHERE url LIKE '%_admin.index_view%'"
+                )
             )
             db.session.commit()
         except Exception:
             db.session.rollback()
 
-    
     from models.panel_repartidor import panel_repartidor
     from models.panel_encargado import panel_encargado
     from models.usuario_cliente_routes import usuario_cliente_bp
@@ -512,7 +729,7 @@ def bootstrap_app(flask_app):
     flask_app.register_blueprint(panel_contador)
     flask_app.register_blueprint(usuario_cliente_bp)
     flask_app.register_blueprint(panel_repartidor)
-    flask_app.register_blueprint(panel_encargado)
+    flask_app.register_blueprint(panel_encargado, url_prefix='/empleado')
     flask_app.register_blueprint(panel_gerente_emp)
     flask_app.register_blueprint(index_admin_bp)
     flask_app.register_blueprint(password_reset_bp)
@@ -544,8 +761,12 @@ def bootstrap_app(flask_app):
     import models.admin_pantallas_acciones_view
     import models.admin_permisos_de_puestos
     import models.admin_permiso_de_los_empleados
+
     return admin
+
+
 #######
+
 
 @app.route("/")
 def index():
@@ -555,6 +776,7 @@ def index():
 @app.route("/sinconexion")
 def sinconexion():
     from flask import render_template
+
     return render_template("sinconexion.html")
 
 
@@ -564,6 +786,7 @@ def verificar_conexion_db():
     import pyodbc
     import traceback
     from mensajes_logs import logger_
+
     if request.path.startswith("/sinconexion") or request.path.startswith("/static/"):
         return None
     try:
@@ -571,11 +794,17 @@ def verificar_conexion_db():
         conn.close()
     except Exception as e:
         from datetime import datetime
+
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         pantalla = request.path.strip("/").replace("/", "_") or "inicio"
         boton = request.method.lower()
         nombre_log = f"sin_conexion_{pantalla}_{boton}"
-        logger_.Logger.add_to_log("error", f"Motor de base de datos apagado. Pantalla: {request.path} | Accion: {request.method} | Error: {str(e)}", nombre_log, fecha)
+        logger_.Logger.add_to_log(
+            "error",
+            f"Motor de base de datos apagado. Pantalla: {request.path} | Accion: {request.method} | Error: {str(e)}",
+            nombre_log,
+            fecha,
+        )
         logger_.Logger.add_to_log("error", traceback.format_exc(), nombre_log, fecha)
         return redirect(url_for("sinconexion"))
 
@@ -590,14 +819,16 @@ def handle_db_runtime_error(e):
     from flask import request as req
 
     from werkzeug.exceptions import HTTPException
+
     if isinstance(e, HTTPException):
         return e  # dejar que Flask maneje 404, 405, etc. normalmente
     if not isinstance(e, (OperationalError, InterfaceError)):
-        raise e          # re-lanzar para no ocultar otros errores
+        raise e  # re-lanzar para no ocultar otros errores
 
     try:
         from mensajes_logs import logger_
         from datetime import datetime
+
         fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
         pantalla = req.path.strip("/").replace("/", "_") or "inicio"
         boton = req.method.lower()
@@ -605,7 +836,8 @@ def handle_db_runtime_error(e):
         logger_.Logger.add_to_log(
             "error",
             f"BD caída durante query. Pantalla: {req.path} | Acción: {req.method} | Error: {str(e)}",
-            nombre_log, fecha
+            nombre_log,
+            fecha,
         )
         logger_.Logger.add_to_log("error", traceback.format_exc(), nombre_log, fecha)
     except Exception:

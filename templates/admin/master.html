@@ -120,12 +120,12 @@
 
     {# ── Endpoints excluidos del navbar ── #}
     {% set _nav_excluir = [
-      'impuesto_tasa_historica_admin.index_view',
+      'impuesto_tasa_historica.index_view',
       'carrito.index_view',
-      'usuarios_cliente_admin.index_view',
-      'empleado_documento_admin.index_view',
-      'pantallas_admin.index_view',
-      'acciones_admin.index_view',
+      'usuarios_cliente.index_view',
+      'empleado_documento.index_view',
+      'pantallas.index_view',
+      'acciones.index_view',
     ] %}
 
     {# ── Barra de navegación: muestra solo las pantallas configuradas para el puesto ── #}
@@ -141,6 +141,7 @@
 
     {# Rutas personalizadas a mostrar en navbar (endpoint, nombre_display) #}
     {% set _custom_routes = [
+      ('crud_recetas', 'Recetas'),
       ('panel_encargado.encargar_insumos', 'Encargar Insumos'),
     ] %}
     {% set _custom_count = namespace(n=0) %}

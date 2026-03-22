@@ -20,7 +20,7 @@ from models.permisos_mixin import endpoint_accesible
 def crear_receta_routes(app):
     registrar_lookup_tipos_receta(app)
 
-    @app.route("/crear_receta", methods=["GET", "POST"])
+    @app.route("/empleado/crear_receta", methods=["GET", "POST"])
     def crear_receta():
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             flash("No tienes acceso a esta pantalla.", "danger")
@@ -322,7 +322,7 @@ def crear_receta_routes(app):
 def editar_receta_routes(app):
     registrar_lookup_tipos_receta(app)
 
-    @app.route("/editar_receta/<int:id_receta>", methods=["GET", "POST"])
+    @app.route("/empleado/editar_receta/<int:id_receta>", methods=["GET", "POST"])
     def editar_receta(id_receta):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             flash("No tienes acceso a esta pantalla.", "danger")

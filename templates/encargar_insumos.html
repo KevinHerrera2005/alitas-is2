@@ -123,13 +123,32 @@
   </a>
 </div>
 
-{% if pantallas_nav %}
+<!-- Navbar pantallas compartido (mismo criterio que master.html) -->
+{% set _nav_excluir = [
+  'impuesto_tasa_historica.index_view', 'carrito.index_view',
+  'usuarios_cliente.index_view', 'empleado_documento.index_view',
+  'pantallas.index_view', 'acciones.index_view',
+] %}
+{% set _custom_routes = [
+  ('crud_recetas', 'Recetas'),
+  ('panel_encargado.encargar_insumos', 'Encargar Insumos'),
+] %}
 <div class="emp-nav-bar">
-  {% for p in pantallas_nav %}
-    <a href="{{ p.url }}" class="emp-nav-link{% if request.path == p.url %} active{% endif %}">{{ p.nombre }}</a>
+  {% for v in admin_views %}
+    {% if v.endpoint and v.endpoint != 'admin' and v.is_visible()
+          and endpoint_accesible(v.endpoint + '.index_view')
+          and endpoint_en_db(v.endpoint + '.index_view')
+          and (v.endpoint + '.index_view') not in _nav_excluir %}
+      <a href="{{ url_for(v.endpoint + '.index_view') }}" class="emp-nav-link">{{ v.name }}</a>
+    {% endif %}
+  {% endfor %}
+  {% for ep, nombre in _custom_routes %}
+    {% if endpoint_accesible(ep) %}
+      <a href="{{ url_for(ep) }}"
+         class="emp-nav-link{% if request.endpoint == ep %} active{% endif %}">{{ nombre }}</a>
+    {% endif %}
   {% endfor %}
 </div>
-{% endif %}
 
 <div class="container" style="padding-top:20px;">
     <div class="card card-main">

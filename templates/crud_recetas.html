@@ -11,13 +11,56 @@
             font-family: 'Poppins', sans-serif;
             background-color: #fafafa;
             margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
+        .contenedor { flex: 1; }
 
-        header {
-            background-color: #b80000;
-            color: white;
-            text-align: center;
-            padding: 20px;
+        /* ── Topbar ── */
+        .topbar {
+            background: #c30d0d; color: #fff;
+            padding: 10px 24px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            box-sizing: border-box;
+        }
+        .topbar-title { font-weight: 700; font-size: 17px; flex: 1; text-align: center; letter-spacing: .3px; }
+        .topbar-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            height: 38px; padding: 0 18px; border-radius: 22px;
+            font-size: 13px; font-weight: 700; line-height: 1;
+            text-decoration: none; color: #fff; white-space: nowrap;
+            box-sizing: border-box; transition: all 0.18s ease;
+        }
+        .topbar-btn:hover { text-decoration: none; color: #fff; }
+        .btn-volver { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.18); }
+        .btn-volver:hover { background: rgba(0,0,0,0.4); }
+        .btn-logout { background: #a00909; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .btn-logout:hover { background: #7d0606; }
+        /* ── Navbar pantallas ── */
+        .emp-nav-bar {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+            padding: 8px 24px; background: #1c2740;
+            border-bottom: 2px solid #2a4070; box-sizing: border-box;
+        }
+        .emp-nav-link {
+            color: #a0b8d8; padding: 7px 18px; border-radius: 6px;
+            font-size: 13px; font-weight: 500; text-decoration: none;
+            border: 1px solid transparent; transition: background 0.15s, color 0.15s; white-space: nowrap;
+        }
+        .emp-nav-link:hover, .emp-nav-link.active { background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; }
+        /* ── Subnavbar recetas ── */
+        .recetas-nav {
+            display: flex; align-items: center; gap: 16px;
+            background: #e60000; padding: 10px 24px;
+        }
+        .recetas-nav a { color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; transition: opacity 0.2s; }
+        .recetas-nav a:hover { opacity: 0.8; text-decoration: none; color: #fff; }
+        /* ── Footer ── */
+        footer {
+            background: #c30d0d; text-align: center;
+            padding: 12px 28px; color: rgba(255,255,255,0.85);
+            font-size: 12px; margin-top: auto;
         }
 
         .btn-action {
@@ -45,24 +88,6 @@
             border: none;
         }
 
-        nav {
-            display: flex;
-            justify-content: center;
-            background-color: #e60000;
-            padding: 10px 0;
-            gap: 30px;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: 600;
-            transition: 0.3s;
-        }
-
-        nav a:hover {
-            color: #ffcc00;
-        }
 
         .contenedor {
             width: 90%;
@@ -117,35 +142,66 @@
             font-size: 14px;
         }
 
-        footer {
-            background-color: #b80000;
-            text-align: center;
-            padding: 20px;
-            color: white;
-            margin-top: 40px;
-        }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>👨‍🍳 Panel de recetas</h1>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin:10px 0;">
+<!-- Topbar -->
+<div class="topbar">
+  <a href="{{ url_for('index_admin_bp.index') }}" class="topbar-btn btn-volver">&#8592; Volver al inicio</a>
+  <span class="topbar-title">Panel Central</span>
+  <a href="{{ url_for('logout') }}" class="topbar-btn btn-logout">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+    Cerrar sesión
+  </a>
+</div>
+
+<!-- Navbar pantallas compartido (mismo criterio que master.html) -->
+{% set _nav_excluir = [
+  'impuesto_tasa_historica.index_view', 'carrito.index_view',
+  'usuarios_cliente.index_view', 'empleado_documento.index_view',
+  'pantallas.index_view', 'acciones.index_view',
+] %}
+{% set _custom_routes = [
+  ('crud_recetas', 'Recetas'),
+  ('panel_encargado.encargar_insumos', 'Encargar Insumos'),
+] %}
+<div class="emp-nav-bar">
+  {% for v in admin_views %}
+    {% if v.endpoint and v.endpoint != 'admin' and v.is_visible()
+          and endpoint_accesible(v.endpoint + '.index_view')
+          and endpoint_en_db(v.endpoint + '.index_view')
+          and (v.endpoint + '.index_view') not in _nav_excluir %}
+      <a href="{{ url_for(v.endpoint + '.index_view') }}" class="emp-nav-link">{{ v.name }}</a>
+    {% endif %}
+  {% endfor %}
+  {% for ep, nombre in _custom_routes %}
+    {% if endpoint_accesible(ep) %}
+      <a href="{{ url_for(ep) }}"
+         class="emp-nav-link{% if request.endpoint == ep %} active{% endif %}">{{ nombre }}</a>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<!-- Subnavbar propio de recetas -->
+<div class="recetas-nav">
+    {% if permisos.crear %}
+    <a href="{{ url_for('crear_receta') }}">+ Crear Nueva Receta</a>
+    {% endif %}
+    <div style="margin-left:auto;display:flex;gap:10px;">
         {% if permisos.exportar_pdf %}
-        <a class="btn btn-danger" href="{{ url_for('reports.exportar', reporte='receta', formato='pdf') }}">Exportar PDF</a>
+        <a class="btn btn-sm btn-danger" href="{{ url_for('reports.exportar', reporte='receta', formato='pdf') }}">Exportar PDF</a>
         {% endif %}
         {% if permisos.exportar_excel %}
-        <a class="btn btn-success" href="{{ url_for('reports.exportar', reporte='receta', formato='excel') }}">Exportar Excel</a>
+        <a class="btn btn-sm btn-success" href="{{ url_for('reports.exportar', reporte='receta', formato='excel') }}">Exportar Excel</a>
         {% endif %}
     </div>
-</header>
-
-<nav>
-    {% if permisos.crear %}
-    <a href="{{ url_for('crear_receta') }}">➕ Crear Nueva Receta</a>
-    {% endif %}
-    <a href="{{ url_for('login_jefe.panel_jefe') }}">⬅ Volver al panel principal</a>
-</nav>
+</div>
 
 <div class="contenedor">
     {% for categoria, items in categorias.items() %}
@@ -205,9 +261,7 @@
     {% endfor %}
 </div>
 
-<footer>
-    © 2025 Alitas El Comelón - Panel del Jefe de Cocina
-</footer>
+<footer>© 2025 Alitas El Comelón</footer>
 
 <script>
 function leerJsonSeguro(texto) {

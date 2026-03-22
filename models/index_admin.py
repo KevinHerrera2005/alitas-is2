@@ -67,6 +67,9 @@ def index():
             'usuarios_cliente.index_view',
             'empleado_documento.index_view',
             'pantallas.index_view',
+            'ver_permisos_empleado',
+            'ver_permisos_puesto',
+            'ver_pantallas_acciones',
         }
         _NOMBRES_CUSTOM = {
             'panel_encargado.encargar_insumos': 'Encargar Insumos',

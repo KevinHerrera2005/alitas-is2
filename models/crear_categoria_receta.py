@@ -3,7 +3,7 @@ from models import db
 from sqlalchemy import text
 
 def crear_categoria_receta_routes(app):
-    @app.route('/crear_categoria_receta', methods=['GET', 'POST'])
+    @app.route('/empleado/crear_categoria_receta', methods=['GET', 'POST'])
     def crear_categoria_receta():
         if request.method == 'POST':
             nombre = request.form.get('nombre')

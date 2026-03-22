@@ -1,0 +1,21 @@
+2026-03-22 14:26:53 | ERROR | Kevin Alejandro | cannot access local variable 'or_' where it is not associated with a value
+2026-03-22 14:26:53 | ERROR | Kevin Alejandro | Traceback (most recent call last):
+  File "C:\Users\Zabdiel\Desktop\alitas-pruebas\models\historial_ordenes_repartidor_admin.py", line 425, in get_list
+    return super().get_list(
+           ~~~~~~~~~~~~~~~~^
+        page,
+        ^^^^^
+    ...<5 lines>...
+        page_size=page_size,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Zabdiel\Desktop\alitas-pruebas\venv\Lib\site-packages\flask_admin\contrib\sqla\view.py", line 1059, in get_list
+    query = self.get_query()
+  File "C:\Users\Zabdiel\Desktop\alitas-pruebas\models\historial_ordenes_repartidor_admin.py", line 385, in get_query
+    q = self._aplicar_filtro_sucursal(q)
+  File "C:\Users\Zabdiel\Desktop\alitas-pruebas\models\historial_ordenes_repartidor_admin.py", line 360, in _aplicar_filtro_sucursal
+    q = q.outerjoin(OrdenEntrega, or_(*[c == hist_oid for c in orden_cols]))
+                                  ^^^
+UnboundLocalError: cannot access local variable 'or_' where it is not associated with a value
+

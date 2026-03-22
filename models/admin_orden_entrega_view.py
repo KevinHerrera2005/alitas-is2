@@ -230,25 +230,24 @@ class OrdenEntregaAdmin(PermisosAdminMixin, ModelView):
         if not suc_emp:
             return query.filter(False)
 
-        return query.join(
-            UsuarioCliente,
-            UsuarioCliente.ID_Usuario_ClienteF == OrdenEntrega.ID_Usuario_ClienteF,
-        ).filter(UsuarioCliente.ID_sucursal == int(suc_emp))
+        # Filtrar directamente por ID_sucursal de Orden_Entrega
+        return query.filter(OrdenEntrega.ID_sucursal == int(suc_emp))
 
     def _filtrar_lista(self, query):
         query = self._filtrar_por_sucursal_cliente(query)
-        estados_activos = [0, 1, 2]
 
+        # Repartidores: solo sus órdenes activas
         if getattr(current_user, "tipo", None) == "empleado" and self._es_repartidor():
             emp_id = self._empleado_id()
             if emp_id is None:
                 return query.filter(False)
             return query.filter(
                 OrdenEntrega.ID_Empleado_Repartidor == int(emp_id),
-                OrdenEntrega.estado.in_(estados_activos),
+                OrdenEntrega.estado.in_([0, 1, 2]),
             )
 
-        return query.filter(OrdenEntrega.estado.in_(estados_activos))
+        # Otros empleados (jefe de cocina, encargado, etc.): todos los estados
+        return query
 
     def get_query(self):
         return self._filtrar_lista(super().get_query())

@@ -24,7 +24,7 @@ def gestion_receta_routes(app):
         return int(puesto) == 1
 
     # este boton es para abrir el listado de recetas desde el panel del jefe de cocina
-    @app.route("/crud_recetas")
+    @app.route("/empleado/crud_recetas")
     def crud_recetas(*args,**kwargs):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             flash("No tienes acceso a esta pantalla.", "danger")
@@ -89,11 +89,18 @@ def gestion_receta_routes(app):
                 "exportar_excel":     tiene_accion_en_pantalla("crud_recetas", "exportar excel"),
             }
 
+            # Navbar compartido: pasar las vistas del admin al template
+            from flask import current_app
+            _admin_obj = current_app.extensions.get('admin')
+            _admin_inst = (_admin_obj[0] if isinstance(_admin_obj, list) else _admin_obj)
+            admin_views = list(_admin_inst._views) if _admin_inst else []
+
             return render_template(
                 "crud_recetas.html",
                 categorias=categorias,
                 nombres_categorias=nombres_categorias,
-                permisos=permisos_recetas
+                permisos=permisos_recetas,
+                admin_views=admin_views,
             )
         except Exception as error:
                 fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -101,7 +108,7 @@ def gestion_receta_routes(app):
                 logger_.Logger.add_to_log("error", traceback.format_exc(), "listado_recetas(boton del panel)", fecha)
                 return "esto es un error", 501
     # este boton es para cambiar el estado de la receta entre activo e inactivo
-    @app.route("/toggle_receta_estado", methods=["POST"])
+    @app.route("/empleado/toggle_receta_estado", methods=["POST"])
     def toggle_receta_estado(*args,**kwargs):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             return jsonify({"success": False, "message": "Sin acceso"}), 403
@@ -130,7 +137,7 @@ def gestion_receta_routes(app):
             return "esto es un error", 501
 
     # este boton es para borrar una receta
-    @app.route("/eliminar_receta/<int:id_receta>", methods=["DELETE"])
+    @app.route("/empleado/eliminar_receta/<int:id_receta>", methods=["DELETE"])
     def eliminar_receta(id_receta,*args,**kwargs):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             return jsonify({"success": False, "message": "Sin acceso"}), 403
@@ -179,7 +186,7 @@ def gestion_receta_routes(app):
             return "esto es un error", 501
         
     # este boton es para borrar una categoria de recetas
-    @app.route("/eliminar_categoria/<path:nombre_categoria>", methods=["DELETE"])
+    @app.route("/empleado/eliminar_categoria/<path:nombre_categoria>", methods=["DELETE"])
     def eliminar_categoria(nombre_categoria,*args,**kwargs):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             return jsonify({"success": False, "message": "Sin acceso"}), 403
@@ -233,7 +240,7 @@ def gestion_receta_routes(app):
         
 
     # este boton es para ver los ingredientes y detalles de una receta
-    @app.route("/jefe/ver_receta/<int:id_receta>")
+    @app.route("/empleado/ver_receta/<int:id_receta>")
     def jefe_ver_receta(id_receta,*args,**kwargs):
         if not current_user.is_authenticated or not endpoint_accesible("crud_recetas"):
             flash("No tienes acceso a esta pantalla.", "danger")
@@ -265,6 +272,18 @@ def gestion_receta_routes(app):
                 AND ir.Activo = 1
                 AND ir.ID_sucursal = :sid
             """), {"id": id_receta, "sid": sid}).fetchall()
+
+            from flask import current_app
+            _admin_obj = current_app.extensions.get('admin')
+            _admin_inst = (_admin_obj[0] if isinstance(_admin_obj, list) else _admin_obj)
+            admin_views = list(_admin_inst._views) if _admin_inst else []
+
+            return render_template(
+                "ver_receta.html",
+                receta=receta,
+                ingredientes=ingredientes,
+                admin_views=admin_views,
+            )
         except Exception as error:
             fecha = datetime.now().strftime("%Y%m%d-%H%M%S")
             logger_.Logger.add_to_log("error", str(error), "gestion_recetas_ver_ingredientes", fecha)

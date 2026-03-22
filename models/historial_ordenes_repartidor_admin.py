@@ -346,6 +346,11 @@ class HistorialOrdenesRepartidorAdmin(PermisosAdminMixin, ModelView):
         if not self._es_empleado():
             return q
 
+        # Repartidores: filtrar por su sucursal
+        # Otros empleados (jefe de cocina, etc.): ven todo el historial
+        if not self._es_repartidor():
+            return q
+
         suc = self._empleado_sucursal()
         if not suc:
             return q.filter(False)
@@ -358,20 +363,11 @@ class HistorialOrdenesRepartidorAdmin(PermisosAdminMixin, ModelView):
         if orden_cols:
             q = q.outerjoin(OrdenEntrega, or_(*[c == hist_oid for c in orden_cols]))
 
-        q = q.outerjoin(Factura, Factura.ID_Parametro == hist_oid)
+        oe_suc = self._attr(OrdenEntrega, "ID_sucursal", "id_sucursal", "sucursal_id")
+        if oe_suc is not None:
+            return q.filter(or_(oe_suc == int(suc), oe_suc.is_(None)))
 
-        uc_pk = self._attr(UsuarioCliente, "ID_Usuario_ClienteF", "id_usuario_cliente", "usuario_cliente_id", "Usuario_ClienteID")
-        uc_suc = self._attr(UsuarioCliente, "ID_sucursal", "id_sucursal", "sucursal_id", "SucursalID")
-        if uc_pk is None or uc_suc is None:
-            return q.filter(False)
-
-        ord_cliente_fk = self._attr(OrdenEntrega, "ID_Usuario_ClienteF", "id_usuario_cliente", "usuario_cliente_id", "Usuario_ClienteID")
-        if ord_cliente_fk is not None:
-            q = q.outerjoin(UsuarioCliente, uc_pk == func.coalesce(ord_cliente_fk, Factura.ID_Usuario_ClienteF))
-        else:
-            q = q.outerjoin(UsuarioCliente, uc_pk == Factura.ID_Usuario_ClienteF)
-
-        return q.filter(uc_suc == int(suc))
+        return q
 
     def get_query(self):
         q = super().get_query()
