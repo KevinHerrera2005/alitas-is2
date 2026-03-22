@@ -12,8 +12,8 @@ from .sucursal_model import Sucursal
 
 @app.route("/ver_permisos_de_empleados", methods=["GET"])
 def ver_permisos_empleado():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_empleado"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso a esta pantalla.", "danger")
         return redirect(url_for("login"))
 
@@ -115,8 +115,61 @@ def ver_permisos_empleado():
         Acciones.estado
     ).order_by(Acciones.Nombre).all()
 
-    from models.permisos_mixin import pantallas_del_empleado_actual
-    pantallas_permitidas = pantallas_del_empleado_actual() or set()
+    from models.permisos_mixin import pantallas_del_empleado_actual, es_admin_panel
+
+    # Admin ve todo; el resto solo ve lo que su puesto permite
+    class _AllSet:
+        def __contains__(self, item): return True
+        def __bool__(self): return True
+
+    pantallas_permitidas = _AllSet() if es_admin_panel() else (pantallas_del_empleado_actual() or set())
+
+    # Módulo Vistas: pantallas activas con URL válida, excluyendo las internas del sistema
+    from flask import url_for as _url_for, current_app
+    _EXCLUIR_ENDPOINTS = {
+        'acciones_admin.index_view',
+        'impuesto_tasa_historica_admin.index_view',
+        'carrito.index_view',
+        'usuarios_cliente_admin.index_view',
+        'empleado_documento_admin.index_view',
+        'pantallas_admin.index_view',
+        # Paneles específicos de puesto (no relevantes para el admin)
+        'panel_contador.panel',
+        'login_jefe.panel_jefe',
+        'ver_pantallas_acciones',
+        'ver_permisos_puesto',
+        'ver_permisos_empleado',
+        'puestos_admin.index_view',
+    }
+    # Renombres manuales para endpoints que no están en Flask-Admin
+    _RENOMBRAR_ENDPOINTS = {
+        'crud_recetas': 'Recetas',
+    }
+    # Construir mapeo endpoint → nombre de display desde Flask-Admin
+    _endpoint_nombres = {}
+    try:
+        _admin_obj = current_app.extensions.get('admin')
+        _admin_inst = (_admin_obj[0] if isinstance(_admin_obj, list) else _admin_obj)
+        for _v in _admin_inst._views:
+            if _v.endpoint and getattr(_v, 'name', None):
+                _endpoint_nombres[_v.endpoint + '.index_view'] = _v.name
+    except Exception:
+        pass
+
+    vistas_pantallas = []
+    for p in todas_pantallas:
+        if p.estado == 1 and p.url and p.url not in _EXCLUIR_ENDPOINTS:
+            try:
+                href = _url_for(p.url)
+            except Exception:
+                href = None
+            if href:
+                nombre_display = (
+                    _endpoint_nombres.get(p.url)
+                    or _RENOMBRAR_ENDPOINTS.get(p.url)
+                    or p.Nombre
+                )
+                vistas_pantallas.append({"nombre": nombre_display, "href": href})
 
     return render_template(
         "permisos_de_los_empleados.html",
@@ -133,7 +186,9 @@ def ver_permisos_empleado():
         pantallas_permitidas=pantallas_permitidas,
         nombre_pantalla=nombre_pantalla,
         todas_pantallas=todas_pantallas,
-        todas_acciones=todas_acciones
+        todas_acciones=todas_acciones,
+        # Módulo Vistas
+        vistas_pantallas=vistas_pantallas,
     )
 
 

@@ -15,28 +15,25 @@ def _solo_staff():
 
 @index_admin_bp.route("/index_admin")
 def index():
+    from flask import redirect, url_for as _url_for
+    from models.permisos_mixin import es_admin_panel, pantallas_del_empleado_actual
+
+    # Gerentes y empleados admin van directamente al hub de administración
+    if es_admin_panel():
+        return redirect(_url_for("ver_permisos_empleado", modulo="permisos_puesto"))
+
+    # Empleados normales: mostrar su panel personal con las pantallas que tienen asignadas
     try:
-        tipo = getattr(current_user, "tipo", None)
-        id_puesto = (
-            getattr(current_user, "id_puesto", None)
-            or getattr(current_user, "ID_Puesto", None)
-        )
-
-        if tipo == "gerente" and not id_puesto:
-            # Gerente sin puesto asignado → acceso total
-            pantallas_permitidas = None
-        else:
-            from models.permisos_mixin import pantallas_del_empleado_actual
-            pantallas_permitidas = pantallas_del_empleado_actual() or set()
-
+        permisos = pantallas_del_empleado_actual() or set()
         nombre = (
             getattr(current_user, "nombre", None)
             or getattr(current_user, "Nombre", None)
             or "Usuario"
         )
+        tipo = getattr(current_user, "tipo", None)
         return render_template(
             "index_admin.html",
-            pantallas_permitidas=pantallas_permitidas,
+            pantallas_permitidas=permisos,
             nombre_usuario=nombre,
             tipo_usuario=tipo,
         )

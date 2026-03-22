@@ -213,13 +213,46 @@
         .grupo-chevron.colapsado {
             transform: rotate(-90deg);
         }
+
+        /* ── Botón cerrar sesión ── */
+        .btn-cerrar-sesion {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 18px;
+            border-radius: 22px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            color: #fff;
+            background: linear-gradient(135deg, #c30d0d 0%, #a00000 100%);
+            border: 1px solid rgba(255,255,255,0.18);
+            box-shadow: 0 2px 10px rgba(195,13,13,0.4);
+            transition: all 0.18s ease;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+        }
+        .btn-cerrar-sesion:hover {
+            background: linear-gradient(135deg, #e01010 0%, #c30d0d 100%);
+            box-shadow: 0 4px 16px rgba(195,13,13,0.55);
+            transform: translateY(-1px);
+            text-decoration: none;
+            color: #fff;
+        }
+        .btn-cerrar-sesion:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(195,13,13,0.35);
+        }
     </style>
 </head>
 <body>
     <div class="contenedor">
         <div class="encabezado">
             <div>
-                {% if modulo == 'asignacion_empleados' %}
+                {% if modulo == 'vistas' %}
+                    <h1 class="titulo">Vistas del Sistema</h1>
+                    <p class="subtitulo">Accede directamente a cualquier pantalla registrada en el sistema.</p>
+                {% elif modulo == 'asignacion_empleados' %}
                     <h1 class="titulo">Asignación de Empleados</h1>
                     <p class="subtitulo">Asigna o cambia el puesto de cada empleado y registra nuevos usuarios.</p>
                 {% elif modulo == 'pantallas_acciones' %}
@@ -236,7 +269,19 @@
                     <p class="subtitulo">Define qué acciones podrá realizar cada puesto en cada pantalla del sistema.</p>
                 {% endif %}
             </div>
-            <div class="sesion">Sesión: <strong>Administrador</strong></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div class="sesion">Sesión: <strong>Administrador</strong></div>
+                <a href="{{ url_for('logout') }}" class="btn-cerrar-sesion">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                         style="flex-shrink:0;">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Cerrar sesión
+                </a>
+            </div>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -256,8 +301,56 @@
                ═══════════════════════════════════════════════ #}
             <div class="panel">
 
+                {# ── MÓDULO: Vistas ── #}
+                {% if modulo == 'vistas' %}
+                <div class="panel-cabecera">
+                    <div class="panel-titulo">Todas las pantallas</div>
+                    <div class="panel-etiqueta">{{ vistas_pantallas|length }} pantalla(s)</div>
+                </div>
+                <div class="panel-cuerpo">
+                    <style>
+                        .vistas-grid {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                            gap: 12px;
+                            margin-top: 8px;
+                        }
+                        .vista-btn {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            padding: 16px 12px;
+                            border-radius: 14px;
+                            background: rgba(13, 25, 45, 0.92);
+                            border: 1px solid rgba(255,255,255,0.08);
+                            color: #eef4ff;
+                            text-decoration: none;
+                            font-weight: 600;
+                            font-size: 14px;
+                            transition: all 0.18s ease;
+                            min-height: 64px;
+                        }
+                        .vista-btn:hover {
+                            border-color: rgba(34,195,170,0.45);
+                            background: rgba(22,177,162,0.1);
+                            color: #22c3aa;
+                            transform: translateY(-2px);
+                        }
+                    </style>
+                    {% if vistas_pantallas %}
+                    <div class="vistas-grid">
+                        {% for v in vistas_pantallas %}
+                        <a class="vista-btn" href="{{ v.href }}">{{ v.nombre }}</a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="vacio">No hay pantallas activas registradas.</div>
+                    {% endif %}
+                </div>
+
                 {# ── MÓDULO: Permisos por Puesto ── #}
-                {% if modulo == 'permisos_puesto' or modulo not in ['asignacion_empleados','pantallas_acciones','pantallas_admin','acciones_admin'] %}
+                {% elif modulo == 'permisos_puesto' or modulo not in ['vistas','asignacion_empleados','pantallas_acciones','pantallas_admin','acciones_admin'] %}
                 <div class="panel-cabecera">
                     <div class="panel-titulo">Puesto configurado</div>
                     {% if puesto_seleccionado %}
@@ -600,18 +693,16 @@
                                 </div>
                             </a>
 
-                            {% if 'ver_pantallas_acciones' in pantallas_permitidas %}
-                            <a class="modulo-item {% if modulo == 'pantallas_acciones' %}modulo-activo{% endif %}"
-                               href="{{ url_for('ver_permisos_empleado', modulo='pantallas_acciones') }}">
+                            <a class="modulo-item {% if modulo == 'vistas' %}modulo-activo{% endif %}"
+                               href="{{ url_for('ver_permisos_empleado', modulo='vistas') }}">
                                 <div class="modulo-punto"></div>
                                 <div>
-                                    <div class="modulo-titulo">Pantallas & Acciones</div>
-                                    <div class="modulo-desc">Vincula acciones a pantallas</div>
+                                    <div class="modulo-titulo">Vistas</div>
+                                    <div class="modulo-desc">Acceso directo a todas las pantallas</div>
                                 </div>
                             </a>
-                            {% endif %}
 
-                            {% if 'pantallas_admin.index_view' in pantallas_permitidas %}
+{% if 'pantallas_admin.index_view' in pantallas_permitidas %}
                             <a class="modulo-item {% if modulo == 'pantallas_admin' %}modulo-activo{% endif %}"
                                href="{{ url_for('ver_permisos_empleado', modulo='pantallas_admin') }}">
                                 <div class="modulo-punto"></div>

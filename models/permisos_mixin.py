@@ -7,6 +7,21 @@ from models.pantallas_acciones_model import PantallasAcciones
 from models.Acciones_model import Acciones
 
 
+def endpoints_en_db() -> set:
+    """
+    Devuelve el set de urls/endpoints registrados en la tabla Pantallas (estado=1).
+    Cacheado en g por request. Sirve para filtrar el navbar de Flask-Admin.
+    """
+    if not hasattr(g, "_endpoints_db_cache"):
+        try:
+            from models.Pantallas_model import Pantallas as _Pantallas
+            rows = db.session.query(_Pantallas.url).filter(_Pantallas.estado == 1).all()
+            g._endpoints_db_cache = {r[0] for r in rows}
+        except Exception:
+            g._endpoints_db_cache = set()
+    return g._endpoints_db_cache
+
+
 def pantallas_del_empleado_actual():
     """
     Devuelve el set de endpoints (Pantallas.url) permitidos para el empleado actual.
@@ -51,13 +66,43 @@ def pantallas_del_empleado_actual():
     return g._pantallas_empleado_cache
 
 
-def endpoint_accesible(endpoint: str) -> bool:
+_ADMIN_SCREENS = {
+    'pantallas_admin.index_view',
+    'ver_permisos_puesto',
+    'ver_permisos_empleado',
+    'ver_pantallas_acciones',
+}
+
+
+def es_admin_panel() -> bool:
     """
-    Verifica si el endpoint/url de pantalla está permitido para el usuario actual.
-    Todos los usuarios (incluido gerente) pasan por PermisosPuesto.
+    True si el usuario es gerente O si es un empleado con acceso a
+    pantallas de administración (indicador de cuenta admin).
+    Cacheado en g por request.
     """
     if not current_user.is_authenticated:
         return False
+    if not hasattr(g, "_es_admin_cache"):
+        tipo = getattr(current_user, "tipo", None)
+        if tipo == "gerente":
+            g._es_admin_cache = True
+        elif tipo == "empleado":
+            permisos = pantallas_del_empleado_actual()
+            g._es_admin_cache = bool(_ADMIN_SCREENS & permisos)
+        else:
+            g._es_admin_cache = False
+    return g._es_admin_cache
+
+
+def endpoint_accesible(endpoint: str) -> bool:
+    """
+    Verifica si el endpoint/url de pantalla está permitido para el usuario actual.
+    Los administradores (gerentes y empleados admin) tienen acceso total.
+    """
+    if not current_user.is_authenticated:
+        return False
+    if es_admin_panel():
+        return True
     pantallas = pantallas_del_empleado_actual()
     return endpoint in pantallas
 
@@ -159,11 +204,13 @@ class PermisosAdminMixin:
 
     def _tiene_permiso(self, accion):
         """Si la acción no está configurada, se permite por defecto. Verifica por pantalla.
-        Todos los usuarios pasan por PermisosPuesto según su id_puesto."""
+        Los administradores tienen acceso total a todas las acciones."""
         if not accion:
             return True
         if not current_user.is_authenticated:
             return False
+        if es_admin_panel():
+            return True
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return tiene_accion_en_pantalla(pantalla_url, accion)
 
@@ -202,6 +249,8 @@ class PermisosAdminMixin:
         tipo = getattr(current_user, "tipo", None)
         if tipo not in ("empleado", "gerente"):
             return False
+        if es_admin_panel():
+            return True
         pantalla_url = getattr(self, "endpoint", "") + ".index_view"
         return endpoint_accesible(pantalla_url)
 

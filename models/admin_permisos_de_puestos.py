@@ -24,8 +24,8 @@ def _borrar_permisos_puesto_por_ids(ids_permiso_puesto):
 
 @app.route("/ver_permisospuesto", methods=["GET", "POST"])
 def ver_permisos_puesto():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_puesto"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso a esta pantalla.", "danger")
         return redirect(url_for("login"))
     if request.method == "POST":
@@ -151,8 +151,8 @@ def crear_permisos_puesto():
 # ─────────────────────────────────────────────────────────────
 @app.route("/guardar_permisos_puesto_hub", methods=["POST"])
 def guardar_permisos_puesto_hub():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_puesto"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso.", "danger")
         return redirect(url_for("login"))
 
@@ -205,8 +205,8 @@ def guardar_permisos_puesto_hub():
 # ─────────────────────────────────────────────────────────────
 @app.route("/crear_puesto_nuevo", methods=["POST"])
 def crear_puesto_nuevo():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_puesto"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso.", "danger")
         return redirect(url_for("login"))
 
@@ -237,8 +237,8 @@ def crear_puesto_nuevo():
 # ─────────────────────────────────────────────────────────────
 @app.route("/asignar_puesto_empleado", methods=["POST"])
 def asignar_puesto_empleado():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_empleado"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso.", "danger")
         return redirect(url_for("login"))
 
@@ -265,8 +265,8 @@ def asignar_puesto_empleado():
 # ─────────────────────────────────────────────────────────────
 @app.route("/crear_empleado_nuevo", methods=["POST"])
 def crear_empleado_nuevo():
-    from models.permisos_mixin import endpoint_accesible
-    if not current_user.is_authenticated or getattr(current_user, "tipo", None) != "empleado" or not endpoint_accesible("ver_permisos_empleado"):
+    from models.permisos_mixin import es_admin_panel
+    if not current_user.is_authenticated or not es_admin_panel():
         flash("No tienes acceso.", "danger")
         return redirect(url_for("login"))
 

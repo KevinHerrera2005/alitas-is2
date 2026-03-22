@@ -158,7 +158,7 @@ def login():
             login_user(user)
             session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
-            return redirect(url_for("index_admin_bp.index"))
+            return redirect(url_for("ver_permisos_empleado", modulo="permisos_puesto"))
 
         empleado = Empleado.query.filter_by(Username=username).first()
         _pwd_emp = empleado.Password if empleado else None
@@ -177,7 +177,10 @@ def login():
             login_user(user)
             session["inicio_sesion_de_la_persona"] = user.nombre
             session.pop("cliente_id", None)
-
+            # Admin empleados van al hub de administración; el resto al panel central
+            from models.permisos_mixin import es_admin_panel
+            if es_admin_panel():
+                return redirect(url_for("ver_permisos_empleado", modulo="permisos_puesto"))
             return redirect(url_for("index_admin_bp.index"))
 
         usuario = ClienteModel.query.filter_by(Username=username).first()

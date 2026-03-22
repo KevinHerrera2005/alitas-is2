@@ -9,6 +9,36 @@
         body{
             background:#f3f4ff;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin:0;
+        }
+        .topbar{
+            background:#c30d0d;
+            color:#fff;
+            padding:10px 20px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+        }
+        .topbar-title{
+            font-weight:700;
+            font-size:17px;
+            flex:1;
+            text-align:center;
+        }
+        .topbar-btn{
+            color:#fff;
+            font-size:12px;
+            font-weight:600;
+            text-decoration:none;
+            background:rgba(255,255,255,0.18);
+            border:1px solid rgba(255,255,255,0.35);
+            padding:5px 14px;
+            border-radius:20px;
+            white-space:nowrap;
+        }
+        .topbar-btn:hover{
+            background:rgba(255,255,255,0.28);
+            color:#fff;
         }
         .card-main{
             max-width:1100px;
@@ -43,7 +73,13 @@
 </head>
 <body>
 
-<div class="container">
+<div class="topbar">
+  <a href="{{ url_for('ver_permisos_empleado') }}" class="topbar-btn">&#8592; Volver al inicio</a>
+  <span class="topbar-title">Panel Central</span>
+  <a href="{{ url_for('logout') }}" class="topbar-btn" style="background:rgba(0,0,0,0.25);">Cerrar sesión</a>
+</div>
+
+<div class="container" style="padding-top:20px;">
     <div class="card card-main">
         <div class="card-header">
             <h5 class="mb-0">
@@ -56,11 +92,7 @@
         </div>
 
         <div class="card-body">
-            <a href="{{ url_for('panel_encargado.panel') }}" class="btn btn-outline-secondary btn-sm mb-3">
-                ← Volver al panel del encargado
-            </a>
-
-            {% with mensajes = get_flashed_messages(with_categories=true) %}
+{% with mensajes = get_flashed_messages(with_categories=true) %}
             {% if mensajes %}
             <div class="mt-3">
                 {% for categoria, mensaje in mensajes %}

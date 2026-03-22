@@ -162,17 +162,23 @@ def _inyectar_helpers_permisos():
         {% endif %}
     """
     try:
-        from models.permisos_mixin import tiene_accion_en_pantalla, tiene_accion_empleado, endpoint_accesible
+        from models.permisos_mixin import (
+            tiene_accion_en_pantalla, tiene_accion_empleado,
+            endpoint_accesible, endpoints_en_db,
+        )
+        _db_set = endpoints_en_db()
         return dict(
-            tiene_accion=tiene_accion_en_pantalla,        # (pantalla_url, nombre_accion) → bool
-            tiene_accion_global=tiene_accion_empleado,    # (nombre_accion) → bool
-            endpoint_accesible=endpoint_accesible,        # (endpoint) → bool
+            tiene_accion=tiene_accion_en_pantalla,
+            tiene_accion_global=tiene_accion_empleado,
+            endpoint_accesible=endpoint_accesible,
+            endpoint_en_db=lambda ep: ep in _db_set,
         )
     except Exception:
         return dict(
             tiene_accion=lambda *a, **k: True,
             tiene_accion_global=lambda *a, **k: True,
             endpoint_accesible=lambda *a, **k: True,
+            endpoint_en_db=lambda *a, **k: True,
         )
 # ───────────────────────────────────────────────────────────────────────────
 
@@ -571,6 +577,9 @@ def handle_db_runtime_error(e):
     import traceback
     from flask import request as req
 
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e  # dejar que Flask maneje 404, 405, etc. normalmente
     if not isinstance(e, (OperationalError, InterfaceError)):
         raise e          # re-lanzar para no ocultar otros errores
 
