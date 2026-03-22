@@ -127,19 +127,19 @@ def ver_permisos_empleado():
     # Módulo Vistas: pantallas activas con URL válida, excluyendo las internas del sistema
     from flask import url_for as _url_for, current_app
     _EXCLUIR_ENDPOINTS = {
-        'acciones_admin.index_view',
-        'impuesto_tasa_historica_admin.index_view',
+        'acciones.index_view',
+        'impuesto_tasa_historica.index_view',
         'carrito.index_view',
-        'usuarios_cliente_admin.index_view',
-        'empleado_documento_admin.index_view',
-        'pantallas_admin.index_view',
+        'usuarios_cliente.index_view',
+        'empleado_documento.index_view',
+        'pantallas.index_view',
         # Paneles específicos de puesto (no relevantes para el admin)
         'panel_contador.panel',
         'login_jefe.panel_jefe',
         'ver_pantallas_acciones',
         'ver_permisos_puesto',
         'ver_permisos_empleado',
-        'puestos_admin.index_view',
+        'puestos.index_view',
     }
     # Renombres manuales para endpoints que no están en Flask-Admin
     _RENOMBRAR_ENDPOINTS = {

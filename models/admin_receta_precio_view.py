@@ -25,7 +25,7 @@ class RecetaPrecioHistoricoAdmin(ModelView):
             return False
         if getattr(current_user, "tipo", None) != "empleado":
             return False
-        return endpoint_accesible("receta_precio_historico_admin.index_view")
+        return endpoint_accesible("receta_precio_historico.index_view")
 
     def inaccessible_callback(self, name, **kwargs):
         flash("No tienes acceso a esta pantalla.", "danger")

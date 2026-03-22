@@ -18,31 +18,46 @@
     .topbar {
       background: #c30d0d;
       color: #fff;
-      padding: 14px 24px;
+      padding: 10px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
+      box-sizing: border-box;
     }
-    .topbar h1 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+    .topbar-title { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: .3px; text-align: center; flex: 1; }
     .topbar .user-info { font-size: 0.88rem; opacity: .9; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar .user-info {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 18px;
+      border-radius: 22px;
+      font-size: 13px;
+      font-weight: 500;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.18);
+      white-space: nowrap;
+      opacity: 1;
+    }
     .btn-logout-top {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 6px 16px;
+      gap: 7px;
+      padding: 8px 18px;
       border-radius: 22px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 700;
       text-decoration: none;
       color: #fff;
-      background: rgba(0,0,0,0.28);
-      border: 1px solid rgba(255,255,255,0.3);
+      background: #a00909;
+      border: 1px solid rgba(255,255,255,0.25);
       white-space: nowrap;
-      transition: background 0.18s;
+      transition: background 0.18s, box-shadow 0.18s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .btn-logout-top:hover { background: rgba(0,0,0,0.45); color: #fff; text-decoration: none; }
+    .btn-logout-top:hover { background: #7d0606; color: #fff; text-decoration: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
 
     /* ── Vista bienvenida ── */
     .bienvenida-wrap {
@@ -85,13 +100,13 @@
     }
     .emp-nav-link {
       color: #a0b8d8;
-      padding: 6px 16px;
+      padding: 7px 18px;
       border-radius: 6px;
       font-size: 13px;
       font-weight: 500;
       text-decoration: none;
-      border: 1px solid rgba(255,255,255,0.08);
-      transition: background 0.15s, color 0.15s;
+      border: 1px solid transparent;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
       white-space: nowrap;
     }
     .emp-nav-link:hover {
@@ -117,9 +132,11 @@
 <body>
 
 <div class="topbar">
-  <h1>Panel Central | Alitas El Comelón</h1>
-  <div class="topbar-right">
+  <div class="topbar-left">
     <div class="user-info">{{ nombre_usuario }} &mdash; {{ tipo_usuario | capitalize }}</div>
+  </div>
+  <span class="topbar-title">Panel Central</span>
+  <div class="topbar-right">
     <a href="{{ url_for('logout') }}" class="btn-logout-top">
       <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -146,7 +163,7 @@
   <img src="{{ url_for('static', filename='img/' ~ imagen_puesto) }}"
        alt="Bienvenida {{ nombre_puesto }}"
        class="bienvenida-img">
-  <div class="bienvenida-titulo">¡Bienvenido, {{ nombre_usuario }}!</div>
+  <div class="bienvenida-titulo">¡Bienvenido!</div>
   <p class="bienvenida-sub">
     Estás ingresando como <strong>{{ nombre_puesto }}</strong>.
     Selecciona una pantalla del menú superior para comenzar.
@@ -167,7 +184,7 @@
   <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3">
 
     <div class="col">
-      <a class="mod-card" href="{{ url_for('pantallas_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('pantallas.index_view') }}">
         <div class="icon">🖥️</div>
         <div class="title">Pantallas</div>
         <div class="desc">Pantallas registradas en el sistema.</div>
@@ -204,19 +221,19 @@
   {# ── RECURSOS HUMANOS ── #}
   {% set hay_rrhh = (
     pantallas_permitidas is none or
-    'empleados_admin.index_view' in pantallas_permitidas or
-    'sucursales_admin.index_view' in pantallas_permitidas or
-    'puestos_admin.index_view' in pantallas_permitidas or
-    'proveedores_admin.index_view' in pantallas_permitidas or
-    'usuarios_cliente_admin.index_view' in pantallas_permitidas
+    'empleados.index_view' in pantallas_permitidas or
+    'sucursales.index_view' in pantallas_permitidas or
+    'puestos.index_view' in pantallas_permitidas or
+    'proveedores.index_view' in pantallas_permitidas or
+    'usuarios_cliente.index_view' in pantallas_permitidas
   ) %}
   {% if hay_rrhh %}
   <div class="section-title">Recursos Humanos</div>
   <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3">
 
-    {% if pantallas_permitidas is none or 'empleados_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'empleados.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('empleados_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('empleados.index_view') }}">
         <div class="icon">👥</div>
         <div class="title">Empleados</div>
         <div class="desc">Gestiona la nómina y datos del personal.</div>
@@ -224,9 +241,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'sucursales_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'sucursales.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('sucursales_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('sucursales.index_view') }}">
         <div class="icon">🏪</div>
         <div class="title">Sucursales</div>
         <div class="desc">Administra las sucursales del negocio.</div>
@@ -234,9 +251,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'puestos_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'puestos.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('puestos_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('puestos.index_view') }}">
         <div class="icon">📋</div>
         <div class="title">Puestos</div>
         <div class="desc">Define los puestos de trabajo disponibles.</div>
@@ -244,9 +261,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'proveedores_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'proveedores.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('proveedores_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('proveedores.index_view') }}">
         <div class="icon">🚚</div>
         <div class="title">Proveedores</div>
         <div class="desc">Gestiona proveedores y contratos.</div>
@@ -254,9 +271,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'usuarios_cliente_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'usuarios_cliente.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('usuarios_cliente_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('usuarios_cliente.index_view') }}">
         <div class="icon">🧑‍💼</div>
         <div class="title">Usuarios</div>
         <div class="desc">Gestiona cuentas de clientes del sistema.</div>
@@ -271,8 +288,8 @@
   {% set hay_compras = (
     pantallas_permitidas is none or
     'panel_encargado.encargar_insumos' in pantallas_permitidas or
-    'ordenes_proveedores_admin.index_view' in pantallas_permitidas or
-    'historial_ordenes_proveedores_admin.index_view' in pantallas_permitidas
+    'ordenes_proveedores.index_view' in pantallas_permitidas or
+    'historial_ordenes_proveedores.index_view' in pantallas_permitidas
   ) %}
   {% if hay_compras %}
   <div class="section-title">Compras</div>
@@ -288,9 +305,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'ordenes_proveedores.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('ordenes_proveedores_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('ordenes_proveedores.index_view') }}">
         <div class="icon">📦</div>
         <div class="title">Órdenes a Proveedores</div>
         <div class="desc">Consulta y actualiza órdenes enviadas.</div>
@@ -298,9 +315,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'historial_ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'historial_ordenes_proveedores.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('historial_ordenes_proveedores_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('historial_ordenes_proveedores.index_view') }}">
         <div class="icon">📜</div>
         <div class="title">Historial Órdenes</div>
         <div class="desc">Órdenes finalizadas (entregadas o canceladas).</div>
@@ -314,20 +331,20 @@
   {# ── CONTABILIDAD ── #}
   {% set hay_contab = (
     pantallas_permitidas is none or
-    'impuestos_admin.index_view' in pantallas_permitidas or
-    'impuesto_tasa_historica_admin.index_view' in pantallas_permitidas or
+    'impuestos.index_view' in pantallas_permitidas or
+    'impuesto_tasa_historica.index_view' in pantallas_permitidas or
     'cai.index_view' in pantallas_permitidas or
-    'cai_historico_admin.index_view' in pantallas_permitidas or
-    'parametros_sar_admin.index_view' in pantallas_permitidas or
-    'historial_facturas_admin.index_view' in pantallas_permitidas
+    'cai_historico.index_view' in pantallas_permitidas or
+    'parametros_sar.index_view' in pantallas_permitidas or
+    'historial_facturas.index_view' in pantallas_permitidas
   ) %}
   {% if hay_contab %}
   <div class="section-title">Contabilidad</div>
   <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3">
 
-    {% if pantallas_permitidas is none or 'impuestos_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'impuestos.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('impuestos_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('impuestos.index_view') }}">
         <div class="icon">💰</div>
         <div class="title">Impuestos</div>
         <div class="desc">Administra los impuestos del sistema.</div>
@@ -335,9 +352,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'impuesto_tasa_historica_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'impuesto_tasa_historica.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('impuesto_tasa_historica_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('impuesto_tasa_historica.index_view') }}">
         <div class="icon">📊</div>
         <div class="title">Historial Tasas</div>
         <div class="desc">Historial de tasas de impuestos.</div>
@@ -355,9 +372,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'cai_historico_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'cai_historico.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('cai_historico_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('cai_historico.index_view') }}">
         <div class="icon">🗂️</div>
         <div class="title">CAI Histórico</div>
         <div class="desc">Historial de CAI anteriores.</div>
@@ -365,9 +382,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'parametros_sar_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'parametros_sar.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('parametros_sar_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('parametros_sar.index_view') }}">
         <div class="icon">⚙️</div>
         <div class="title">Parámetros SAR</div>
         <div class="desc">Configura parámetros fiscales del SAR.</div>
@@ -375,9 +392,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'historial_facturas_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'historial_facturas.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('historial_facturas_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('historial_facturas.index_view') }}">
         <div class="icon">🧮</div>
         <div class="title">Facturas</div>
         <div class="desc">Historial y gestión de facturas.</div>
@@ -394,10 +411,10 @@
     'crud_recetas' in pantallas_permitidas or
     'insumo.index_view' in pantallas_permitidas or
     'categoriainsumo.index_view' in pantallas_permitidas or
-    'categoria_recetas_admin.index_view' in pantallas_permitidas or
-    'unidades_medida_admin.index_view' in pantallas_permitidas or
-    'insumo_precio_historico_admin.index_view' in pantallas_permitidas or
-    'receta_precio_historico_admin.index_view' in pantallas_permitidas
+    'categoria_recetas.index_view' in pantallas_permitidas or
+    'unidades_medida.index_view' in pantallas_permitidas or
+    'insumo_precio_historico.index_view' in pantallas_permitidas or
+    'receta_precio_historico.index_view' in pantallas_permitidas
   ) %}
   {% if hay_cocina %}
   <div class="section-title">Cocina</div>
@@ -433,9 +450,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'categoria_recetas_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'categoria_recetas.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('categoria_recetas_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('categoria_recetas.index_view') }}">
         <div class="icon">📂</div>
         <div class="title">Categoría Recetas</div>
         <div class="desc">Clasifica las recetas del menú.</div>
@@ -443,9 +460,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'unidades_medida_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'unidades_medida.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('unidades_medida_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('unidades_medida.index_view') }}">
         <div class="icon">📏</div>
         <div class="title">Unidades de Medida</div>
         <div class="desc">Define unidades para los insumos.</div>
@@ -453,9 +470,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'insumo_precio_historico_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'insumo_precio_historico.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('insumo_precio_historico_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('insumo_precio_historico.index_view') }}">
         <div class="icon">📈</div>
         <div class="title">Histórico Insumos</div>
         <div class="desc">Historial de precios de insumos.</div>
@@ -463,9 +480,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'receta_precio_historico_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'receta_precio_historico.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('receta_precio_historico_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('receta_precio_historico.index_view') }}">
         <div class="icon">📉</div>
         <div class="title">Histórico Recetas</div>
         <div class="desc">Historial de precios de recetas.</div>
@@ -479,16 +496,16 @@
   {# ── ENTREGAS ── #}
   {% set hay_entregas = (
     pantallas_permitidas is none or
-    'orden_entrega_admin.index_view' in pantallas_permitidas or
-    'historial_ordenes_repartidor_admin.index_view' in pantallas_permitidas
+    'orden_entrega.index_view' in pantallas_permitidas or
+    'historial_ordenes_repartidor.index_view' in pantallas_permitidas
   ) %}
   {% if hay_entregas %}
   <div class="section-title">Entregas</div>
   <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 g-3">
 
-    {% if pantallas_permitidas is none or 'orden_entrega_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'orden_entrega.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('orden_entrega_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('orden_entrega.index_view') }}">
         <div class="icon">🚴</div>
         <div class="title">Órdenes de Entrega</div>
         <div class="desc">Gestiona las órdenes de entrega activas.</div>
@@ -496,9 +513,9 @@
     </div>
     {% endif %}
 
-    {% if pantallas_permitidas is none or 'historial_ordenes_repartidor_admin.index_view' in pantallas_permitidas %}
+    {% if pantallas_permitidas is none or 'historial_ordenes_repartidor.index_view' in pantallas_permitidas %}
     <div class="col">
-      <a class="mod-card" href="{{ url_for('historial_ordenes_repartidor_admin.index_view') }}">
+      <a class="mod-card" href="{{ url_for('historial_ordenes_repartidor.index_view') }}">
         <div class="icon">🗃️</div>
         <div class="title">Historial Entregas</div>
         <div class="desc">Historial de entregas completadas.</div>

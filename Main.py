@@ -440,36 +440,47 @@ def bootstrap_app(flask_app):
         name="Panel Administrativo",
         index_view=MyAdminIndexView(),
         template_mode="bootstrap4",
-        url='/panel'
+        url='/empleado'
     )
-    admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas_admin"))
+    admin.add_view(HistorialFacturasAdmin(Factura, db.session, category="Contabilidad", name="Facturas", endpoint="historial_facturas"))
     admin.add_view(InsumoAdmin(Insumo, db.session, category="Inventario", name="Insumos"))
     admin.add_view(CategoriaAdmin(CategoriaInsumo, db.session, category="Inventario", name="Categorías"))
-    admin.add_view(UnidadesMedidaAdmin(Unidades_medida, db.session, category="Inventario", name="Unidades de Medida", endpoint="unidades_medida_admin"))
-    admin.add_view(EmpleadoAdmin(Empleado, db.session, category="Personal", name="Empleados", endpoint="empleados_admin"))
-    admin.add_view(PuestoAdmin(Puesto, db.session, category="Personal", name="Puestos", endpoint="puestos_admin"))
-    admin.add_view(CategoriaRecetaAdmin(Categoria_recetas, db.session, category="Recetas", name="Categoría de las Recetas", endpoint="categoria_recetas_admin"))
-    admin.add_view(SucursalAdmin(Sucursal, db.session, category="Gerencia", name="Sucursales", endpoint="sucursales_admin"))
-    admin.add_view(InsumoPrecioHistoricoAdmin(InsumoPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Insumos", endpoint="insumo_precio_historico_admin"))
-    admin.add_view(RecetaPrecioHistoricoAdmin(RecetaPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Recetas", endpoint="receta_precio_historico_admin"))
-    admin.add_view(RecetaAdmin(Receta, db.session, category="Recetas", name="Recetas", endpoint="recetas_admin"))
-    admin.add_view(ProveedorAdmin(Proveedor, db.session, category="Gerencia", name="Proveedores", endpoint="proveedores_admin"))
-    admin.add_view(ImpuestoAdmin(Impuesto, db.session, category="Contabilidad", name="Impuestos", endpoint="impuestos_admin"))
-    admin.add_view(ImpuestoTasaHistoricaAdmin(ImpuestoTasaHistorica, db.session, category="Contabilidad", name="Histórico tasas", endpoint="impuesto_tasa_historica_admin"))
+    admin.add_view(UnidadesMedidaAdmin(Unidades_medida, db.session, category="Inventario", name="Unidades de Medida", endpoint="unidades_medida"))
+    admin.add_view(EmpleadoAdmin(Empleado, db.session, category="Personal", name="Empleados", endpoint="empleados"))
+    admin.add_view(PuestoAdmin(Puesto, db.session, category="Personal", name="Puestos", endpoint="puestos"))
+    admin.add_view(CategoriaRecetaAdmin(Categoria_recetas, db.session, category="Recetas", name="Categoría de las Recetas", endpoint="categoria_recetas"))
+    admin.add_view(SucursalAdmin(Sucursal, db.session, category="Gerencia", name="Sucursales", endpoint="sucursales"))
+    admin.add_view(InsumoPrecioHistoricoAdmin(InsumoPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Insumos", endpoint="insumo_precio_historico"))
+    admin.add_view(RecetaPrecioHistoricoAdmin(RecetaPrecioHistorico, db.session, category="Auditoría de Precios", name="Histórico de Recetas", endpoint="receta_precio_historico"))
+    admin.add_view(RecetaAdmin(Receta, db.session, category="Recetas", name="Recetas", endpoint="recetas"))
+    admin.add_view(ProveedorAdmin(Proveedor, db.session, category="Gerencia", name="Proveedores", endpoint="proveedores"))
+    admin.add_view(ImpuestoAdmin(Impuesto, db.session, category="Contabilidad", name="Impuestos", endpoint="impuestos"))
+    admin.add_view(ImpuestoTasaHistoricaAdmin(ImpuestoTasaHistorica, db.session, category="Contabilidad", name="Histórico tasas", endpoint="impuesto_tasa_historica"))
     admin.add_view(CarritoAdmin(Carrito, db.session, category="Contabilidad", name="Carrito"))
-    admin.add_view(UsuarioClienteAdmin(UsuarioCliente, db.session, name="Usuarios", endpoint="usuarios_cliente_admin", category="Gerencia"))
+    admin.add_view(UsuarioClienteAdmin(UsuarioCliente, db.session, name="Usuarios", endpoint="usuarios_cliente", category="Gerencia"))
     admin.add_view(CAIAdmin(CAI, db.session, name="CAI", category="Contabilidad"))
-    admin.add_view(CAIHistoricoAdmin(CAIHistorico, db.session, name="CAI histórico", category="Contabilidad", endpoint="cai_historico_admin"))
-    admin.add_view(TipoDocumentoAdmin(TipoDocumento, db.session, category="Personal", name="Tipos de documentos", endpoint="tipos_documento_admin"))
-    admin.add_view(EmpleadoDocumentoAdmin(EmpleadoDocumento, db.session, category="Personal", name="Documentos de empleados", endpoint="empleado_documento_admin"))
-    admin.add_view(ParametroSARAdmin(ParametroSAR, db.session, name="Parámetros SAR", endpoint="parametros_sar_admin"))
-    admin.add_view(OrdenEntregaAdmin(OrdenEntrega, db.session, category="Reparto", name="Órdenes de entrega", endpoint="orden_entrega_admin"))
-    admin.add_view(OrdenesProveedoresAdmin(OrdenesProveedores, db.session, category="Órdenes", name="Órdenes a proveedores", endpoint="ordenes_proveedores_admin"))
-    admin.add_view(OrdenesProveedoresDetalleAdmin(OrdenesProveedoresDetalle, db.session, category="Órdenes", name="Detalle órdenes proveedores", endpoint="ordenes_proveedores_detalle_admin"))
-    admin.add_view(HistorialOrdenesRepartidorAdmin(HistorialOrdenesRepartidor, db.session, name="Historial de órdenes", endpoint="historial_ordenes_repartidor_admin", category=None))
-    admin.add_view(HistorialOrdenesProveedoresAdmin(OrdenesProveedores, db.session, name="Historial órdenes proveedores", endpoint="historial_ordenes_proveedores_admin"))
-    admin.add_view(PantallasAdmin(Pantallas, db.session, category="Seguridad", name="Pantallas", endpoint="pantallas_admin"))
-    admin.add_view(AccionesAdmin(Acciones, db.session, category="Seguridad", name="Acciones", endpoint="acciones_admin"))
+    admin.add_view(CAIHistoricoAdmin(CAIHistorico, db.session, name="CAI histórico", category="Contabilidad", endpoint="cai_historico"))
+    admin.add_view(TipoDocumentoAdmin(TipoDocumento, db.session, category="Personal", name="Tipos de documentos", endpoint="tipos_documento"))
+    admin.add_view(EmpleadoDocumentoAdmin(EmpleadoDocumento, db.session, category="Personal", name="Documentos de empleados", endpoint="empleado_documento"))
+    admin.add_view(ParametroSARAdmin(ParametroSAR, db.session, name="Parámetros SAR", endpoint="parametros_sar"))
+    admin.add_view(OrdenEntregaAdmin(OrdenEntrega, db.session, category="Reparto", name="Órdenes de entrega", endpoint="orden_entrega"))
+    admin.add_view(OrdenesProveedoresAdmin(OrdenesProveedores, db.session, category="Órdenes", name="Órdenes a proveedores", endpoint="ordenes_proveedores"))
+    admin.add_view(OrdenesProveedoresDetalleAdmin(OrdenesProveedoresDetalle, db.session, category="Órdenes", name="Detalle órdenes proveedores", endpoint="ordenes_proveedores_detalle"))
+    admin.add_view(HistorialOrdenesRepartidorAdmin(HistorialOrdenesRepartidor, db.session, name="Historial de órdenes", endpoint="historial_ordenes_repartidor", category=None))
+    admin.add_view(HistorialOrdenesProveedoresAdmin(OrdenesProveedores, db.session, name="Historial órdenes proveedores", endpoint="historial_ordenes_proveedores"))
+    admin.add_view(PantallasAdmin(Pantallas, db.session, category="Seguridad", name="Pantallas", endpoint="pantallas"))
+    admin.add_view(AccionesAdmin(Acciones, db.session, category="Seguridad", name="Acciones", endpoint="acciones"))
+
+    # Migración automática: actualiza Pantallas.url en la BD (quita sufijo _admin de endpoints)
+    with flask_app.app_context():
+        try:
+            from sqlalchemy import text as _sql_text
+            db.session.execute(
+                _sql_text("UPDATE Pantallas SET url = REPLACE(url, '_admin.index_view', '.index_view') WHERE url LIKE '%_admin.index_view%'")
+            )
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
     
     from models.panel_repartidor import panel_repartidor

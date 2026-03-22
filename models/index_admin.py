@@ -61,12 +61,12 @@ def index():
 
         # Construir lista de pantallas para el navbar
         _EXCLUIR_NAV = {
-            'acciones_admin.index_view',
-            'impuesto_tasa_historica_admin.index_view',
+            'acciones.index_view',
+            'impuesto_tasa_historica.index_view',
             'carrito.index_view',
-            'usuarios_cliente_admin.index_view',
-            'empleado_documento_admin.index_view',
-            'pantallas_admin.index_view',
+            'usuarios_cliente.index_view',
+            'empleado_documento.index_view',
+            'pantallas.index_view',
         }
         _NOMBRES_CUSTOM = {
             'panel_encargado.encargar_insumos': 'Encargar Insumos',

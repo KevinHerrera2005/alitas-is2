@@ -214,15 +214,39 @@
             transform: rotate(-90deg);
         }
 
+        /* ── Badge sesión ── */
+        .sesion {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 22px;
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1;
+            color: rgba(255,255,255,0.75);
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.15);
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+        .sesion strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
         /* ── Botón cerrar sesión ── */
         .btn-cerrar-sesion {
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            padding: 8px 18px;
+            height: 38px;
+            padding: 0 18px;
             border-radius: 22px;
             font-size: 13px;
             font-weight: 700;
+            line-height: 1;
             text-decoration: none;
             color: #fff;
             background: linear-gradient(135deg, #c30d0d 0%, #a00000 100%);
@@ -231,6 +255,7 @@
             transition: all 0.18s ease;
             white-space: nowrap;
             letter-spacing: 0.02em;
+            box-sizing: border-box;
         }
         .btn-cerrar-sesion:hover {
             background: linear-gradient(135deg, #e01010 0%, #c30d0d 100%);
@@ -270,7 +295,14 @@
                 {% endif %}
             </div>
             <div style="display:flex;align-items:center;gap:12px;">
-                <div class="sesion">Sesión: <strong>Administrador</strong></div>
+                <div class="sesion">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Sesión: <strong>Administrador</strong>
+                </div>
                 <a href="{{ url_for('logout') }}" class="btn-cerrar-sesion">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
@@ -702,27 +734,6 @@
                                 </div>
                             </a>
 
-{% if 'pantallas_admin.index_view' in pantallas_permitidas %}
-                            <a class="modulo-item {% if modulo == 'pantallas_admin' %}modulo-activo{% endif %}"
-                               href="{{ url_for('ver_permisos_empleado', modulo='pantallas_admin') }}">
-                                <div class="modulo-punto"></div>
-                                <div>
-                                    <div class="modulo-titulo">Pantallas</div>
-                                    <div class="modulo-desc">Gestiona pantallas del sistema</div>
-                                </div>
-                            </a>
-                            {% endif %}
-
-                            {% if 'acciones_admin.index_view' in pantallas_permitidas %}
-                            <a class="modulo-item {% if modulo == 'acciones_admin' %}modulo-activo{% endif %}"
-                               href="{{ url_for('ver_permisos_empleado', modulo='acciones_admin') }}">
-                                <div class="modulo-punto"></div>
-                                <div>
-                                    <div class="modulo-titulo">Acciones</div>
-                                    <div class="modulo-desc">Administra acciones del sistema</div>
-                                </div>
-                            </a>
-                            {% endif %}
 
                         </div>
                     </div>

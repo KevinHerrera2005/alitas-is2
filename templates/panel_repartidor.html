@@ -57,15 +57,15 @@
 
   <div class="wrap">
 
-    {% if 'orden_entrega_admin.index_view' in pantallas_permitidas %}
+    {% if 'orden_entrega.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('orden_entrega_admin.index_view') }}">&gt; Órdenes</a>
+      <a href="{{ url_for('orden_entrega.index_view') }}">&gt; Órdenes</a>
     </div>
     {% endif %}
 
-    {% if 'historial_ordenes_repartidor_admin.index_view' in pantallas_permitidas %}
+    {% if 'historial_ordenes_repartidor.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('historial_ordenes_repartidor_admin.index_view') }}">&gt; Historial de órdenes</a>
+      <a href="{{ url_for('historial_ordenes_repartidor.index_view') }}">&gt; Historial de órdenes</a>
     </div>
     {% endif %}
 

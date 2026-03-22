@@ -11,34 +11,70 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             margin:0;
         }
-        .topbar{
-            background:#c30d0d;
-            color:#fff;
-            padding:10px 20px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
+        .topbar {
+            background: #c30d0d;
+            color: #fff;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-sizing: border-box;
         }
-        .topbar-title{
-            font-weight:700;
-            font-size:17px;
-            flex:1;
-            text-align:center;
+        .topbar-title { font-weight: 700; font-size: 17px; flex: 1; text-align: center; letter-spacing: .3px; }
+        .topbar-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 22px;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1;
+            text-decoration: none;
+            color: #fff;
+            white-space: nowrap;
+            box-sizing: border-box;
+            transition: all 0.18s ease;
         }
-        .topbar-btn{
-            color:#fff;
-            font-size:12px;
-            font-weight:600;
-            text-decoration:none;
-            background:rgba(255,255,255,0.18);
-            border:1px solid rgba(255,255,255,0.35);
-            padding:5px 14px;
-            border-radius:20px;
-            white-space:nowrap;
+        .topbar-btn:hover { text-decoration: none; color: #fff; }
+        .btn-volver  { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.18); }
+        .btn-volver:hover  { background: rgba(0,0,0,0.4); }
+        .btn-logout  { background: #a00909; border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .btn-logout:hover  { background: #7d0606; }
+        /* Navbar pantallas */
+        .emp-nav-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 24px;
+            background: #1c2740;
+            border-bottom: 2px solid #2a4070;
+            box-sizing: border-box;
         }
-        .topbar-btn:hover{
-            background:rgba(255,255,255,0.28);
-            color:#fff;
+        .emp-nav-link {
+            color: #a0b8d8;
+            padding: 7px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            border: 1px solid transparent;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .emp-nav-link:hover { background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; }
+        .emp-nav-link.active { background: rgba(255,255,255,0.12); color: #fff; border-color: rgba(255,255,255,0.15); }
+        /* Footer */
+        .footer {
+            background: #c30d0d;
+            color: rgba(255,255,255,0.85);
+            text-align: center;
+            padding: 12px 28px;
+            font-size: 12px;
+            margin-top: 40px;
         }
         .card-main{
             max-width:1100px;
@@ -74,10 +110,26 @@
 <body>
 
 <div class="topbar">
-  <a href="{{ url_for('ver_permisos_empleado') }}" class="topbar-btn">&#8592; Volver al inicio</a>
+  <a href="{{ url_for('index_admin_bp.index') }}" class="topbar-btn btn-volver">&#8592; Volver al inicio</a>
   <span class="topbar-title">Panel Central</span>
-  <a href="{{ url_for('logout') }}" class="topbar-btn" style="background:rgba(0,0,0,0.25);">Cerrar sesión</a>
+  <a href="{{ url_for('logout') }}" class="topbar-btn btn-logout">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+    Cerrar sesión
+  </a>
 </div>
+
+{% if pantallas_nav %}
+<div class="emp-nav-bar">
+  {% for p in pantallas_nav %}
+    <a href="{{ p.url }}" class="emp-nav-link{% if request.path == p.url %} active{% endif %}">{{ p.nombre }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 
 <div class="container" style="padding-top:20px;">
     <div class="card card-main">
@@ -502,6 +554,8 @@
         });
     });
 </script>
+
+<div class="footer">© 2025 Alitas El Comelón</div>
 
 </body>
 </html>

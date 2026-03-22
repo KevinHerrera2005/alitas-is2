@@ -22,7 +22,7 @@ class ImpuestoTasaHistoricaAdmin(ModelView):
             return False
         if getattr(current_user, "tipo", None) != "empleado":
             return False
-        return endpoint_accesible("impuesto_tasa_historica_admin.index_view")
+        return endpoint_accesible("impuesto_tasa_historica.index_view")
 
     def inaccessible_callback(self, name, **kwargs):
         flash("No tienes acceso a esta pantalla.", "danger")

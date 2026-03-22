@@ -8,10 +8,10 @@
       .master-topbar-btn {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 6px 16px;
+        gap: 7px;
+        padding: 8px 18px;
         border-radius: 22px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 700;
         text-decoration: none;
         white-space: nowrap;
@@ -22,17 +22,17 @@
       .master-topbar-btn:active { transform: translateY(0); }
       .btn-volver {
         color: #fff;
-        background: rgba(255,255,255,0.15);
-        border: 1px solid rgba(255,255,255,0.35);
+        background: rgba(0,0,0,0.25);
+        border: 1px solid rgba(255,255,255,0.18);
       }
-      .btn-volver:hover { background: rgba(255,255,255,0.25); color: #fff; }
+      .btn-volver:hover { background: rgba(0,0,0,0.4); color: #fff; }
       .btn-logout {
         color: #fff;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(255,255,255,0.28);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        background: #a00909;
+        border: 1px solid rgba(255,255,255,0.25);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       }
-      .btn-logout:hover { background: rgba(0,0,0,0.5); color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+      .btn-logout:hover { background: #7d0606; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
     </style>
     <div style="background:#c30d0d;color:#fff;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100vw;position:relative;left:50%;transform:translateX(-50%);box-sizing:border-box;">
       {% if endpoint_accesible('ver_permisos_empleado') %}
@@ -133,12 +133,22 @@
     {% for v in admin_view.admin._views %}
       {% if v.endpoint and v.endpoint != 'admin' and v.is_visible()
             and endpoint_accesible(v.endpoint + '.index_view')
+            and endpoint_en_db(v.endpoint + '.index_view')
             and (v.endpoint + '.index_view') not in _nav_excluir %}
         {% set _nav_count.n = _nav_count.n + 1 %}
       {% endif %}
     {% endfor %}
 
-    {% if _nav_count.n > 1 %}
+    {# Rutas personalizadas a mostrar en navbar (endpoint, nombre_display) #}
+    {% set _custom_routes = [
+      ('panel_encargado.encargar_insumos', 'Encargar Insumos'),
+    ] %}
+    {% set _custom_count = namespace(n=0) %}
+    {% for ep, _ in _custom_routes %}
+      {% if endpoint_accesible(ep) %}{% set _custom_count.n = _custom_count.n + 1 %}{% endif %}
+    {% endfor %}
+
+    {% if _nav_count.n + _custom_count.n > 1 %}
     <div class="emp-nav-bar">
       {% for v in admin_view.admin._views %}
         {% if v.endpoint and v.endpoint != 'admin' and v.is_visible()
@@ -149,6 +159,11 @@
              class="emp-nav-link{% if v.endpoint == admin_view.endpoint %} emp-nav-activo{% endif %}">
             {{ v.name }}
           </a>
+        {% endif %}
+      {% endfor %}
+      {% for ep, nombre in _custom_routes %}
+        {% if endpoint_accesible(ep) %}
+          <a href="{{ url_for(ep) }}" class="emp-nav-link">{{ nombre }}</a>
         {% endif %}
       {% endfor %}
     </div>

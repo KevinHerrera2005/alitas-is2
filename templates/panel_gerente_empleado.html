@@ -19,27 +19,27 @@
 
   <div class="wrap">
 
-    {% if 'empleados_admin.index_view' in pantallas_permitidas %}
+    {% if 'empleados.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('empleados_admin.index_view') }}">Empleados</a>
+      <a href="{{ url_for('empleados.index_view') }}">Empleados</a>
     </div>
     {% endif %}
 
-    {% if 'sucursales_admin.index_view' in pantallas_permitidas %}
+    {% if 'sucursales.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('sucursales_admin.index_view') }}">Sucursales</a>
+      <a href="{{ url_for('sucursales.index_view') }}">Sucursales</a>
     </div>
     {% endif %}
 
-    {% if 'puestos_admin.index_view' in pantallas_permitidas %}
+    {% if 'puestos.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('puestos_admin.index_view') }}">Puestos</a>
+      <a href="{{ url_for('puestos.index_view') }}">Puestos</a>
     </div>
     {% endif %}
 
-    {% if 'proveedores_admin.index_view' in pantallas_permitidas %}
+    {% if 'proveedores.index_view' in pantallas_permitidas %}
     <div class="card">
-      <a href="{{ url_for('proveedores_admin.index_view') }}">Proveedores</a>
+      <a href="{{ url_for('proveedores.index_view') }}">Proveedores</a>
     </div>
     {% endif %}
 

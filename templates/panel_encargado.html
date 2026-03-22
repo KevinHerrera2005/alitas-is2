@@ -122,10 +122,10 @@
             </div>
             {% endif %}
 
-            {% if 'ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
+            {% if 'ordenes_proveedores.index_view' in pantallas_permitidas %}
             <div class="col-12">
                 <a
-                    href="{{ url_for('ordenes_proveedores_admin.index_view') }}"
+                    href="{{ url_for('ordenes_proveedores.index_view') }}"
                     class="btn-action btn-action-secondary"
                     id="btn-ordenes-proveedores"
                 >
@@ -137,10 +137,10 @@
             </div>
             {% endif %}
 
-            {% if 'historial_ordenes_proveedores_admin.index_view' in pantallas_permitidas %}
+            {% if 'historial_ordenes_proveedores.index_view' in pantallas_permitidas %}
             <div class="col-12">
                 <a
-                    href="{{ url_for('historial_ordenes_proveedores_admin.index_view') }}"
+                    href="{{ url_for('historial_ordenes_proveedores.index_view') }}"
                     class="btn-action btn-action-secondary"
                     id="btn-historial-ordenes-proveedores"
                 >

@@ -67,7 +67,7 @@ def pantallas_del_empleado_actual():
 
 
 _ADMIN_SCREENS = {
-    'pantallas_admin.index_view',
+    'pantallas.index_view',
     'ver_permisos_puesto',
     'ver_permisos_empleado',
     'ver_pantallas_acciones',
